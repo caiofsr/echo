@@ -30,3 +30,15 @@ _Evitar_: Recibo como sinônimo de fatura.
 
 **Dados de pagamento**:
 Conjunto de informações para recebimento que pode ser escolhido para uma fatura.
+
+**Prévia de fatura**:
+Visualização dos dados e valores de uma possível fatura antes da emissão, sem número consumido nem registros de horas bloqueados.
+
+**Emissão de fatura**:
+Confirmação que salva a fatura com seus dados e valores, atribui seu número e bloqueia os registros de horas incluídos.
+
+**Cancelamento de fatura**:
+Invalidação de uma fatura que preserva o documento e seu número e libera os registros de horas associados.
+
+**Marcação de pagamento**:
+Registro manual de que uma fatura foi paga integralmente, acompanhado da data do pagamento.
