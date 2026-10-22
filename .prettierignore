@@ -1,6 +1,0 @@
-node_modules
-dist
-bun.lock
-src/routeTree.gen.ts
-docs/prototypes
-docs/planning/artifacts

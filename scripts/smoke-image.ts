@@ -94,7 +94,7 @@ try {
   assert.equal(page.status, 200);
   const html = await page.text();
   assert.match(html, />Horas</);
-  const asset = html.match(/href="(\/assets\/[^\"]+\.css)"/)?.[1];
+  const asset = html.match(/href="(\/assets\/[^ ]+\.css)"/)?.[1];
   assert.ok(asset);
   assert.equal((await fetch(`${baseURL}${asset}`)).status, 200);
   await docker(["restart", name]);
