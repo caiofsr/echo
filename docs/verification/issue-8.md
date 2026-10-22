@@ -21,7 +21,7 @@ Revisão independente encontrou dois ajustes: incluir abertura, retorno visível
 
 ## Revisão visual
 
-A revisão independente apontou a ausência de destaque visual da rota Configurações. O destaque foi aplicado e conferido em desktop e 320px. A revisão da correção recebeu disposição `ship`, restrita ao ajuste avaliado. As capturas estão em [issue-8/](issue-8/).
+A revisão independente apontou a ausência de destaque visual da rota Configurações. O destaque foi aplicado e conferido em desktop e 320px. A revisão da correção recebeu disposição `ship`, restrita ao ajuste avaliado. As capturas da revisão foram removidas do repositório.
 
 A revisão usou o protótipo aprovado e o contrato fornecido; não houve nova rodada de conceitos ou geração de comp. A ausência de seed e QUALITY BAR card foi registrada como lacuna de processo, sem substituir a direção já aprovada.
 
