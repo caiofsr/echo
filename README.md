@@ -100,3 +100,11 @@ Os testes de integração observam as respostas nativas sem transformar status o
 Consultas usam `staleTime` padrão de 30 segundos, que cada consulta pode sobrescrever. `defaultPreloadStaleTime: 0` deixa a decisão de atualização com o React Query. Limpeza de cache na saída e reautenticação continua usando esse mesmo cliente.
 
 Os testes verificam isolamento entre roteadores, hidratação sem repetir a leitura, disponibilidade do provider e transferência de uma consulta iniciada após a desidratação inicial.
+
+## Carregamento das páginas
+
+`/login` e `/_app` usam `beforeLoad` com `context.queryClient.fetchQuery(accessQueryOptions)`. A query chama a server function `hasSession`, que consulta a sessão no servidor sem renovar sua validade. Essa query sobrescreve o padrão global com `staleTime: 0`: cada navegação confirma o acesso atual, inclusive após uma revogação ou preload. A query compartilha chamadas em andamento e participa da integração SSR.
+
+Quadro, Horas, Faturas, Cadastros e Configurações herdam o guard de `/_app`. Essas páginas ainda apresentam placeholders e não precisam de loaders ou consultas de dados de trabalho. Quando esses dados existirem, as leituras privadas devem ser autorizadas dentro das server functions e consumidas por query options compartilhadas entre loader e tela. O guard de navegação não substitui autorização no servidor.
+
+Login, logout e observação da sessão continuam no SDK nativo do Better Auth. Após reautenticação, o ciclo de sessão limpa o cache e aguarda `router.invalidate({ sync: true })` antes de mostrar os formulários novamente.

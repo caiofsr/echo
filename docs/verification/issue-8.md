@@ -7,7 +7,7 @@ Verificação local em 22/10/2026. Implementa [Entrar no Echo com sessão persis
 - `bun run typecheck`: passou.
 - `bun test tests`: 12 testes passaram, com 59 verificações na execução final usando `bun:sqlite`. SQLite real isolado, migrações, persistência após reabrir banco, revogação, cookies, expiração/renovação, limite nativo persistente do Better Auth, concorrência e rollback de escritas atômicas.
 - `bun run build`: passou, gerando cliente e servidor do TanStack Start.
-- `bun run test:e2e`: 16 testes passaram, em desktop e celular. Entrada inválida/válida, mostrar senha, destino interno, recarga, navegação, saída em múltiplas abas e reentrada após revogação. O limite nativo também foi conferido na interface, com a mensagem de espera em português.
+- `bun run test:e2e`: 18 testes passaram, em desktop e celular. Entrada inválida/válida, mostrar senha, destino interno, recarga, navegação, saída em múltiplas abas e reentrada após revogação. O limite nativo também foi conferido na interface, com a mensagem de espera em português.
 - Railpack 0.43.0: build local inicial da imagem `echo-issue-8`, runtime Bun 1.3.14. Teste com `bun scripts/smoke-image.ts echo-issue-8` passou, incluindo migrações, definição administrativa de senha, cookie seguro, SSR protegido, assets, sessão após reinício do contêiner e saída. Essa validação da imagem antecede a troca para `bun:sqlite`; não foi repetida depois da troca.
 - Detector Impeccable: nenhum achado nos componentes, rotas e CSS. Revisão visual real em 1440px, 320px e viewport equivalente ao espaço disponível em zoom de 200%. Os SVGs locais foram validados e inspecionados em branco, cinza e fundo do aplicativo, em 17, 24, 32, 64 e 128px. São versões simplificadas de interface; não são ilustrações 3D.
 
@@ -42,3 +42,9 @@ O fixture de integração retorna status e payload nativos, incluindo sessão au
 ## React Query com SSR
 
 A integração oficial `@tanstack/react-router-ssr-query` está conectada em `getRouter`. Os testes usam o roteador real da aplicação no servidor e as funções nativas de SSR/hidratação para conferir isolamento do cache, leitura reaproveitada na hidratação, provider e consultas transmitidas depois do cache inicial. O documento raiz delega o provider à integração oficial.
+
+## Server functions, beforeLoad e consultas de acesso
+
+Os guards de `/_app` e `/login` consultam a mesma query, cuja função chama `hasSession` no servidor. O `staleTime: 0` dessa query impede que os 30 segundos de cache padrão adiem a verificação de uma sessão revogada. As cinco páginas privadas herdam esse guard e permanecem sem consultas fictícias de dados de trabalho.
+
+O teste de navegador adicional verifica redirecionamento SSR de uma sessão autenticada na página de login, revogação seguida de navegação cliente e retorno ao destino após nova entrada. A reautenticação aguarda a invalidação síncrona das rotas antes de reexibir os formulários.

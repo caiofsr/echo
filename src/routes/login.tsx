@@ -1,5 +1,5 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { hasSession } from "../server/session";
+import { accessQueryOptions } from "../lib/access-query";
 import { LoginForm } from "../components/login-form";
 const destinations = ["/", "/hours", "/invoices", "/directory", "/settings"];
 function safeDestination(value: unknown) {
@@ -19,8 +19,9 @@ export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>) => ({
     destination: safeDestination(search.destination),
   }),
-  beforeLoad: async ({ search }) => {
-    if (await hasSession()) throw redirect({ href: search.destination });
+  beforeLoad: async ({ context, search }) => {
+    if (await context.queryClient.fetchQuery(accessQueryOptions))
+      throw redirect({ href: search.destination });
   },
   component: LoginPage,
 });

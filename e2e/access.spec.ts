@@ -258,3 +258,26 @@ test("página restaurada anuncia seus rascunhos e desmontar remove a participaç
   await expect(other).toHaveURL(/\/login/);
   expect(unexpectedConfirmation).toBe(false);
 });
+
+test("beforeLoad usa a sessão atual no SSR e na navegação após revogação", async ({
+  page,
+  request,
+}) => {
+  await page.goto("/login");
+  await page.getByLabel("Senha pessoal").fill(password);
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page).toHaveURL("/");
+  await page.goto("/login?destination=/invoices");
+  await expect(page).toHaveURL("/invoices");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Faturas");
+  await request.post("http://127.0.0.1:4319/reset-password");
+  await page.getByRole("link", { name: "Cadastros", exact: true }).click();
+  await expect(page).toHaveURL(/\/login\?destination=%2Fdirectory/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Seu trabalho, no seu ritmo.",
+  );
+  await page.getByLabel("Senha pessoal").fill(password);
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page).toHaveURL("/directory");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Cadastros");
+});
