@@ -1,0 +1,14 @@
+node_modules
+.git
+.env
+.env.*
+.data
+dist
+.tanstack
+playwright-report
+test-results
+docs
+.intent
+.claude
+.codex
+.impeccable

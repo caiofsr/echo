@@ -8,7 +8,7 @@ Estado: divisão aprovada e tickets publicados com dependências nativas verific
 
 **Parent:** [Implementar a primeira versão do Echo](https://github.com/caiofsr/echo/issues/7)
 
-**What to build:** Abrir a aplicação responsiva protegida por senha pessoal e manter a sessão em visitas seguintes, com persistência real e execução Node compatível com Railpack.
+**What to build:** Abrir a aplicação responsiva protegida por senha pessoal e manter a sessão em visitas seguintes, com persistência real e execução com Bun compatível com Railpack.
 
 **Blocked by:** None (can start immediately)
 
@@ -16,9 +16,31 @@ Estado: divisão aprovada e tickets publicados com dependências nativas verific
 
 - [ ] Aplicação TanStack Start com interface em português, shadcn/ui e navegação aprovada; usuário sem sessão não acessa dados ou operações protegidas.
 - [ ] Better Auth com única credencial pessoal, sem cadastro público; cookie seguro e expiração deslizante de 30 dias.
-- [ ] Drizzle/libSQL com SQLite local e configuração de Turso por ambiente; inicialização e migrações documentadas sem segredos versionados.
-- [ ] Build e comando do artefato Node conferidos para execução pelo Railpack, sem Dockerfile; documentar requisitos e limites a verificar no servidor sem publicar em produção.
+- [ ] Drizzle com bun:sqlite e SQLite local em desenvolvimento e produção; caminho por ambiente, volume persistente no Dokploy, inicialização e migrações documentadas sem segredos versionados.
+- [ ] Bun com versão fixa, bun.lock versionado e comando de inicialização explícito; build pelo Railpack e execução da imagem resultante validados com acesso, sessão e banco real, sem Dockerfile; documentar requisitos e limites a verificar no servidor sem publicar em produção.
 - [ ] Testes da operação pública de acesso com SQLite real e fluxo no navegador; infraestrutura reutilizável para banco isolado e controle de tempo.
+
+### Refinamento aprovado da issue #8
+
+Confirmado em 22/10/2026.
+
+- A tela de entrada pede somente a senha. Qualquer identificador interno exigido pela autenticação fica fora desse fluxo.
+- A primeira senha é definida por uma operação administrativa no servidor. A mesma operação permite redefini-la em caso de esquecimento, sem recuperação por e-mail nesta versão.
+- A redefinição da senha encerra todas as sessões existentes.
+- Computador e celular podem permanecer conectados simultaneamente. Sair encerra somente a sessão daquele navegador.
+- Sair preserva o cronômetro em andamento, que continua independente do dispositivo.
+- A sessão expira após 30 dias de inatividade e é renovada pelo uso autenticado, sem prazo máximo adicional nesta versão.
+- Ao acessar um destino protegido, entrar retorna ao destino interno solicitado. Sem destino específico, entrar abre o Quadro.
+- Se a sessão expirar durante uma edição, o formulário é preservado temporariamente naquela aba para restauração após novo acesso. O Echo atualiza os dados do servidor e exige confirmação antes de salvar, sem envio automático. O cronômetro continua contando.
+- Tentativas repetidas de senha recebem limitação por origem e espera temporária, com mensagem em português indicando quando tentar novamente. Não há bloqueio permanente da credencial.
+- A issue #8 entrega acesso, sessão e estrutura responsiva com Quadro, Horas, Faturas, Cadastros e Configurações. Funcionalidades das próximas issues exibem uma mensagem de indisponibilidade temporária. Dados fictícios ficam restritos ao protótipo.
+- Sair limpa os formulários temporários e oculta os dados protegidos em todas as abas daquele navegador, preservando as sessões dos outros dispositivos. Havendo alterações não salvas, o Echo pede confirmação antes de sair e descartá-las. A preservação temporária de formulários aplica-se à expiração involuntária da sessão.
+- A definição e a redefinição administrativa exigem senha de pelo menos 15 caracteres, permitem frases e não exigem combinações de maiúsculas, números ou símbolos. A entrada aceita colagem e preenchimento por gerenciadores de senha.
+- Bun é o runtime escolhido para o Echo, substituindo a decisão anterior de executar em Node.js. Fixar a versão, versionar bun.lock e definir o comando de inicialização explicitamente.
+- A validação da issue #8 inclui build pelo Railpack e execução da imagem resultante com Bun, cobrindo entrada, sessão e banco real. A validação no Dokploy é uma etapa separada, sem publicação em produção nesta issue. O suporte documentado do Railpack ao Bun não substitui esse teste: https://railpack.com/languages/bun.
+- SQLite local com o driver nativo bun:sqlite e Drizzle é usado tanto em desenvolvimento quanto em produção no Dokploy. O suporte ao Turso/libSQL foi removido por decisão do usuário; configurar o caminho do banco por ambiente e um volume persistente no servidor.
+- A renovação da sessão considera o uso em uma aba visível. Uma aba inativa em segundo plano não renova a sessão indefinidamente. A expiração não interrompe o cronômetro.
+- O rascunho preservado após expiração fica somente na memória da aba aberta. Recarregar ou fechar a página descarta esse rascunho, sem armazenamento local persistente dos dados do formulário.
 
 ## 2. [Gerenciar clientes e projetos](https://github.com/caiofsr/echo/issues/9)
 

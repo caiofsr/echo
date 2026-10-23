@@ -86,9 +86,9 @@ Organizar responsabilidades em acesso e sessão; cadastros e preferências; quad
 ### Stack, persistência e acesso
 
 - Usar TanStack Start, Query, Table e Form, com shadcn/ui.
-- Usar Drizzle com driver libSQL. Desenvolvimento usa SQLite em arquivo local; produção usa Turso com URL e token configurados no ambiente.
+- Usar Drizzle com o driver nativo bun:sqlite. Desenvolvimento e produção usam SQLite em arquivo local; no Dokploy, o arquivo fica em um volume persistente e o caminho é configurado por ambiente.
 - Usar Better Auth na mesma base com adaptador Drizzle/SQLite, credencial pessoal única, sem cadastro público ou gestão de usuários. Sessão com cookie seguro e expiração deslizante de 30 dias, renovada durante o uso.
-- Servir a aplicação em Node.js. Dokploy executa o build no servidor usando Railpack, sem Dockerfile mantido no projeto. Conferir artefato e comando de inicialização ao montar o scaffold; não presumir o fallback do Railpack.
+- Servir a aplicação com Bun como runtime, com versão fixa e bun.lock versionado. Dokploy executa o build no servidor usando Railpack, sem Dockerfile mantido no projeto. Definir comando de inicialização explícito e validar o build pelo Railpack e a execução da imagem resultante com Bun, incluindo acesso, sessão e banco real; não presumir o fallback do Railpack.
 - Autorizar as operações protegidas no servidor. Query, Table e Form organizam a experiência no cliente, mas o servidor preserva as regras de negócio.
 
 ### Modelo de dados e contratos de comportamento
@@ -139,14 +139,14 @@ Organizar responsabilidades em acesso e sessão; cadastros e preferências; quad
 
 Estratégia confirmada pelo usuário: testes das operações públicas com SQLite real e testes dos fluxos no navegador.
 
-- Concentrar a verificação das regras na fronteira pública de comandos e consultas da aplicação no servidor, usando banco SQLite/libSQL real e isolado. Observar respostas e estado consultável após a ação, sem testar métodos privados, detalhes de componentes ou estrutura das tabelas.
+- Concentrar a verificação das regras na fronteira pública de comandos e consultas da aplicação no servidor, usando banco SQLite real e isolado. Observar respostas e estado consultável após a ação, sem testar métodos privados, detalhes de componentes ou estrutura das tabelas.
 - Controlar tempo e dados de entrada para testar duração em segundos, pausa e retomada, mudança de fuso, limites de períodos e precisão monetária sem esperas reais ou resultados instáveis.
 - Cobrir por essa fronteira cadastros e cascatas; padrões e valores preservados; cronômetro e registros; sobreposição; seleção e emissão de faturas; numeração; bloqueio, pagamento e cancelamento.
 - Exercitar concorrência com operações simultâneas e armazenamento real: troca/parada do timer, emissão concorrente e disputa pelos mesmos registros. Verificar que só o primeiro resultado válido é confirmado e que falhas não deixam operações parciais.
 - Complementar com poucos testes no navegador percorrendo a aplicação completa: acesso protegido e sessão, quadro desktop e celular, cronômetro entre duas sessões, edição pelo accordion, mensagens de conflito e conexão perdida, prévia e ciclo de fatura, exportação CSV/PDF e seleção opcional de Tarefa.
 - Verificar conteúdo e valores dos documentos por seus resultados públicos. Para CSV, conferir campos e linhas. Para PDF, conferir conteúdo legível e realizar revisão visual de exemplos em português e inglês. Evitar testes que dependam dos bytes exatos do PDF ou copiem o HTML do protótipo.
 - Usar exemplos com moedas e valores distintos, meios centavos, registros sem Projeto, registros nas bordas de períodos e faturas canceladas. Verificar que mudanças em cadastros e valores não alteram documentos já emitidos.
-- A suíte existente não oferece precedentes porque ainda não há aplicação ou testes no repositório. O protótipo aprovado é referência de interação, não uma suíte ou implementação reutilizável. Escolher a infraestrutura de testes ao montar o scaffold; verificar também a compatibilidade das operações usadas com libSQL remoto em ambiente isolado, sem usar dados de produção.
+- A suíte existente não oferece precedentes porque ainda não há aplicação ou testes no repositório. O protótipo aprovado é referência de interação, não uma suíte ou implementação reutilizável. A infraestrutura de testes usa SQLite nativo do Bun em arquivos isolados, sem usar dados de produção.
 
 ## Out of Scope
 
@@ -165,6 +165,28 @@ Estratégia confirmada pelo usuário: testes das operações públicas com SQLit
 - A decisão posterior de não oferecer divisão de registros substitui a orientação anterior de dividir períodos nas bordas da seleção. Prevalecem a exclusão integral e o ajuste do intervalo da fatura.
 - Referência visual: [protótipo aprovado](https://github.com/caiofsr/echo/tree/703ce8aecb254b1db26cc2fcbe70f32b7bb181eb/docs/prototypes). Seus dados são fictícios. A imagem inicial de fatura orienta campos e apresentação; não fornece números, valores ou dados pessoais padrão.
 - Leitura das decisões: [faturamento](https://github.com/caiofsr/echo/issues/2), [fluxos](https://github.com/caiofsr/echo/issues/3), [arquitetura](https://github.com/caiofsr/echo/issues/4) e [arquivamento e cadastros](https://github.com/caiofsr/echo/issues/6).
-- A decisão de arquitetura registra a consulta a fontes oficiais. Ao implementar o scaffold, conferir o artefato Node produzido, comando de inicialização e limites operacionais do servidor Dokploy. Esses detalhes não estão presumidos nesta spec.
+- A decisão de arquitetura registra a consulta a fontes oficiais. Ao implementar o scaffold, conferir o artefato produzido para execução com Bun, comando de inicialização e limites operacionais do servidor Dokploy. Esses detalhes não estão presumidos nesta spec.
 - Ordem sugerida: scaffold e runtime; persistência e acesso; cronômetro; cadastros, quadro e tarefas; registros e timesheet; ciclo de faturas e PDF; validação em computador e celular. A divisão em entregas verticais e dependências será feita em /to-tickets.
 - Esta spec de implementação é separada do mapa Wayfinder encerrado. Seus tickets serão publicados como subissues com dependências nativas e rótulo ready-for-agent após aprovação da divisão.
+
+### Refinamento aprovado da issue #8
+
+Confirmado em 22/10/2026.
+
+- A tela de entrada pede somente a senha. Qualquer identificador interno exigido pela autenticação fica fora desse fluxo.
+- A primeira senha é definida por uma operação administrativa no servidor. A mesma operação permite redefini-la em caso de esquecimento, sem recuperação por e-mail nesta versão.
+- A redefinição da senha encerra todas as sessões existentes.
+- Computador e celular podem permanecer conectados simultaneamente. Sair encerra somente a sessão daquele navegador.
+- Sair preserva o cronômetro em andamento, que continua independente do dispositivo.
+- A sessão expira após 30 dias de inatividade e é renovada pelo uso autenticado, sem prazo máximo adicional nesta versão.
+- Ao acessar um destino protegido, entrar retorna ao destino interno solicitado. Sem destino específico, entrar abre o Quadro.
+- Se a sessão expirar durante uma edição, o formulário é preservado temporariamente naquela aba para restauração após novo acesso. O Echo atualiza os dados do servidor e exige confirmação antes de salvar, sem envio automático. O cronômetro continua contando.
+- Tentativas repetidas de senha recebem limitação por origem e espera temporária, com mensagem em português indicando quando tentar novamente. Não há bloqueio permanente da credencial.
+- A issue #8 entrega acesso, sessão e estrutura responsiva com Quadro, Horas, Faturas, Cadastros e Configurações. Funcionalidades das próximas issues exibem uma mensagem de indisponibilidade temporária. Dados fictícios ficam restritos ao protótipo.
+- Sair limpa os formulários temporários e oculta os dados protegidos em todas as abas daquele navegador, preservando as sessões dos outros dispositivos. Havendo alterações não salvas, o Echo pede confirmação antes de sair e descartá-las. A preservação temporária de formulários aplica-se à expiração involuntária da sessão.
+- A definição e a redefinição administrativa exigem senha de pelo menos 15 caracteres, permitem frases e não exigem combinações de maiúsculas, números ou símbolos. A entrada aceita colagem e preenchimento por gerenciadores de senha.
+- Bun é o runtime escolhido para o Echo, substituindo a decisão anterior de executar em Node.js. Fixar a versão, versionar bun.lock e definir o comando de inicialização explicitamente.
+- A validação da issue #8 inclui build pelo Railpack e execução da imagem resultante com Bun, cobrindo entrada, sessão e banco real. A validação no Dokploy é uma etapa separada, sem publicação em produção nesta issue. O suporte documentado do Railpack ao Bun não substitui esse teste: https://railpack.com/languages/bun.
+- SQLite local com o driver nativo bun:sqlite e Drizzle é usado tanto em desenvolvimento quanto em produção no Dokploy. O suporte ao Turso/libSQL foi removido por decisão do usuário; configurar o caminho do banco por ambiente e um volume persistente no servidor.
+- A renovação da sessão considera o uso em uma aba visível. Uma aba inativa em segundo plano não renova a sessão indefinidamente. A expiração não interrompe o cronômetro.
+- O rascunho preservado após expiração fica somente na memória da aba aberta. Recarregar ou fechar a página descarta esse rascunho, sem armazenamento local persistente dos dados do formulário.

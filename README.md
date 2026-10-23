@@ -1,0 +1,176 @@
+# Echo
+
+Aplicação pessoal para trabalho freelancer. Esta primeira entrega implementa acesso e sessão, com a navegação aprovada em português. Quadro, Horas, Faturas, Cadastros, Configurações e cronômetro mostram estados de indisponibilidade enquanto aguardam suas próximas issues.
+
+## Desenvolvimento
+
+Requer Bun **1.3.14**. Dependências são fixadas em `bun.lock`.
+
+```sh
+bun install --frozen-lockfile
+cp .env.example .env
+# Preencha BETTER_AUTH_SECRET com um segredo gerado localmente:
+openssl rand -base64 48
+bun run db:migrate
+# Leia a senha sem mostrá-la nem colocá-la nos argumentos/histórico:
+read -rs 'echo_password?Senha pessoal: '; printf '\n'
+printf '%s' "$echo_password" | bun run auth:password
+unset echo_password
+bun run dev
+```
+
+O exemplo de leitura da senha usa zsh, shell do ambiente de desenvolvimento. Em outro shell, use sua leitura silenciosa equivalente. A senha deve ter de 15 a 1024 caracteres, aceita espaços e não exige composição específica. Não há senha padrão nem cadastro público. A operação `auth:password` também redefine a senha e revoga todas as sessões, preservando os demais dados. Execute-a apenas administrativamente no servidor, com o mesmo banco e segredo da aplicação. Não passe a senha em argumentos ou arquivos versionados.
+
+`DATABASE_URL=file:.data/echo.db` usa SQLite persistente local com o driver nativo `bun:sqlite` e o adaptador `drizzle-orm/bun-sqlite`. Chaves estrangeiras e WAL são habilitados na conexão. Desenvolvimento e produção usam esse mesmo driver; no Dokploy, configure um caminho absoluto em volume persistente, como `file:/data/echo.db`. Nunca versione `.env` ou arquivos de banco.
+
+## Build e execução
+
+```sh
+bun run build
+bun run start
+```
+
+O build gera `dist/client` e `dist/server/server.js`. `server.ts` usa `Bun.serve`, serve apenas os arquivos estáticos conhecidos em `dist/client` e encaminha requisições dinâmicas ao TanStack Start. Escuta `0.0.0.0` na porta `PORT`, com padrão 3000. É preciso instalar dependências também na imagem final; o servidor SSR importa pacotes de `node_modules`.
+
+## Verificação
+
+```sh
+bun run typecheck
+bun test tests
+bunx playwright install chromium
+bun run build
+bun run test:e2e
+```
+
+Os testes de acesso usam SQLite real em diretórios temporários, migrações reais, cookies e operações públicas de entrada, consulta, atividade, saída e redefinição administrativa. O relógio é controlado para testar 30 dias sem esperas reais. Nenhum teste depende de um banco remoto ou do banco pessoal.
+
+O Playwright testa o artefato compilado em desktop e celular. `scripts/e2e-server.ts` cria e remove um banco isolado. Seu controle administrativo de teste, quando habilitado, escuta somente `127.0.0.1:4319`; esse processo não faz parte do servidor de produção. A porta da aplicação de teste é 4318.
+
+## Dokploy e Railpack
+
+Sem Dockerfile. Configure Railpack e preserve o comando `bun run start` do `package.json`, que executa explicitamente o runtime Bun. Fixe a versão 1.3.14. `.dockerignore` exclui segredos, bancos, dependências locais e saídas de build do contexto enviado.
+
+Em produção, configure:
+
+- `NODE_ENV=production`.
+- `BETTER_AUTH_URL=https://seu-dominio`, exatamente a origem pública, sem caminho.
+- `BETTER_AUTH_SECRET` estável, aleatório e com pelo menos 32 caracteres.
+- `DATABASE_URL=file:/data/echo.db`, apontando para o volume persistente.
+- `PORT=3000`, ou a porta configurada no serviço.
+
+Antes da primeira inicialização, aplique `bun run db:migrate` no ambiente de destino e defina a senha com `bun run auth:password`. Monte um volume persistente e use um caminho absoluto como `file:/data/echo.db`. Crie previamente o diretório do volume e garanta permissão de escrita. Use uma única instância, sem múltiplas réplicas independentes com arquivos SQLite diferentes. Migrações não são executadas automaticamente a cada requisição.
+
+O proxy deve terminar HTTPS e encaminhar à porta interna da aplicação. Cookies de produção usam Secure, HttpOnly e SameSite=Lax. Operações de escrita verificam a origem exata. Páginas e respostas de sessão usam `Cache-Control: no-store`; não habilite cache de proxy para conteúdo dinâmico.
+
+A entrada HTTP substitui qualquer `x-echo-client-ip` recebido pelo endereço real da conexão: `server.ts` em produção e o middleware do Vite em desenvolvimento. A rota de autenticação apenas encaminha a requisição ao serviço de acesso, sem extrair ou repassar o IP separadamente. Cabeçalhos de IP encaminhados pelo proxy não são confiados automaticamente. Atrás do Dokploy, conexões do mesmo proxy compartilham o limite de cinco tentativas por minuto, suficiente para este aplicativo pessoal. O rate limiter nativo do Better Auth usa `storage: "database"` e a tabela SQLite `rate_limit`. A espera é temporária e persistida no banco, sem bloqueio permanente; consultas de sessão e saída não consomem o limite de entrada. A interface traduz a resposta 429 usando `X-Retry-After`. A migration inicial `0000_initial` já inclui essa tabela; execute `bun run db:migrate` antes de iniciar.
+
+Para reproduzir a validação local da imagem, com Docker e um BuildKit disponíveis:
+
+```sh
+docker run --rm --privileged -d --name echo-buildkit moby/buildkit
+BUILDKIT_HOST=docker-container://echo-buildkit railpack build . --name echo-issue-8
+bun scripts/smoke-image.ts echo-issue-8
+docker stop echo-buildkit
+```
+
+O teste usa banco, senha e segredo temporários, verifica entrada, cookie seguro, página protegida, assets, persistência após reiniciar o contêiner e saída. O entrypoint padrão da imagem Railpack é `/bin/bash -c`; comandos administrativos com `docker run` precisam de `--entrypoint bun`, como feito no script.
+
+Ainda deve ser conferido no servidor Dokploy: versão disponível do Railpack, domínio e HTTPS, variáveis, volume/permissões quando aplicável, execução de migrações, inicialização e sessão entre visitas. Esta entrega não publica em produção. A política de backup continua adiada.
+
+## Formulários das próximas entregas
+
+`SessionBoundary` mantém seus filhos montados e ocultos durante reentrada, preservando estado React somente na memória daquela aba. Após autenticar, limpa consultas e invalida os dados do roteador sem enviar formulários. Formulários protegidos devem anexar ao `ref` do formulário o retorno de `useUnsavedChanges`, consultar a sessão pelo cliente nativo ao receber 401 e exigir ação explícita para salvar após atualizar os dados. Sair pede confirmação de alterações sinalizadas nesta ou em outra aba e encerra o acesso em todas as abas daquele navegador pela notificação nativa de saída do Better Auth. O BroadcastChannel do Echo comunica apenas alterações não salvas. A sessão é observada por `authClient.useSession()`; consultas automáticas não renovam a validade, e somente eventos de atividade em aba visível solicitam renovação. Não altera sessões de outros dispositivos.
+
+Não há formulários de trabalho nem cronômetro operacional nesta issue. Essas entregas devem integrar a proteção de sessão sem parar o cronômetro quando o acesso expira ou termina.
+
+## Organização da sessão
+
+`useSessionLifecycle` concentra as transições de acesso, atividade visível e limpeza das consultas. A comunicação de alterações não salvas permanece montada durante expiração e reentrada; ao desmontar ou restaurar uma página, a participação da aba é atualizada. `SessionBoundary` renderiza esse estado e mantém os formulários montados.
+
+O comando `auth:password` cria a conta inicial por `signUpEmail`, sem sessão automática. Para uma conta existente, chama `requestPasswordReset` e `resetPassword`, com `revokeSessionsOnPasswordReset: true`. O token fica somente na memória do comando; nenhum email é enviado e o envio de reset não é configurado na instância pública.
+
+A revogação segue o comportamento nativo do Better Auth. Não existe revisão customizada da credencial nem garantia adicional contra um login concorrente que crie uma sessão depois do reset. O adapter Drizzle com `bun:sqlite` mantém transações assíncronas desativadas; não há promessa de atomicidade adicional ao fluxo nativo.
+
+O cliente mantém `fetchOptions.query.disableRefresh: true` como padrão. Atividade visível sobrescreve o valor com `undefined`, omitindo o parâmetro para solicitar renovação. Nesta versão do Better Auth, a string `false` na URL também é convertida para verdadeiro.
+
+Os testes de integração observam as respostas nativas sem transformar status ou payload. O servidor isolado dos testes de navegador gera um formulário temporário em `dist/client/__tests__` para exercitar os hooks públicos e remove esses arquivos ao encerrar; esse formulário não faz parte do build da aplicação.
+
+## React Query e SSR
+
+`getRouter` cria um `QueryClient` por requisição SSR e conecta a integração oficial `@tanstack/react-router-ssr-query`. Ela fornece o provider e transfere o cache inicial e consultas em streaming para o navegador. O documento raiz não mantém um segundo provider.
+
+Consultas usam `staleTime` padrão de 30 segundos, que cada consulta pode sobrescrever. `defaultPreloadStaleTime: 0` deixa a decisão de atualização com o React Query. Limpeza de cache na saída e reautenticação continua usando esse mesmo cliente.
+
+Os testes verificam isolamento entre roteadores, hidratação sem repetir a leitura, disponibilidade do provider e transferência de uma consulta iniciada após a desidratação inicial.
+
+## Carregamento das páginas
+
+`/login` e `/_app` usam `beforeLoad` com `context.queryClient.fetchQuery(accessQueryOptions)`. A query chama a server function `hasSession`, que consulta a sessão no servidor sem renovar sua validade. Essa query sobrescreve o padrão global com `staleTime: 0`: cada navegação confirma o acesso atual, inclusive após uma revogação ou preload. A query compartilha chamadas em andamento e participa da integração SSR.
+
+Quadro, Horas, Faturas, Cadastros e Configurações herdam o guard de `/_app`. Essas páginas ainda apresentam placeholders e não precisam de loaders ou consultas de dados de trabalho. Quando esses dados existirem, as leituras privadas devem ser autorizadas dentro das server functions e consumidas por query options compartilhadas entre loader e tela. O guard de navegação não substitui autorização no servidor.
+
+Login, logout e observação da sessão continuam no SDK nativo do Better Auth. Após reautenticação, o ciclo de sessão limpa o cache e aguarda `router.invalidate({ sync: true })` antes de mostrar os formulários novamente.
+
+A seleção do menu usa `Link.activeOptions` e `activeProps`; `aria-current` é fornecido pelo TanStack. Entrada e saída usam `router.navigate` com `reloadDocument: true`, preservando o recarregamento e a substituição do histórico na saída. O login inicial passa `disableSignal: true` ao Better Auth para não iniciar uma consulta na página que será encerrada; a reentrada mantém a notificação nativa. Montar a tela apenas observa a sessão. A renovação depende de atividade real e aguarda a conclusão de consultas já em andamento. O polling de sessão usa `sessionOptions.refetchInterval: 60` do Better Auth. Ele pode consultar em segundo plano enquanto houver sessão, sempre com `disableRefresh: true`; somente os eventos de atividade em aba visível solicitam renovação.
+
+### Estado de interface com TanStack Store
+
+`@tanstack/react-store` gerencia status de acesso, erros de conexão, registro de formulários alterados, participação de outras abas e última atividade. Cada `SessionBoundary` cria seu store com `useCreateStore`; o contexto nativo compartilha as ações usadas pelos descendentes. Não existe store global entre requisições SSR. Seletores observam apenas os campos exibidos, e os conjuntos de alterações recebem atualizações imutáveis.
+
+Cada `LoginForm` também cria um store para visibilidade da senha. Valor da senha, envio e erros ficam no TanStack Form; dados do servidor ficam no React Query e a sessão autenticada continua sob responsabilidade do Better Auth. Os rascunhos dos próximos formulários permanecem nos respectivos formulários; o Store registra quais têm alterações não salvas.
+
+### Integração direta do Better Auth
+
+A rota `/api/auth/$` encaminha GET e POST diretamente para `auth.handler`, conforme a [integração oficial com TanStack Start](https://better-auth.com/docs/integrations/tanstack). A server function de acesso chama `auth.api.getSession` com os cabeçalhos da requisição; os guards continuam no `beforeLoad`, usando a consulta compartilhada do React Query. `tanstackStartCookies()` permanece como último plugin.
+
+Não há hooks customizados, wrapper HTTP ou reconstrução da resposta do Better Auth. Os endpoints usam as validações e a autorização nativas. Cadastro público permanece desativado por `disableSignUp: true`; o login exige uma credencial existente. O email da tela de entrada e do comando administrativo continua sendo `owner@echo.invalid`.
+
+A validação de Origin usa a proteção nativa e a origem derivada de `baseURL`, incluindo o tratamento padrão de clientes sem Origin. `disableOriginCheck: false` mantém essa validação ativa também em testes. Não há lista customizada de endpoints nem cabeçalho global aplicado por hook; a leitura nativa de sessão fornece `Cache-Control: no-store`.
+
+O histórico foi reiniciado em `0000_initial`, a partir do schema gerado pelo CLI oficial do Better Auth. Essa baseline se aplica a um banco vazio; o banco local foi recriado. Para configurar o acesso novamente, execute `bun run auth:password`.
+
+### Organização de autenticação e banco
+
+`src/lib/auth.ts` exporta a instância `auth` do Better Auth, usada diretamente pela rota HTTP e pela server function. Não há `getAuth` nem instância obtida por getter. As opções sem conexão ficam em `src/config/auth.ts` para serem compartilhadas com os testes isolados. A instância administrativa e o fluxo de senha ficam inteiramente em `scripts/password.ts`, executados como comando local.
+
+`src/db/index.ts` exporta a conexão da aplicação. `src/db/connection.ts` contém abertura e migração do SQLite, e `src/db/schema.ts` reúne as tabelas. O Drizzle aponta para esse schema. O comando de migração depende apenas de `DATABASE_URL`, sem exigir segredo de autenticação.
+
+Com o `.env` configurado, gere o schema e depois a migração:
+
+```sh
+bun run auth:generate
+bunx --bun drizzle-kit generate
+bun run db:migrate
+```
+
+`auth:generate` chama o CLI oficial com `--config ./src/lib/auth.ts --output ./src/db/schema.ts`. Revise o schema e o SQL antes de aplicar a migração.
+
+A estrutura completa está em [Organização do código](docs/architecture/source-layout.md). A [revisão da PR 21](docs/verification/pr-21-native-review.md) registra as simplificações e as regras do Echo que continuam necessárias. Secure cookies e a persistência do login usam os padrões nativos do Better Auth; não há override que desative Secure em uma origem HTTPS de desenvolvimento.
+
+### React Compiler e efeitos
+
+O React Compiler está habilitado no cliente pelo preset oficial de `@vitejs/plugin-react`, com `@rolldown/plugin-babel`. O Oxc continua responsável por lint e formatação; suas regras de hooks e dependências estão ativas. Não há `useCallback`, `useMemo` ou wrappers de memoização manuais na aplicação.
+
+O ciclo de sessão mantém dois efeitos. Um processa as transições de autenticação observadas no Better Auth, mantendo a reentrada fechada até a atualização das rotas. O outro conecta eventos do navegador e canais entre abas durante a montagem da fronteira. `useEffectEvent` fornece os valores atuais aos eventos, sem reinstalar os listeners a cada transição.
+
+O registro de rascunhos usa um ref callback com cleanup do React 19. Anexe o retorno ao formulário ou ao seu elemento raiz:
+
+```tsx
+const dirty = useSelector(form.store, (state) => state.isDirty);
+const draftRef = useUnsavedChanges(dirty);
+return <form ref={draftRef}>...</form>;
+```
+
+O registro acompanha a montagem, as alterações do estado dirty e a remoção do elemento. Não há efeito de registro por formulário.
+
+### Componentes shadcn/ui com Base UI
+
+O `components.json` configura o shadcn/ui para TanStack Start, Tailwind 4 e o estilo `base-nova`, baseado em Base UI. `Button` e `Input` foram adicionados pelo CLI oficial e usam `@base-ui/react/button` e `@base-ui/react/input`. Os tokens em `src/styles.css` e as classes do Echo preservam cores, tipografia, dimensões, foco e ícones SVG próprios. Os textos continuam em português.
+
+Para adicionar componentes:
+
+```sh
+bunx --bun shadcn add <componente>
+```
+
+Revise os estilos gerados para manter o visual do Echo. O CLI está nas dependências de desenvolvimento; não use `--overwrite` sem revisar as adaptações locais. Links usam o `Link` do TanStack com `buttonVariants`, conforme a composição recomendada pelo shadcn. A escolha de biblioteca de ícones no CLI não substitui os SVGs próprios exigidos pelo projeto.

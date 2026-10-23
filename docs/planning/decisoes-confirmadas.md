@@ -64,3 +64,25 @@ Registro das decisões confirmadas antes da migração para GitHub Issues. A esp
 ## Referência visual
 
 A imagem enviada é uma referência dos campos e apresentação da fatura. Os números, valores e dados pessoais nela não foram tratados como valores padrão do produto.
+
+## Acesso e sessão, refinamento da issue #8
+
+Decisões confirmadas em 22/10/2026 durante o grill-with-docs da issue #8.
+
+- A tela de entrada pede somente a senha. Qualquer identificador interno exigido pela autenticação fica fora desse fluxo.
+- A primeira senha é definida por uma operação administrativa no servidor. A mesma operação permite redefini-la em caso de esquecimento, sem recuperação por e-mail nesta versão.
+- A redefinição da senha encerra todas as sessões existentes.
+- Computador e celular podem permanecer conectados simultaneamente. Sair encerra somente a sessão daquele navegador.
+- Sair preserva o cronômetro em andamento, que continua independente do dispositivo.
+- A sessão expira após 30 dias de inatividade e é renovada pelo uso autenticado, sem prazo máximo adicional nesta versão.
+- Ao acessar um destino protegido, entrar retorna ao destino interno solicitado. Sem destino específico, entrar abre o Quadro.
+- Se a sessão expirar durante uma edição, o formulário é preservado temporariamente naquela aba para restauração após novo acesso. O Echo atualiza os dados do servidor e exige confirmação antes de salvar, sem envio automático. O cronômetro continua contando.
+- Tentativas repetidas de senha recebem limitação por origem e espera temporária, com mensagem em português indicando quando tentar novamente. Não há bloqueio permanente da credencial.
+- A issue #8 entrega acesso, sessão e estrutura responsiva com Quadro, Horas, Faturas, Cadastros e Configurações. Funcionalidades das próximas issues exibem uma mensagem de indisponibilidade temporária. Dados fictícios ficam restritos ao protótipo.
+- Sair limpa os formulários temporários e oculta os dados protegidos em todas as abas daquele navegador, preservando as sessões dos outros dispositivos. Havendo alterações não salvas, o Echo pede confirmação antes de sair e descartá-las. A preservação temporária de formulários aplica-se à expiração involuntária da sessão.
+- A definição e a redefinição administrativa exigem senha de pelo menos 15 caracteres, permitem frases e não exigem combinações de maiúsculas, números ou símbolos. A entrada aceita colagem e preenchimento por gerenciadores de senha.
+- Bun é o runtime escolhido para o Echo, substituindo a decisão anterior de executar em Node.js. Fixar a versão, versionar bun.lock e definir o comando de inicialização explicitamente.
+- A validação da issue #8 inclui build pelo Railpack e execução da imagem resultante com Bun, cobrindo entrada, sessão e banco real. A validação no Dokploy é uma etapa separada, sem publicação em produção nesta issue. O suporte documentado do Railpack ao Bun não substitui esse teste: https://railpack.com/languages/bun.
+- SQLite local com o driver nativo bun:sqlite e Drizzle é usado tanto em desenvolvimento quanto em produção no Dokploy. O suporte ao Turso/libSQL foi removido por decisão do usuário; configurar o caminho do banco por ambiente e um volume persistente no servidor.
+- A renovação da sessão considera o uso em uma aba visível. Uma aba inativa em segundo plano não renova a sessão indefinidamente. A expiração não interrompe o cronômetro.
+- O rascunho preservado após expiração fica somente na memória da aba aberta. Recarregar ou fechar a página descarta esse rascunho, sem armazenamento local persistente dos dados do formulário.
