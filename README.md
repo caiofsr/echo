@@ -62,7 +62,7 @@ Antes da primeira inicialização, aplique `bun run db:migrate` no ambiente de d
 
 O proxy deve terminar HTTPS e encaminhar à porta interna da aplicação. Cookies de produção usam Secure, HttpOnly e SameSite=Lax. Operações de escrita verificam a origem exata. Páginas e respostas de sessão usam `Cache-Control: no-store`; não habilite cache de proxy para conteúdo dinâmico.
 
-A entrada HTTP substitui qualquer `x-echo-client-ip` recebido pelo endereço real da conexão: `server.ts` em produção e o middleware do Vite em desenvolvimento. A rota de autenticação apenas encaminha a requisição ao serviço de acesso, sem extrair ou repassar o IP separadamente. Cabeçalhos de IP encaminhados pelo proxy não são confiados automaticamente. Atrás do Dokploy, conexões do mesmo proxy compartilham o limite de cinco tentativas por minuto, suficiente para este aplicativo pessoal. O rate limiter nativo do Better Auth usa `storage: "database"` e a tabela SQLite `rate_limit`. A espera é temporária e persistida no banco, sem bloqueio permanente; consultas de sessão e saída não consomem o limite de entrada. A interface traduz a resposta 429 usando `X-Retry-After`. A migração `0002_native_rate_limit` cria essa tabela e remove a antiga `login_attempt`; execute `bun run db:migrate` antes de iniciar a versão atualizada.
+A entrada HTTP substitui qualquer `x-echo-client-ip` recebido pelo endereço real da conexão: `server.ts` em produção e o middleware do Vite em desenvolvimento. A rota de autenticação apenas encaminha a requisição ao serviço de acesso, sem extrair ou repassar o IP separadamente. Cabeçalhos de IP encaminhados pelo proxy não são confiados automaticamente. Atrás do Dokploy, conexões do mesmo proxy compartilham o limite de cinco tentativas por minuto, suficiente para este aplicativo pessoal. O rate limiter nativo do Better Auth usa `storage: "database"` e a tabela SQLite `rate_limit`. A espera é temporária e persistida no banco, sem bloqueio permanente; consultas de sessão e saída não consomem o limite de entrada. A interface traduz a resposta 429 usando `X-Retry-After`. A migration inicial `0000_initial` já inclui essa tabela; execute `bun run db:migrate` antes de iniciar.
 
 Para reproduzir a validação local da imagem, com Docker e um BuildKit disponíveis:
 
@@ -127,7 +127,7 @@ Não há hooks customizados, wrapper HTTP ou reconstrução da resposta do Bette
 
 A validação de Origin usa a proteção nativa e a origem derivada de `baseURL`, incluindo o tratamento padrão de clientes sem Origin. `disableOriginCheck: false` mantém essa validação ativa também em testes. Não há lista customizada de endpoints nem cabeçalho global aplicado por hook; a leitura nativa de sessão fornece `Cache-Control: no-store`.
 
-A migração `0003_remove_credential_revision` remove as colunas de revisão de usuário e sessão, preservando as credenciais e sessões existentes. Execute `bun run db:migrate` antes de iniciar a versão atualizada.
+O histórico foi reiniciado em `0000_initial`, a partir do schema gerado pelo CLI oficial do Better Auth. Essa baseline se aplica a um banco vazio; o banco local foi recriado. Para configurar o acesso novamente, execute `bun run auth:password`.
 
 ### Organização de autenticação e banco
 

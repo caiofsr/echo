@@ -1,42 +1,17 @@
 import { test, expect } from "bun:test";
-import {
-  mkdtemp,
-  rm,
-  mkdir,
-  readFile,
-  writeFile,
-  copyFile,
-} from "node:fs/promises";
+import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { sql } from "drizzle-orm";
-import { migrate } from "drizzle-orm/bun-sqlite/migrator";
 import { migrateDatabase, openDatabase } from "../src/db/connection";
 import { createAccess } from "./helpers/create-access";
 import * as schema from "../src/db/schema";
 
-test("remover a revisão preserva credencial e sessão de um banco existente", async () => {
+test("migration inicial pode ser reaplicada sem perder credencial ou sessão", async () => {
   const dir = await mkdtemp(join(tmpdir(), "echo-migration-"));
   const database = openDatabase(`file:${join(dir, "test.db")}`);
   try {
-    const journal = JSON.parse(
-      await readFile("drizzle/meta/_journal.json", "utf8"),
-    );
-    journal.entries = journal.entries.filter(
-      (entry: { idx: number }) => entry.idx < 3,
-    );
-    const previous = join(dir, "previous");
-    await mkdir(join(previous, "meta"), { recursive: true });
-    await writeFile(
-      join(previous, "meta/_journal.json"),
-      JSON.stringify(journal),
-    );
-    for (const entry of journal.entries)
-      await copyFile(
-        `drizzle/${entry.tag}.sql`,
-        join(previous, `${entry.tag}.sql`),
-      );
-    migrate(database.db, { migrationsFolder: previous });
+    await migrateDatabase(database.db);
     const { auth, setPassword } = createAccess(database.db, {
       baseURL: "https://echo.test",
       secret: "test-only-secret-at-least-thirty-two-characters",
@@ -72,14 +47,18 @@ test("remover a revisão preserva credencial e sessão de um banco existente", a
         query: { disableRefresh: true },
       }),
     ).not.toBeNull();
-    for (const table of ["user", "session"]) {
-      const columns = database.db.all<{ name: string }>(
-        sql`PRAGMA table_info(${sql.identifier(table)})`,
-      );
-      expect(columns.map((column) => column.name)).not.toContain(
-        "credential_version",
-      );
-    }
+    expect(
+      database.db.all<{ count: number }>(
+        sql`select count(*) as count from __drizzle_migrations`,
+      ),
+    ).toEqual([{ count: 1 }]);
+    expect(
+      database.db
+        .all<{ name: string }>(
+          sql`select name from sqlite_master where type = 'table' and name not like 'sqlite_%' and name != '__drizzle_migrations' order by name`,
+        )
+        .map((table) => table.name),
+    ).toEqual(["account", "rate_limit", "session", "user", "verification"]);
   } finally {
     database.close();
     await rm(dir, { recursive: true, force: true });

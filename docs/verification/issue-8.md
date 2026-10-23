@@ -5,7 +5,7 @@ Verificação local atualizada em 23/10/2026. Implementa [Entrar no Echo com ses
 ## Resultado
 
 - `bun run typecheck`: passou.
-- `bun test tests`: 12 testes passaram, com 76 verificações na execução final usando `bun:sqlite`. SQLite real isolado, migrações, persistência após reabrir banco, revogação, cookies, expiração/renovação, limite nativo persistente do Better Auth, concorrência do rate limiter e migração de banco existente.
+- `bun test tests`: 12 testes passaram, com 76 verificações na execução final usando `bun:sqlite`. SQLite real isolado, migrações, persistência após reabrir banco, revogação, cookies, expiração/renovação, limite nativo persistente do Better Auth, concorrência do rate limiter e criação e reaplicação da migration inicial.
 - `bun run build`: passou, gerando cliente e servidor do TanStack Start.
 - `bun run test:e2e`: 18 testes passaram, em desktop e celular. Entrada inválida/válida, mostrar senha, destino interno, recarga, navegação, saída em múltiplas abas e reentrada após revogação. O limite nativo também foi conferido na interface, com a mensagem de espera em português.
 - Railpack 0.43.0: build local inicial da imagem `echo-issue-8`, runtime Bun 1.3.14. Teste com `bun scripts/smoke-image.ts echo-issue-8` passou, incluindo migrações, definição administrativa de senha, cookie seguro, SSR protegido, assets, sessão após reinício do contêiner e saída. Essa validação da imagem antecede a troca para `bun:sqlite`; não foi repetida depois da troca.
@@ -75,7 +75,7 @@ Removidos todos os hooks customizados e o arquivo `personal-credentials.ts`. A A
 
 `revokeSessionsOnPasswordReset: true` delega a revogação ao Better Auth. A criação inicial usa `signUpEmail` sem sessão automática numa instância apenas administrativa. Para redefinir, o comando captura o token de `requestPasswordReset` em memória e chama `resetPassword`. Validação, hash, gravação da senha, consumo do token e remoção das sessões seguem as implementações nativas. Não há escrita direta de credenciais nem helper de transação customizado.
 
-A migração `0003_remove_credential_revision` remove os dois campos de revisão. Um teste aplica as migrações anteriores, cria credencial e sessão, aplica a migração nova e verifica preservação dos dados e leitura da sessão. O teste anterior de rollback do helper removido foi substituído por essa cobertura de migração. Os testes de revisão e corrida de login foram removidos conforme a nova decisão.
+O histórico anterior foi removido e substituído por `0000_initial.sql`, gerada pelo Drizzle a partir do schema produzido pelo CLI oficial. O teste cria as cinco tabelas, autentica, reaplica a mesma migration e verifica que credencial e sessão permanecem intactas, com apenas uma entrada no histórico. Os testes de revisão e corrida de login foram removidos conforme a decisão pelo fluxo nativo.
 
 O adapter mantém transações assíncronas desativadas, compatível com `bun:sqlite`; a aplicação segue o comportamento nativo de revogar antes de gravar a senha e não promete atomicidade adicional. A revogação não garante impedir uma sessão criada posteriormente por um login concorrente já em andamento.
 
@@ -85,4 +85,8 @@ O adapter mantém transações assíncronas desativadas, compatível com `bun:sq
 
 Conexão, abertura/migração e tabelas ficam em `src/db`. O `drizzle.config.ts`, comandos e testes usam os novos caminhos. O preload de testes usa uma conexão em memória para impedir que imports de SSR abram o banco local da aplicação.
 
-O CLI oficial gerou um schema temporário usando `src/lib/auth.ts`, sem sobrescrever as tabelas do projeto. O script `auth:generate` usa essa configuração e direciona a saída para `src/db/schema.ts`. Os testes de integração, navegador, CLI administrativo e os checks foram reexecutados após a reorganização.
+O CLI oficial regenerou `src/db/schema.ts` usando `src/lib/auth.ts`, incluindo as relações, índices e padrões nativos. O script `auth:generate` usa essa configuração e direciona a saída para `src/db/schema.ts`. Os testes de integração, navegador, CLI administrativo e os checks foram reexecutados após a reorganização.
+
+## Baseline aplicada ao banco local
+
+As quatro migrations anteriores e seus snapshots foram excluídos. O histórico agora contém apenas `0000_initial`, com as cinco tabelas atuais do Better Auth. O banco local `.data/echo.db` foi removido conforme autorização do usuário e recriado por `bun run db:migrate`. A consulta ao banco confirmou uma migration aplicada e as tabelas `account`, `rate_limit`, `session`, `user` e `verification`. Nenhuma senha foi definida no banco local recriado; o próximo acesso requer executar `bun run auth:password`.

@@ -15,16 +15,19 @@ CREATE TABLE `account` (
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE cascade
 );
 --> statement-breakpoint
-CREATE TABLE `login_attempt` (
-	`origin` text PRIMARY KEY NOT NULL,
-	`started_at` integer NOT NULL,
-	`count` integer NOT NULL
+CREATE INDEX `account_userId_idx` ON `account` (`user_id`);--> statement-breakpoint
+CREATE TABLE `rate_limit` (
+	`id` text PRIMARY KEY NOT NULL,
+	`key` text NOT NULL,
+	`count` integer NOT NULL,
+	`last_request` integer NOT NULL
 );
 --> statement-breakpoint
+CREATE UNIQUE INDEX `rate_limit_key_unique` ON `rate_limit` (`key`);--> statement-breakpoint
 CREATE TABLE `session` (
 	`id` text PRIMARY KEY NOT NULL,
-	`token` text NOT NULL,
 	`expires_at` integer NOT NULL,
+	`token` text NOT NULL,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL,
 	`ip_address` text,
@@ -34,11 +37,12 @@ CREATE TABLE `session` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `session_token_unique` ON `session` (`token`);--> statement-breakpoint
+CREATE INDEX `session_userId_idx` ON `session` (`user_id`);--> statement-breakpoint
 CREATE TABLE `user` (
 	`id` text PRIMARY KEY NOT NULL,
 	`name` text NOT NULL,
 	`email` text NOT NULL,
-	`email_verified` integer NOT NULL,
+	`email_verified` integer DEFAULT false NOT NULL,
 	`image` text,
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL
@@ -53,3 +57,5 @@ CREATE TABLE `verification` (
 	`created_at` integer NOT NULL,
 	`updated_at` integer NOT NULL
 );
+--> statement-breakpoint
+CREATE INDEX `verification_identifier_idx` ON `verification` (`identifier`);

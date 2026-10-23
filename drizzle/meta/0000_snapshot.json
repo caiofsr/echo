@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "554a1a56-b8fd-46af-b2e4-42049fcb26fa",
+  "id": "dbbf05cc-6f4c-4f6f-b592-38193d8f374c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "account": {
@@ -99,7 +99,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "account_userId_idx": {
+          "name": "account_userId_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {
         "account_user_id_user_id_fk": {
           "name": "account_user_id_user_id_fk",
@@ -119,19 +127,19 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "login_attempt": {
-      "name": "login_attempt",
+    "rate_limit": {
+      "name": "rate_limit",
       "columns": {
-        "origin": {
-          "name": "origin",
+        "id": {
+          "name": "id",
           "type": "text",
           "primaryKey": true,
           "notNull": true,
           "autoincrement": false
         },
-        "started_at": {
-          "name": "started_at",
-          "type": "integer",
+        "key": {
+          "name": "key",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -142,9 +150,24 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "last_request": {
+          "name": "last_request",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "rate_limit_key_unique": {
+          "name": "rate_limit_key_unique",
+          "columns": [
+            "key"
+          ],
+          "isUnique": true
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
@@ -160,16 +183,16 @@
           "notNull": true,
           "autoincrement": false
         },
-        "token": {
-          "name": "token",
-          "type": "text",
+        "expires_at": {
+          "name": "expires_at",
+          "type": "integer",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "integer",
+        "token": {
+          "name": "token",
+          "type": "text",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -217,6 +240,13 @@
             "token"
           ],
           "isUnique": true
+        },
+        "session_userId_idx": {
+          "name": "session_userId_idx",
+          "columns": [
+            "user_id"
+          ],
+          "isUnique": false
         }
       },
       "foreignKeys": {
@@ -267,7 +297,8 @@
           "type": "integer",
           "primaryKey": false,
           "notNull": true,
-          "autoincrement": false
+          "autoincrement": false,
+          "default": false
         },
         "image": {
           "name": "image",
@@ -351,7 +382,15 @@
           "autoincrement": false
         }
       },
-      "indexes": {},
+      "indexes": {
+        "verification_identifier_idx": {
+          "name": "verification_identifier_idx",
+          "columns": [
+            "identifier"
+          ],
+          "isUnique": false
+        }
+      },
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
