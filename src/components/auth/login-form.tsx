@@ -17,30 +17,35 @@ export function LoginForm({
   const form = useForm({
     defaultValues: { password: "" },
     onSubmit: async ({ value }) => {
-      try {
-        let retryAfter: string | null = null;
-        const { error } = await authClient.signIn.email(
-          {
-            email: ECHO_LOGIN_EMAIL,
-            password: value.password,
-          },
+      let retryAfter: string | null = null;
+      const result = await authClient.signIn
+        .email(
+          { email: ECHO_LOGIN_EMAIL, password: value.password },
           {
             onError: ({ response }) => {
               retryAfter = response.headers.get("X-Retry-After");
             },
           },
+        )
+        .catch(() => null);
+      if (!result) {
+        setError(
+          "Não foi possível conectar. Confira sua conexão e tente novamente.",
         );
-        if (error) {
-          setError(
-            error.status === 429
-              ? retryAfter
-                ? `Muitas tentativas. Tente novamente em ${retryAfter} segundos.`
-                : "Muitas tentativas. Tente novamente em breve."
-              : "Senha incorreta. Confira e tente novamente.",
-          );
-          return;
-        }
-        form.reset();
+        return;
+      }
+      if (result.error) {
+        setError(
+          result.error.status === 429
+            ? retryAfter
+              ? `Muitas tentativas. Tente novamente em ${retryAfter} segundos.`
+              : "Muitas tentativas. Tente novamente em breve."
+            : "Senha incorreta. Confira e tente novamente.",
+        );
+        return;
+      }
+      form.reset();
+      try {
         await onSuccess();
       } catch {
         setError(

@@ -96,3 +96,17 @@ As quatro migrations anteriores e seus snapshots foram excluídos. O histórico 
 A revisão por standards e spec está em `docs/verification/pr-21-native-review.md`, e o mapa das pastas está em `docs/architecture/source-layout.md`. Foram removidos os overrides redundantes de persistência de login e Secure cookies; o Better Auth infere cookies seguros pela URL HTTPS. O login usa o mapa de erros nativo do TanStack Form. O contexto da sessão expõe somente as ações efetivamente usadas.
 
 Server functions ficam em `src/server/functions`, opções de biblioteca em `src/config`, consultas em `src/queries`, ciclo de interface em `src/hooks` e o contexto em `src/contexts`. Componentes de autenticação, layout e UI ficam em pastas próprias. A instância `src/lib/auth.ts`, o banco em `src/db`, o script administrativo e a baseline de migrations foram preservados.
+
+## React Compiler e React 19
+
+React Compiler instalado e habilitado pelo preset oficial do plugin React no Vite 8, com Babel como etapa de compilação. O Oxc continua no lint/formatação, agora com `react/rules-of-hooks` e `react/exhaustive-deps` ativos. A inspeção dos eventos do Compiler confirmou 11 funções compiladas, sem `CompileError`, incluindo os dois hooks e o formulário de login. O bundle cliente contém o runtime de memoização gerado.
+
+Foram removidas as seis memoizações manuais com `useCallback`. O número de `useEffect` em `src` caiu de cinco para dois. `useEffectEvent` lê o estado atual nos eventos de atividade, retorno de página e saída nativa entre abas, sem reconectar os listeners a cada atualização. As inscrições de navegador e canais compartilham o lifetime da fronteira e têm cleanup explícito.
+
+`useUnsavedChanges` retorna um ref callback com cleanup do React 19, aplicado ao elemento raiz do rascunho no fixture. O registro não usa mais efeito. A configuração anuncia o estado dirty inicial depois de abrir o canal, contemplando um elemento já registrado durante o commit.
+
+Os dois efeitos restantes sincronizam a máquina de reentrada com o Better Auth e os recursos do navegador com a montagem da fronteira. A expiração continua retida até o usuário reautenticar e as rotas serem invalidadas, preservando formulários sem revelá-los antes da atualização. Não há mutação de Store ou abertura de canal durante render.
+
+Validação: 12 testes de integração, 76 asserções e 18 testes de navegador em desktop/mobile passaram, incluindo consultas passivas, renovação por atividade, reentrada com rascunhos e limpeza ao desmontar. Build, typecheck, lint e formatação passaram.
+
+Referências: [instalação do Compiler](https://react.dev/learn/react-compiler/installation), [Effect Events](https://react.dev/reference/react/useEffectEvent) e [ref callbacks com cleanup](https://react.dev/reference/react-dom/components/common#ref-callback).

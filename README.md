@@ -79,7 +79,7 @@ Ainda deve ser conferido no servidor Dokploy: versão disponível do Railpack, d
 
 ## Formulários das próximas entregas
 
-`SessionBoundary` mantém seus filhos montados e ocultos durante reentrada, preservando estado React somente na memória daquela aba. Após autenticar, limpa consultas e invalida os dados do roteador sem enviar formulários. Formulários protegidos devem usar `useUnsavedChanges`, consultar a sessão pelo cliente nativo ao receber 401 e exigir ação explícita para salvar após atualizar os dados. Sair pede confirmação de alterações sinalizadas nesta ou em outra aba e encerra o acesso em todas as abas daquele navegador pela notificação nativa de saída do Better Auth. O BroadcastChannel do Echo comunica apenas alterações não salvas. A sessão é observada por `authClient.useSession()`; consultas automáticas não renovam a validade, e somente eventos de atividade em aba visível solicitam renovação. Não altera sessões de outros dispositivos.
+`SessionBoundary` mantém seus filhos montados e ocultos durante reentrada, preservando estado React somente na memória daquela aba. Após autenticar, limpa consultas e invalida os dados do roteador sem enviar formulários. Formulários protegidos devem anexar ao `ref` do formulário o retorno de `useUnsavedChanges`, consultar a sessão pelo cliente nativo ao receber 401 e exigir ação explícita para salvar após atualizar os dados. Sair pede confirmação de alterações sinalizadas nesta ou em outra aba e encerra o acesso em todas as abas daquele navegador pela notificação nativa de saída do Better Auth. O BroadcastChannel do Echo comunica apenas alterações não salvas. A sessão é observada por `authClient.useSession()`; consultas automáticas não renovam a validade, e somente eventos de atividade em aba visível solicitam renovação. Não altera sessões de outros dispositivos.
 
 Não há formulários de trabalho nem cronômetro operacional nesta issue. Essas entregas devem integrar a proteção de sessão sem parar o cronômetro quando o acesso expira ou termina.
 
@@ -146,3 +146,19 @@ bun run db:migrate
 `auth:generate` chama o CLI oficial com `--config ./src/lib/auth.ts --output ./src/db/schema.ts`. Revise o schema e o SQL antes de aplicar a migração.
 
 A estrutura completa está em [Organização do código](docs/architecture/source-layout.md). A [revisão da PR 21](docs/verification/pr-21-native-review.md) registra as simplificações e as regras do Echo que continuam necessárias. Secure cookies e a persistência do login usam os padrões nativos do Better Auth; não há override que desative Secure em uma origem HTTPS de desenvolvimento.
+
+### React Compiler e efeitos
+
+O React Compiler está habilitado no cliente pelo preset oficial de `@vitejs/plugin-react`, com `@rolldown/plugin-babel`. O Oxc continua responsável por lint e formatação; suas regras de hooks e dependências estão ativas. Não há `useCallback`, `useMemo` ou wrappers de memoização manuais na aplicação.
+
+O ciclo de sessão mantém dois efeitos. Um processa as transições de autenticação observadas no Better Auth, mantendo a reentrada fechada até a atualização das rotas. O outro conecta eventos do navegador e canais entre abas durante a montagem da fronteira. `useEffectEvent` fornece os valores atuais aos eventos, sem reinstalar os listeners a cada transição.
+
+O registro de rascunhos usa um ref callback com cleanup do React 19. Anexe o retorno ao formulário ou ao seu elemento raiz:
+
+```tsx
+const dirty = useSelector(form.store, (state) => state.isDirty);
+const draftRef = useUnsavedChanges(dirty);
+return <form ref={draftRef}>...</form>;
+```
+
+O registro acompanha a montagem, as alterações do estado dirty e a remoção do elemento. Não há efeito de registro por formulário.

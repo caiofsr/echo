@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useEffectEvent, useRef } from "react";
 import { getGlobalBroadcastChannel } from "better-auth/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { useCreateStore, useSelector } from "@tanstack/react-store";
 import { authClient } from "../lib/auth-client";
 
-// Native authentication is observed here. Echo owns visible activity, draft
-// coordination and what happens when access expires or is explicitly ended.
+// Better Auth owns authentication. Echo owns the latched reentry screen,
+// visible activity and draft coordination while that screen is open.
 export function useSessionLifecycle() {
   const store = useCreateStore({
     status: "active" as "active" | "expired" | "checking",
@@ -17,67 +17,84 @@ export function useSessionLifecycle() {
   });
   const status = useSelector(store, (state) => state.status);
   const connectionError = useSelector(store, (state) => state.connectionError);
-  const setStatus = useCallback(
-    (value: "active" | "expired" | "checking") =>
-      store.setState((state) => ({ ...state, status: value })),
-    [store],
-  );
-  const setConnectionError = useCallback(
-    (value: string) =>
-      store.setState((state) => ({ ...state, connectionError: value })),
-    [store],
-  );
-  const session = authClient.useSession();
-  const { refetch } = session;
+  const { data, isPending, isRefetching, error, refetch } =
+    authClient.useSession();
   const tabId = useRef("");
   const channel = useRef<BroadcastChannel | null>(null);
   const router = useRouter();
   const queries = useQueryClient();
-  const leave = useCallback(() => {
-    store.setState((state) => ({ ...state, dirtyForms: new Set<string>() }));
+
+  function setStatus(status: "active" | "expired" | "checking") {
+    store.setState((state) => ({ ...state, status }));
+  }
+  function leave() {
+    store.setState((state) => ({
+      ...state,
+      dirtyForms: new Set<string>(),
+      status: "checking",
+    }));
     queries.clear();
-    setStatus("checking");
     return router.navigate({
       href: "/login",
       reloadDocument: true,
       replace: true,
     });
-  }, [queries, router, store, setStatus]);
-  const check = useCallback(
-    async (active = false) => {
-      // Omit the native flag for renewal: the HTTP schema coerces the string
-      // "false" to true. Undefined also overrides the client's passive default.
-      await refetch({ query: { disableRefresh: active ? undefined : true } });
-    },
-    [refetch],
-  );
+  }
+  function check(active = false) {
+    // Omit the native flag for renewal: its HTTP schema coerces "false" to true.
+    return refetch({ query: { disableRefresh: active ? undefined : true } });
+  }
+
+  // Expiry stays latched until Echo has invalidated the routes after reentry.
+  // A native session update alone must not reveal a preserved stale form.
   useEffect(() => {
-    if (session.isPending || session.isRefetching || session.error) return;
-    if (!session.data) setStatus("expired");
-    else {
-      if (store.state.status === "checking") setStatus("active");
-      setConnectionError("");
+    if (isPending || isRefetching || error) return;
+    store.setState((state) =>
+      !data
+        ? { ...state, status: "expired" }
+        : {
+            ...state,
+            status: state.status === "checking" ? "active" : state.status,
+            connectionError: "",
+          },
+    );
+  }, [data, isPending, isRefetching, error, store]);
+
+  const onSignOut = useEffectEvent(() => {
+    void leave();
+  });
+  const onActivity = useEffectEvent(() => {
+    if (
+      document.visibilityState !== "visible" ||
+      status !== "active" ||
+      Date.now() - store.state.lastActivity < 60_000
+    )
+      return;
+    store.setState((state) => ({ ...state, lastActivity: Date.now() }));
+    void check(true);
+  });
+  const onRestore = useEffectEvent((event: PageTransitionEvent) => {
+    if (event.persisted) {
+      setStatus("checking");
+      void check();
     }
-  }, [
-    session.data,
-    session.isPending,
-    session.isRefetching,
-    session.error,
-    store,
-    setStatus,
-    setConnectionError,
-  ]);
-  useEffect(
-    () =>
-      getGlobalBroadcastChannel().subscribe((message) => {
-        if (message.data?.trigger === "signout") void leave();
-      }),
-    [leave],
-  );
+  });
+
+  // These subscriptions share the boundary's lifetime. Effect Events read the
+  // latest committed UI state without reconnecting on each session change.
   useEffect(() => {
-    channel.current = new BroadcastChannel("echo-session");
-    tabId.current ||= crypto.randomUUID();
-    channel.current.onmessage = (event) => {
+    const messages = new BroadcastChannel("echo-session");
+    channel.current = messages;
+    if (!tabId.current) tabId.current = crypto.randomUUID();
+    const announce = () =>
+      messages.postMessage({
+        type: "dirty",
+        tab: tabId.current,
+        value: store.state.dirtyForms.size > 0,
+      });
+    const pageHide = () =>
+      messages.postMessage({ type: "dirty", tab: tabId.current, value: false });
+    messages.onmessage = (event) => {
       const message = event.data;
       if (message?.type === "dirty" && typeof message.tab === "string") {
         store.setState((state) => {
@@ -87,77 +104,46 @@ export function useSessionLifecycle() {
           return { ...state, otherDirtyTabs };
         });
       }
-      if (message?.type === "hello")
-        channel.current?.postMessage({
-          type: "dirty",
-          tab: tabId.current,
-          value: store.state.dirtyForms.size > 0,
-        });
+      if (message?.type === "hello") announce();
     };
-    channel.current.postMessage({ type: "hello" });
-    const pageHide = () =>
-      channel.current?.postMessage({
-        type: "dirty",
-        tab: tabId.current,
-        value: false,
-      });
-    window.addEventListener("pagehide", pageHide);
-    const pageShow = () => {
+    messages.postMessage({ type: "hello" });
+    announce();
+    const unsubscribe = getGlobalBroadcastChannel().subscribe((message) => {
+      if (message.data?.trigger === "signout") onSignOut();
+    });
+    const pageShow = (event: PageTransitionEvent) => {
       store.setState((state) => ({
         ...state,
         otherDirtyTabs: new Set<string>(),
       }));
-      channel.current?.postMessage({ type: "hello" });
-      channel.current?.postMessage({
-        type: "dirty",
-        tab: tabId.current,
-        value: store.state.dirtyForms.size > 0,
-      });
+      messages.postMessage({ type: "hello" });
+      announce();
+      onRestore(event);
     };
+    const visibility = () => {
+      if (document.visibilityState === "visible") onActivity();
+    };
+    document.addEventListener("pointerdown", onActivity);
+    document.addEventListener("keydown", onActivity);
+    document.addEventListener("scroll", onActivity, { passive: true });
+    document.addEventListener("visibilitychange", visibility);
+    window.addEventListener("pagehide", pageHide);
     window.addEventListener("pageshow", pageShow);
+    onActivity();
     return () => {
       pageHide();
+      unsubscribe();
+      document.removeEventListener("pointerdown", onActivity);
+      document.removeEventListener("keydown", onActivity);
+      document.removeEventListener("scroll", onActivity);
+      document.removeEventListener("visibilitychange", visibility);
       window.removeEventListener("pagehide", pageHide);
       window.removeEventListener("pageshow", pageShow);
-      channel.current?.close();
+      messages.close();
       channel.current = null;
     };
   }, [store]);
-  useEffect(() => {
-    const activity = () => {
-      if (
-        document.visibilityState !== "visible" ||
-        Date.now() - store.state.lastActivity < 60_000 ||
-        status !== "active"
-      )
-        return;
-      store.setState((state) => ({ ...state, lastActivity: Date.now() }));
-      void check(true);
-    };
-    const visibility = () => {
-      if (document.visibilityState === "visible") activity();
-    };
-    const pageShow = (event: PageTransitionEvent) => {
-      if (event.persisted) {
-        setStatus("checking");
-        void check();
-      }
-    };
-    document.addEventListener("pointerdown", activity);
-    document.addEventListener("keydown", activity);
-    document.addEventListener("scroll", activity, { passive: true });
-    document.addEventListener("visibilitychange", visibility);
-    window.addEventListener("pageshow", pageShow);
-    if (status === "active") activity();
-    else void check();
-    return () => {
-      document.removeEventListener("pointerdown", activity);
-      document.removeEventListener("keydown", activity);
-      document.removeEventListener("scroll", activity);
-      document.removeEventListener("visibilitychange", visibility);
-      window.removeEventListener("pageshow", pageShow);
-    };
-  }, [check, status, store, setStatus]);
+
   async function logout() {
     if (
       (store.state.dirtyForms.size > 0 ||
@@ -167,42 +153,38 @@ export function useSessionLifecycle() {
       )
     )
       return;
-    try {
-      const { error } = await authClient.signOut();
-      if (error && error.status !== 401) throw new Error();
-      await leave();
-    } catch {
-      setConnectionError(
-        "Não foi possível sair. Confira sua conexão e tente novamente.",
-      );
+    function reportConnectionError() {
+      store.setState((state) => ({
+        ...state,
+        connectionError:
+          "Não foi possível sair. Confira sua conexão e tente novamente.",
+      }));
     }
+    const result = await authClient.signOut().catch(() => null);
+    if (!result || (result.error && result.error.status !== 401)) {
+      reportConnectionError();
+      return;
+    }
+    await leave().catch(reportConnectionError);
   }
-  const setDirty = useCallback(
-    (formId: string, value: boolean) => {
-      store.setState((state) => {
-        const dirtyForms = new Set(state.dirtyForms);
-        if (value) dirtyForms.add(formId);
-        else dirtyForms.delete(formId);
-        return { ...state, dirtyForms };
-      });
-      channel.current?.postMessage({
-        type: "dirty",
-        tab: tabId.current,
-        value: store.state.dirtyForms.size > 0,
-      });
-    },
-    [store],
-  );
-  const reauthenticate = useCallback(async () => {
+
+  function setDirty(formId: string, value: boolean) {
+    store.setState((state) => {
+      const dirtyForms = new Set(state.dirtyForms);
+      if (value) dirtyForms.add(formId);
+      else dirtyForms.delete(formId);
+      return { ...state, dirtyForms };
+    });
+    channel.current?.postMessage({
+      type: "dirty",
+      tab: tabId.current,
+      value: store.state.dirtyForms.size > 0,
+    });
+  }
+  async function reauthenticate() {
     queries.clear();
     await router.invalidate({ sync: true });
     setStatus("active");
-  }, [queries, router, setStatus]);
-  return {
-    status,
-    connectionError,
-    logout,
-    setDirty,
-    reauthenticate,
-  };
+  }
+  return { status, connectionError, logout, setDirty, reauthenticate };
 }

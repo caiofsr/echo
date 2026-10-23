@@ -23,3 +23,5 @@ O `src/router.tsx` permanece no lugar esperado pelo TanStack Start. Ele cria um 
 Server functions devem ler cabeçalhos e autorizar acesso dentro de `.handler()`. O `beforeLoad` controla a navegação, mas não substitui a autorização de consultas e mutações privadas. O catálogo atual contém somente a leitura de sessão; não há serviços ou pastas vazias para funcionalidades futuras.
 
 A aplicação delega estado autenticado ao Better Auth, valores/envio/erros do formulário ao TanStack Form e dados do servidor ao React Query. O TanStack Store mantém estado de interface e coordenação de alterações não salvas. Evite copiar esses estados entre bibliotecas.
+
+O React Compiler realiza a memoização no cliente. A sincronização com eventos externos usa `useEffectEvent`, e o registro de formulários recebe um ref callback com cleanup do React 19. Os dois efeitos restantes pertencem ao ciclo de sessão; não substitua sua sincronização externa por mutações durante render.

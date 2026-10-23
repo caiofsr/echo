@@ -17,9 +17,9 @@ import { useUnsavedChanges } from "../../src/hooks/use-unsaved-changes";
 function Draft() {
   const [value, setValue] = useState("");
   const { logout } = useSession();
-  useUnsavedChanges(Boolean(value));
+  const draftRef = useUnsavedChanges(Boolean(value));
   return (
-    <main>
+    <main ref={draftRef}>
       <h1>Formulário de teste</h1>
       <label>
         Rascunho
