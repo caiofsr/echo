@@ -5,7 +5,7 @@ Verificação local em 22/10/2026. Implementa [Entrar no Echo com sessão persis
 ## Resultado
 
 - `bun run typecheck`: passou.
-- `bun test tests`: 12 testes passaram, com 59 verificações na execução final usando `bun:sqlite`. SQLite real isolado, migrações, persistência após reabrir banco, revogação, cookies, expiração/renovação, limite nativo persistente do Better Auth, concorrência e rollback de escritas atômicas.
+- `bun test tests`: 13 testes passaram, com 67 verificações na execução final usando `bun:sqlite`. SQLite real isolado, migrações, persistência após reabrir banco, revogação, cookies, expiração/renovação, limite nativo persistente do Better Auth, concorrência e rollback de escritas atômicas.
 - `bun run build`: passou, gerando cliente e servidor do TanStack Start.
 - `bun run test:e2e`: 18 testes passaram, em desktop e celular. Entrada inválida/válida, mostrar senha, destino interno, recarga, navegação, saída em múltiplas abas e reentrada após revogação. O limite nativo também foi conferido na interface, com a mensagem de espera em português.
 - Railpack 0.43.0: build local inicial da imagem `echo-issue-8`, runtime Bun 1.3.14. Teste com `bun scripts/smoke-image.ts echo-issue-8` passou, incluindo migrações, definição administrativa de senha, cookie seguro, SSR protegido, assets, sessão após reinício do contêiner e saída. Essa validação da imagem antecede a troca para `bun:sqlite`; não foi repetida depois da troca.
@@ -66,3 +66,11 @@ A suíte de navegador verifica erro e visibilidade da senha, preservação de ra
 Removidos `handleAuth` e `readSession`. A rota usa o handler nativo e a server function chama `auth.api.getSession` diretamente. O plugin de cookies segue como último plugin. Restrições adicionais do Echo ficam nos hooks, sem recriar a resposta HTTP. A configuração não repete os padrões de tamanho máximo de senha e cache de cookie.
 
 Os testes passam pelo handler nativo e pela API do servidor. A cobertura de política verifica também endpoints de listagem de sessões e atualização de usuário, Origin ausente e a mesma origem com porta diferente. A suíte soma 12 testes e 63 asserções, além dos 18 testes de navegador em desktop e mobile.
+
+## Auditoria dos hooks
+
+Removidas a comparação customizada do valor de Origin, a repetição de `baseURL` em `trustedOrigins` e a resposta customizada para credencial inexistente. Os testes verificam o código nativo `INVALID_ORIGIN` e o código nativo `INVALID_EMAIL_OR_PASSWORD`. A configuração explicita `disableOriginCheck: false` porque o Better Auth omite essa checagem por padrão sob `NODE_ENV=test`.
+
+Permanecem as regras adicionais do Echo. O Origin deve estar explícito, sem fallback para Referer ou inferência de Origin nulo. Somente três endpoints HTTP são publicados; `disabledPaths` é uma lista de bloqueio de caminhos exatos, não substitui essa lista de permissão. O cabeçalho sem cache cobre também a resposta de login, que não o define nativamente nesta versão. A revisão protege a interleaving entre verificação de senha, reset e criação da sessão; revogar sessões já existentes no reset não cobre essa criação posterior. Leituras sem revisão confirmada continuam rejeitadas.
+
+Validação após a simplificação: 13 testes de integração, 67 asserções, 18 testes de navegador em desktop e mobile, build, typecheck, lint e formatação.

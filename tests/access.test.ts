@@ -149,17 +149,15 @@ test("tentativas são limitadas por origem, persistem após reinício e liberam 
 test("origens externas e endpoints não publicados são recusados; cookie de produção é seguro", async () => {
   const app = await createAccessFixture(true);
   fixtures.push(app);
-  expect(
-    (
-      await app.request(
-        "/sign-in/email",
-        { email, password: app.password },
-        undefined,
-        "192.0.2.1",
-        "https://outro.test",
-      )
-    ).status,
-  ).toBe(403);
+  const rejectedOrigin = await app.request(
+    "/sign-in/email",
+    { email, password: app.password },
+    undefined,
+    "192.0.2.1",
+    "https://outro.test",
+  );
+  expect(rejectedOrigin.status).toBe(403);
+  expect((await rejectedOrigin.json()).code).toBe("INVALID_ORIGIN");
   expect((await app.request("/sign-up/email", {})).status).toBe(404);
   expect((await app.request("/list-sessions")).status).toBe(404);
   expect(
@@ -237,6 +235,19 @@ test("o handler nativo valida o login e o hook restringe a identidade pessoal", 
     (await app.request("/sign-in/email", { email, password: app.password }))
       .status,
   ).toBe(200);
+});
+
+test("Better Auth recusa a credencial ausente sem resposta customizada", async () => {
+  const app = await createAccessFixture();
+  fixtures.push(app);
+  await app.db.delete(schema.user);
+  const response = await app.request("/sign-in/email", {
+    email,
+    password: app.password,
+  });
+  expect(response.status).toBe(401);
+  expect((await response.json()).code).toBe("INVALID_EMAIL_OR_PASSWORD");
+  expect(await app.db.select().from(schema.session)).toHaveLength(0);
 });
 
 test("leituras HTTP e do servidor recusam uma sessão sem revisão confirmada", async () => {

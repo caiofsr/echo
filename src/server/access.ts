@@ -11,8 +11,7 @@ export function createAccess(
   db: Database,
   options: { baseURL: string; secret: string; secureCookies: boolean },
 ) {
-  const origin = new URL(options.baseURL).origin;
-  const credentials = personalCredentials(db, origin);
+  const credentials = personalCredentials(db);
   const auth = betterAuth({
     baseURL: options.baseURL,
     secret: options.secret,
@@ -27,11 +26,12 @@ export function createAccess(
       updateAge: 0,
     },
     advanced: {
+      // Better Auth otherwise skips Origin checks under NODE_ENV=test.
+      disableOriginCheck: false,
       useSecureCookies: options.secureCookies,
       cookiePrefix: "echo",
       ipAddress: { ipAddressHeaders: ["x-echo-client-ip"] },
     },
-    trustedOrigins: [origin],
     rateLimit: {
       enabled: true,
       storage: "database",

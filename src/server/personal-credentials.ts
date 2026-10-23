@@ -10,17 +10,17 @@ const EMAIL = "owner@echo.invalid";
 
 // Echo's additional invariant: a login verified before a password reset must
 // never leave a usable session after it. Native hooks cover HTTP and server reads.
-export function personalCredentials(db: Database, origin: string) {
+export function personalCredentials(db: Database) {
   const hooks = {
     before: createAuthMiddleware(async (ctx) => {
       if (ctx.request) {
         // Echo exposes only personal login, session observation and logout.
         if (!["/sign-in/email", "/get-session", "/sign-out"].includes(ctx.path))
           throw new APIError("NOT_FOUND", { message: "Não encontrado." });
-        if (
-          ctx.request.method === "POST" &&
-          ctx.request.headers.get("origin") !== origin
-        )
+        // Better Auth validates the value through trustedOrigins. Echo also
+        // requires an explicit Origin instead of allowing a Referer fallback.
+        const origin = ctx.request.headers.get("origin");
+        if (ctx.request.method === "POST" && (!origin || origin === "null"))
           throw new APIError("FORBIDDEN", { message: "Origem não permitida." });
       }
       if (ctx.path !== "/sign-in/email") return;
@@ -32,11 +32,8 @@ export function personalCredentials(db: Database, origin: string) {
         .select({ version: schema.user.credentialVersion })
         .from(schema.user)
         .where(eq(schema.user.id, OWNER));
-      if (!owner)
-        throw new APIError("UNAUTHORIZED", {
-          message: "Senha incorreta. Confira e tente novamente.",
-        });
-      Object.assign(ctx.context, { echoCredentialVersion: owner.version });
+      // Missing credentials are rejected by Better Auth's sign-in handler.
+      Object.assign(ctx.context, { echoCredentialVersion: owner?.version });
     }),
     after: createAuthMiddleware(async (ctx) => {
       ctx.setHeader("Cache-Control", "no-store");
