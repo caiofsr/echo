@@ -12,7 +12,7 @@ export function createAccess(
   options: { baseURL: string; secret: string; secureCookies: boolean },
 ) {
   const origin = new URL(options.baseURL).origin;
-  const credentials = personalCredentials(db);
+  const credentials = personalCredentials(db, origin);
   const auth = betterAuth({
     baseURL: options.baseURL,
     secret: options.secret,
@@ -21,12 +21,10 @@ export function createAccess(
       enabled: true,
       disableSignUp: true,
       minPasswordLength: 15,
-      maxPasswordLength: 1024,
     },
     session: {
       expiresIn: SESSION_SECONDS,
       updateAge: 0,
-      cookieCache: { enabled: false },
     },
     advanced: {
       useSecureCookies: options.secureCookies,
@@ -47,40 +45,6 @@ export function createAccess(
     plugins: [tanstackStartCookies()],
   });
 
-  async function readSession(headers: Headers) {
-    return auth.api.getSession({
-      headers,
-      query: { disableRefresh: true },
-    });
-  }
-  function json(body: unknown, status = 200, headers?: HeadersInit) {
-    const response = Response.json(body, { status, headers });
-    response.headers.set("Cache-Control", "no-store");
-    return response;
-  }
-  async function handleAuth(request: Request) {
-    const url = new URL(request.url);
-    const method = request.method;
-    const signIn =
-      method === "POST" && url.pathname === "/api/auth/sign-in/email";
-    const allowed =
-      (method === "GET" && url.pathname === "/api/auth/get-session") ||
-      signIn ||
-      (method === "POST" && url.pathname === "/api/auth/sign-out");
-    if (!allowed) return json({ message: "Não encontrado." }, 404);
-    if (method === "POST" && request.headers.get("origin") !== origin)
-      return json({ message: "Origem não permitida." }, 403);
-
-    const response = await auth.handler(request);
-    const headers = new Headers(response.headers);
-    headers.set("Cache-Control", "no-store");
-    return new Response(response.body, {
-      status: response.status,
-      statusText: response.statusText,
-      headers,
-    });
-  }
-
-  return { handleAuth, readSession, setPassword: credentials.setPassword };
+  return { auth, setPassword: credentials.setPassword };
 }
 export type Access = ReturnType<typeof createAccess>;

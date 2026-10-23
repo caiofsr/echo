@@ -161,6 +161,32 @@ test("origens externas e endpoints não publicados são recusados; cookie de pro
     ).status,
   ).toBe(403);
   expect((await app.request("/sign-up/email", {})).status).toBe(404);
+  expect((await app.request("/list-sessions")).status).toBe(404);
+  expect(
+    (await app.request("/update-user", { name: "Outro nome" })).status,
+  ).toBe(404);
+  expect(
+    (
+      await app.request(
+        "/sign-in/email",
+        { email, password: app.password },
+        undefined,
+        "192.0.2.1",
+        "",
+      )
+    ).status,
+  ).toBe(403);
+  expect(
+    (
+      await app.request(
+        "/sign-in/email",
+        { email, password: app.password },
+        undefined,
+        "192.0.2.1",
+        "https://echo.test:444",
+      )
+    ).status,
+  ).toBe(403);
   const login = await app.request("/sign-in/email", {
     email,
     password: app.password,

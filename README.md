@@ -116,3 +116,9 @@ A seleção do menu usa `Link.activeOptions` e `activeProps`; `aria-current` é 
 `@tanstack/react-store` gerencia status de acesso, erros de conexão, registro de formulários alterados, participação de outras abas e última atividade. Cada `SessionBoundary` cria seu store com `useCreateStore`; o contexto nativo compartilha a instância e as ações com os descendentes. Não existe store global entre requisições SSR. Seletores observam apenas os campos exibidos, e os conjuntos de alterações recebem atualizações imutáveis.
 
 Cada `LoginForm` também cria um store para erro e visibilidade da senha. Valor da senha e envio continuam no TanStack Form; dados do servidor ficam no React Query e a sessão autenticada continua sob responsabilidade do Better Auth. Os rascunhos dos próximos formulários permanecem nos respectivos formulários; o Store registra quais têm alterações não salvas.
+
+### Integração direta do Better Auth
+
+A rota `/api/auth/$` encaminha GET e POST diretamente para `auth.handler`, conforme a [integração oficial com TanStack Start](https://better-auth.com/docs/integrations/tanstack). A server function de acesso chama `auth.api.getSession` com os cabeçalhos da requisição; os guards continuam no `beforeLoad`, usando a consulta compartilhada do React Query. `tanstackStartCookies()` permanece como último plugin.
+
+Não há wrapper HTTP ou reconstrução da resposta do Better Auth. Os hooks concentram as restrições do Echo: endpoints pessoais publicados, Origin obrigatório e exato nos POSTs, respostas sem cache e proteção contra login concorrente à redefinição da senha. O limite máximo de senha e a desativação do cache de cookie usam os padrões da biblioteca.

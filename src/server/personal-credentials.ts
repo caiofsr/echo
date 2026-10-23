@@ -10,9 +10,19 @@ const EMAIL = "owner@echo.invalid";
 
 // Echo's additional invariant: a login verified before a password reset must
 // never leave a usable session after it. Native hooks cover HTTP and server reads.
-export function personalCredentials(db: Database) {
+export function personalCredentials(db: Database, origin: string) {
   const hooks = {
     before: createAuthMiddleware(async (ctx) => {
+      if (ctx.request) {
+        // Echo exposes only personal login, session observation and logout.
+        if (!["/sign-in/email", "/get-session", "/sign-out"].includes(ctx.path))
+          throw new APIError("NOT_FOUND", { message: "Não encontrado." });
+        if (
+          ctx.request.method === "POST" &&
+          ctx.request.headers.get("origin") !== origin
+        )
+          throw new APIError("FORBIDDEN", { message: "Origem não permitida." });
+      }
       if (ctx.path !== "/sign-in/email") return;
       if (ctx.body?.email !== undefined && ctx.body.email !== EMAIL)
         throw new APIError("UNAUTHORIZED", {
@@ -29,6 +39,7 @@ export function personalCredentials(db: Database) {
       Object.assign(ctx.context, { echoCredentialVersion: owner.version });
     }),
     after: createAuthMiddleware(async (ctx) => {
+      ctx.setHeader("Cache-Control", "no-store");
       if (ctx.path === "/get-session" && ctx.context.session) {
         const [valid] = await db
           .select({ id: schema.session.id })

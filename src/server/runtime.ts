@@ -22,12 +22,12 @@ export function readEnvironment() {
     secureCookies: production,
   };
 }
-let access: ReturnType<typeof createAccess> | undefined;
-export function getAccess() {
-  if (!access) {
+let auth: ReturnType<typeof createAccess>["auth"] | undefined;
+export function getAuth() {
+  if (!auth) {
     const env = readEnvironment();
     const { db } = openDatabase(env.url);
-    access = createAccess(db, env);
+    auth = createAccess(db, env).auth;
   }
-  return access;
+  return auth;
 }

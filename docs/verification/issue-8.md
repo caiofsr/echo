@@ -60,3 +60,9 @@ O intervalo customizado foi removido. O Better Auth faz consultas passivas a cad
 O estado de interface da sessão e do login usa `@tanstack/react-store`, com instâncias criadas por montagem e seletores específicos. A coordenação de formulários e abas atualiza conjuntos de forma imutável. Recursos do navegador, como BroadcastChannel, permanecem em referências com descarte no efeito. TanStack Form mantém os valores e o envio; React Query mantém dados do servidor.
 
 A suíte de navegador verifica erro e visibilidade da senha, preservação de rascunhos na reentrada, confirmação entre abas e descarte da participação ao desmontar. Build, typecheck, lint, formatação, os 12 testes de integração e os 18 testes de navegador foram executados após a migração.
+
+## Integração direta conforme a documentação do Better Auth
+
+Removidos `handleAuth` e `readSession`. A rota usa o handler nativo e a server function chama `auth.api.getSession` diretamente. O plugin de cookies segue como último plugin. Restrições adicionais do Echo ficam nos hooks, sem recriar a resposta HTTP. A configuração não repete os padrões de tamanho máximo de senha e cache de cookie.
+
+Os testes passam pelo handler nativo e pela API do servidor. A cobertura de política verifica também endpoints de listagem de sessões e atualização de usuário, Origin ausente e a mesma origem com porta diferente. A suíte soma 12 testes e 63 asserções, além dos 18 testes de navegador em desktop e mobile.

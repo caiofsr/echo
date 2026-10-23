@@ -28,7 +28,7 @@ export async function createAccessFixture(secureCookies = false) {
     ) {
       const url = new URL(`/api/auth${path}`, options.baseURL);
       const method = body === undefined ? "GET" : "POST";
-      return access.handleAuth(
+      return access.auth.handler(
         new Request(url, {
           method,
           headers: {
@@ -45,7 +45,10 @@ export async function createAccessFixture(secureCookies = false) {
       return database.db;
     },
     readSession(cookie?: string) {
-      return access.readSession(new Headers(cookie ? { cookie } : {}));
+      return access.auth.api.getSession({
+        headers: new Headers(cookie ? { cookie } : {}),
+        query: { disableRefresh: true },
+      });
     },
     cookie(response: Response) {
       return response.headers
