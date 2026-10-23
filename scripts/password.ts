@@ -2,9 +2,60 @@ import { openDatabase } from "../src/server/database";
 import { createAccess } from "../src/server/access";
 import { readEnvironment } from "../src/server/runtime";
 
-// Passwords arrive via stdin, never a command-line argument or versioned seed.
-const input = await Bun.stdin.text();
-const password = input.replace(/\r?\n$/, "");
+async function readPassword() {
+  const stdin = process.stdin;
+  if (!stdin.isTTY || !stdin.setRawMode) {
+    // Keep stdin support for scripts and pipes; never pass the password as an argument.
+    return (await Bun.stdin.text()).replace(/\r?\n$/, "");
+  }
+
+  process.stderr.write("Insira a nova senha e pressione Enter: ");
+  stdin.setRawMode(true);
+  stdin.resume();
+
+  try {
+    return await new Promise<string>((resolve, reject) => {
+      let password = "";
+      const cleanup = () => {
+        stdin.off("data", onData);
+        stdin.off("error", onError);
+        stdin.setRawMode(false);
+        stdin.pause();
+        process.stderr.write("\n");
+      };
+      const onError = (error: Error) => {
+        cleanup();
+        reject(error);
+      };
+      const onData = (chunk: Buffer) => {
+        for (const character of chunk.toString("utf8")) {
+          if (character === "\u0003") {
+            cleanup();
+            reject(new Error("Operação cancelada."));
+            return;
+          }
+          if (character === "\r" || character === "\n") {
+            cleanup();
+            resolve(password);
+            return;
+          }
+          if (character === "\u007f" || character === "\b") {
+            password = Array.from(password).slice(0, -1).join("");
+          } else {
+            password += character;
+          }
+        }
+      };
+      stdin.on("data", onData);
+      stdin.once("error", onError);
+    });
+  } catch (error) {
+    if (stdin.isRaw) stdin.setRawMode(false);
+    throw error;
+  }
+}
+
+const password = await readPassword();
 const env = readEnvironment();
 const database = openDatabase(env.url);
 try {
