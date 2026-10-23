@@ -5,10 +5,10 @@ Verificação local em 22/10/2026. Implementa [Entrar no Echo com sessão persis
 ## Resultado
 
 - `bun run typecheck`: passou.
-- `bun test tests`: 6 testes passaram, com 35 verificações na execução final. SQLite real isolado, migrações, persistência após reabrir banco, revogação, cookies, expiração/renovação, limites e concorrência.
+- `bun test tests`: 7 testes passaram, com 37 verificações na execução final usando `bun:sqlite`. SQLite real isolado, migrações, persistência após reabrir banco, revogação, cookies, expiração/renovação, limites, concorrência e rollback de escritas atômicas.
 - `bun run build`: passou, gerando cliente e servidor do TanStack Start.
 - `bun run test:e2e`: 6 testes passaram, em desktop e celular. Entrada inválida/válida, mostrar senha, destino interno, recarga, navegação, saída em múltiplas abas e reentrada após revogação.
-- Railpack 0.43.0: build local da imagem `echo-issue-8`, runtime Bun 1.3.14. Teste com `bun scripts/smoke-image.ts echo-issue-8` passou, incluindo migrações, definição administrativa de senha, cookie seguro, SSR protegido, assets, sessão após reinício do contêiner e saída.
+- Railpack 0.43.0: build local inicial da imagem `echo-issue-8`, runtime Bun 1.3.14. Teste com `bun scripts/smoke-image.ts echo-issue-8` passou, incluindo migrações, definição administrativa de senha, cookie seguro, SSR protegido, assets, sessão após reinício do contêiner e saída. Essa validação da imagem antecede a troca para `bun:sqlite`; não foi repetida depois da troca.
 - Detector Impeccable: nenhum achado nos componentes, rotas e CSS. Revisão visual real em 1440px, 320px e viewport equivalente ao espaço disponível em zoom de 200%. Os SVGs locais foram validados e inspecionados em branco, cinza e fundo do aplicativo, em 17, 24, 32, 64 e 128px. São versões simplificadas de interface; não são ilustrações 3D.
 
 ## Standards

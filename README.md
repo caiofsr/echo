@@ -21,7 +21,7 @@ bun run dev
 
 O exemplo de leitura da senha usa zsh, shell do ambiente de desenvolvimento. Em outro shell, use sua leitura silenciosa equivalente. A senha deve ter de 15 a 1024 caracteres, aceita espaços e não exige composição específica. Não há senha padrão nem cadastro público. A operação `auth:password` também redefine a senha e revoga todas as sessões, preservando os demais dados. Execute-a apenas administrativamente no servidor, com o mesmo banco e segredo da aplicação. Não passe a senha em argumentos ou arquivos versionados.
 
-`DATABASE_URL=file:.data/echo.db` usa SQLite persistente local. Para Turso, configure `DATABASE_URL=libsql://…` e `DATABASE_AUTH_TOKEN`. Nunca versione `.env` ou arquivos de banco. A conexão remota com Turso foi adiada por decisão do produto.
+`DATABASE_URL=file:.data/echo.db` usa SQLite persistente local com o driver nativo `bun:sqlite` e o adaptador `drizzle-orm/bun-sqlite`. Chaves estrangeiras e WAL são habilitados na conexão. Para Turso, configure `DATABASE_URL=libsql://…` e `DATABASE_AUTH_TOKEN`; somente esse caminho remoto usa `@libsql/client`. Nunca versione `.env` ou arquivos de banco. A conexão remota com Turso foi adiada por decisão do produto.
 
 ## Build e execução
 

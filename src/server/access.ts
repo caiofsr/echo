@@ -3,7 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { hashPassword } from "better-auth/crypto";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { and, eq, sql } from "drizzle-orm";
-import type { Database } from "./database";
+import { atomicWrites, type Database } from "./database";
 import * as schema from "./schema";
 
 const OWNER = "echo-owner";
@@ -185,8 +185,8 @@ export function createAccess(
     const hashed = await hashPassword(password);
     const now = new Date();
     const credentialVersion = crypto.randomUUID();
-    await db.transaction(async (tx) => {
-      await tx
+    await atomicWrites(db, (tx) => [
+      tx
         .insert(schema.user)
         .values({
           id: OWNER,
@@ -200,8 +200,8 @@ export function createAccess(
         .onConflictDoUpdate({
           target: schema.user.id,
           set: { credentialVersion, updatedAt: now },
-        });
-      await tx
+        }),
+      tx
         .insert(schema.account)
         .values({
           id: OWNER,
@@ -215,9 +215,9 @@ export function createAccess(
         .onConflictDoUpdate({
           target: schema.account.id,
           set: { password: hashed, updatedAt: now },
-        });
-      await tx.delete(schema.session).where(eq(schema.session.userId, OWNER));
-    });
+        }),
+      tx.delete(schema.session).where(eq(schema.session.userId, OWNER)),
+    ]);
   }
   return { handleAuth, readSession, setPassword };
 }
