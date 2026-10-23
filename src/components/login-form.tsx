@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
+import { authClient, ECHO_LOGIN_EMAIL } from "../lib/auth-client";
 import { EchoIcon } from "./icons";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -18,15 +19,17 @@ export function LoginForm({
     onSubmit: async ({ value }) => {
       setError("");
       try {
-        const response = await fetch("/api/access/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(value),
+        const { error } = await authClient.signIn.email({
+          email: ECHO_LOGIN_EMAIL,
+          password: value.password,
+          rememberMe: true,
         });
-        const result = await response.json();
-        if (!response.ok) {
+        if (error) {
           setError(
-            result.message ?? "Não foi possível entrar. Tente novamente.",
+            error.status === 429
+              ? (error.message ??
+                  "Muitas tentativas. Tente novamente em breve.")
+              : "Senha incorreta. Confira e tente novamente.",
           );
           return;
         }

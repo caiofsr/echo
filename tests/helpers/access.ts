@@ -26,18 +26,50 @@ export async function createAccessFixture(secureCookies = false) {
       address = "192.0.2.1",
       origin = options.baseURL,
     ) {
-      return access.handle(
-        new Request(`${options.baseURL}/api/access/${action}`, {
-          method: body === undefined ? "GET" : "POST",
-          headers: {
-            origin,
-            "content-type": "application/json",
-            ...(cookie ? { cookie } : {}),
-          },
-          ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-        }),
-        address,
-      );
+      const path =
+        action === "login"
+          ? "/sign-in/email"
+          : action === "logout"
+            ? "/sign-out"
+            : action === "sign-up"
+              ? "/sign-up/email"
+              : "/get-session";
+      const method =
+        action === "session" || action === "activity" ? "GET" : "POST";
+      const requestBody =
+        action === "login"
+          ? { email: "owner@echo.invalid", ...(body as object) }
+          : method === "POST"
+            ? body
+            : undefined;
+      const url = new URL(`/api/auth${path}`, options.baseURL);
+      if (action === "session") url.searchParams.set("disableRefresh", "true");
+      return access
+        .handleAuth(
+          new Request(url, {
+            method,
+            headers: {
+              origin,
+              "content-type": "application/json",
+              ...(cookie ? { cookie } : {}),
+            },
+            ...(requestBody === undefined
+              ? {}
+              : { body: JSON.stringify(requestBody) }),
+          }),
+          address,
+        )
+        .then(async (response) => {
+          if (action !== "session" && action !== "activity") return response;
+          const payload = await response.clone().json();
+          const session = payload?.session ?? payload;
+          return session?.expiresAt
+            ? Response.json({ expiresAt: session.expiresAt })
+            : Response.json(
+                { message: "Entre para continuar." },
+                { status: 401 },
+              );
+        });
     },
     cookie(response: Response) {
       return response.headers

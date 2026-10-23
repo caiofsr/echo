@@ -8,8 +8,9 @@ async function handle({ request }: { request: Request }) {
     process.env.NODE_ENV === "production"
       ? (request.headers.get("x-echo-client-ip") ?? "unknown")
       : "development";
-  return getAccess().handle(request, address);
+  return getAccess().handleAuth(request, address);
 }
-export const Route = createFileRoute("/api/access/$")({
+
+export const Route = createFileRoute("/api/auth/$")({
   server: { handlers: { GET: handle, POST: handle } },
 });

@@ -33,7 +33,8 @@ let baseURL = "";
 async function ready() {
   for (let i = 0; i < 40; i++) {
     try {
-      if ((await fetch(`${baseURL}/api/access/session`)).status === 401) return;
+      if ((await fetch(`${baseURL}/api/auth/get-session`)).status === 200)
+        return;
     } catch {}
     await Bun.sleep(250);
   }
@@ -79,10 +80,10 @@ try {
     (await fetch(`${baseURL}/horas`, { redirect: "manual" })).status,
     307,
   );
-  const login = await fetch(`${baseURL}/api/access/login`, {
+  const login = await fetch(`${baseURL}/api/auth/sign-in/email`, {
     method: "POST",
     headers: { Origin: origin, "Content-Type": "application/json" },
-    body: JSON.stringify({ password }),
+    body: JSON.stringify({ email: "owner@echo.invalid", password }),
   });
   assert.equal(login.status, 200);
   assert.match(login.headers.get("set-cookie") ?? "", /Secure/);
@@ -104,24 +105,24 @@ try {
   baseURL = `http://127.0.0.1:${restartedPort}`;
   await ready();
   assert.equal(
-    (await fetch(`${baseURL}/api/access/session`, { headers: { cookie } }))
+    (await fetch(`${baseURL}/api/auth/get-session`, { headers: { cookie } }))
       .status,
     200,
   );
   assert.equal(
     (
-      await fetch(`${baseURL}/api/access/logout`, {
+      await fetch(`${baseURL}/api/auth/sign-out`, {
         method: "POST",
         headers: { cookie, Origin: origin },
       })
     ).status,
     200,
   );
-  assert.equal(
-    (await fetch(`${baseURL}/api/access/session`, { headers: { cookie } }))
-      .status,
-    401,
-  );
+  const expired = await fetch(`${baseURL}/api/auth/get-session`, {
+    headers: { cookie },
+  });
+  assert.equal(expired.status, 200);
+  assert.equal(await expired.json(), null);
   console.log(
     "Imagem validada: migrações, Bun, entrada, cookie seguro, SSR protegido, assets, sessão após reinício e saída.",
   );

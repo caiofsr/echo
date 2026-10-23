@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { hashPassword } from "better-auth/crypto";
+import { tanstackStartCookies } from "better-auth/tanstack-start";
 import { and, eq, sql } from "drizzle-orm";
 import type { Database } from "./database";
 import * as schema from "./schema";
@@ -33,6 +34,7 @@ export function createAccess(
     advanced: { useSecureCookies: options.secureCookies, cookiePrefix: "echo" },
     trustedOrigins: [origin],
     rateLimit: { enabled: false },
+    plugins: [tanstackStartCookies()],
   });
 
   async function readSession(headers: Headers) {
@@ -58,31 +60,21 @@ export function createAccess(
     response.headers.set("Cache-Control", "no-store");
     return response;
   }
-  function cookies(response: Response) {
-    const headers = new Headers();
-    for (const cookie of response.headers.getSetCookie())
-      headers.append("set-cookie", cookie);
-    return headers;
-  }
-
-  async function handle(request: Request, clientAddress: string) {
-    const action = new URL(request.url).pathname.split("/").at(-1);
+  async function handleAuth(request: Request, clientAddress: string) {
+    const url = new URL(request.url);
     const method = request.method;
-    if (method === "GET" && action === "session") {
-      const current = await readSession(request.headers);
-      return current
-        ? json({ authenticated: true, expiresAt: current.session.expiresAt })
-        : json({ message: "Entre para continuar." }, 401);
-    }
-    if (
-      method !== "POST" ||
-      !["login", "logout", "activity"].includes(action ?? "")
-    )
-      return json({ message: "Não encontrado." }, 404);
-    if (request.headers.get("origin") !== origin)
+    const signIn =
+      method === "POST" && url.pathname === "/api/auth/sign-in/email";
+    const allowed =
+      (method === "GET" && url.pathname === "/api/auth/get-session") ||
+      signIn ||
+      (method === "POST" && url.pathname === "/api/auth/sign-out");
+    if (!allowed) return json({ message: "Não encontrado." }, 404);
+    if (method === "POST" && request.headers.get("origin") !== origin)
       return json({ message: "Origem não permitida." }, 403);
 
-    if (action === "login") {
+    let owner: { version: string } | undefined;
+    if (signIn) {
       const now = Date.now();
       const [attempt] = await db
         .insert(schema.loginAttempt)
@@ -109,23 +101,35 @@ export function createAccess(
           { "Retry-After": String(retryAfter) },
         );
       }
-      let password: unknown;
+      let body: unknown;
       try {
         if (
           (request.headers.get("content-type") ?? "").split(";")[0] !==
           "application/json"
         )
           return json({ message: "Envie a senha em JSON." }, 415);
-        const text = await request.text();
+        const text = await request.clone().text();
         if (text.length > 8192)
           return json({ message: "Senha inválida." }, 400);
-        password = JSON.parse(text).password;
+        body = JSON.parse(text);
       } catch {
         return json({ message: "Informe sua senha." }, 400);
       }
-      if (typeof password !== "string" || !password || password.length > 1024)
-        return json({ message: "Informe uma senha válida." }, 400);
-      const [owner] = await db
+      if (
+        typeof body !== "object" ||
+        body === null ||
+        !("email" in body) ||
+        body.email !== EMAIL ||
+        !("password" in body) ||
+        typeof body.password !== "string" ||
+        !body.password ||
+        body.password.length > 1024
+      )
+        return json(
+          { message: "Senha incorreta. Confira e tente novamente." },
+          401,
+        );
+      [owner] = await db
         .select({ version: schema.user.credentialVersion })
         .from(schema.user)
         .where(eq(schema.user.id, OWNER));
@@ -134,17 +138,11 @@ export function createAccess(
           { message: "Senha incorreta. Confira e tente novamente." },
           401,
         );
-      const result = await auth.api.signInEmail({
-        body: { email: EMAIL, password, rememberMe: true },
-        headers: request.headers,
-        asResponse: true,
-      });
-      if (!result.ok)
-        return json(
-          { message: "Senha incorreta. Confira e tente novamente." },
-          401,
-        );
-      const { token } = await result.json();
+    }
+
+    const response = await auth.handler(request);
+    if (signIn && response.ok && owner) {
+      const { token } = await response.clone().json();
       // A session is unusable until its credential revision is confirmed in
       // SQLite. A concurrent password reset either prevents this update or
       // deletes the finalized session in the same transaction as the reset.
@@ -171,38 +169,14 @@ export function createAccess(
       await db
         .delete(schema.loginAttempt)
         .where(eq(schema.loginAttempt.origin, clientAddress));
-      return json({ authenticated: true }, 200, cookies(result));
     }
-    const current = await readSession(request.headers);
-    if (!current)
-      return json(
-        { message: "Sua sessão expirou. Entre novamente para continuar." },
-        401,
-      );
-    if (action === "logout") {
-      const result = await auth.api.signOut({
-        headers: request.headers,
-        asResponse: true,
-      });
-      return json({ authenticated: false }, result.status, cookies(result));
-    }
-    const result = await auth.api.getSession({
-      headers: request.headers,
-      query: { disableRefresh: false },
-      asResponse: true,
+    const headers = new Headers(response.headers);
+    headers.set("Cache-Control", "no-store");
+    return new Response(response.body, {
+      status: response.status,
+      statusText: response.statusText,
+      headers,
     });
-    const renewed = await result.json();
-    if (!renewed)
-      return json(
-        { message: "Sua sessão expirou. Entre novamente." },
-        401,
-        cookies(result),
-      );
-    return json(
-      { authenticated: true, expiresAt: renewed.session.expiresAt },
-      200,
-      cookies(result),
-    );
   }
 
   async function setPassword(password: string) {
@@ -245,6 +219,6 @@ export function createAccess(
       await tx.delete(schema.session).where(eq(schema.session.userId, OWNER));
     });
   }
-  return { handle, readSession, setPassword };
+  return { handleAuth, readSession, setPassword };
 }
 export type Access = ReturnType<typeof createAccess>;

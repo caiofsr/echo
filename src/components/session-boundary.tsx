@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
+import { authClient } from "../lib/auth-client";
 import { LoginForm } from "./login-form";
 
 const SessionContext = createContext<{
@@ -43,18 +44,16 @@ export function SessionBoundary({ children }: { children: ReactNode }) {
   }, [queries]);
   const check = useCallback(async (active = false) => {
     try {
-      const response = await fetch(
-        `/api/access/${active ? "activity" : "session"}`,
-        active ? { method: "POST" } : {},
-      );
-      if (response.status === 401) {
+      const { data, error } = active
+        ? await authClient.getSession()
+        : await authClient.getSession({ query: { disableRefresh: true } });
+      if (error) return;
+      if (!data) {
         setStatus("expired");
         return;
       }
-      if (response.ok) {
-        setStatus((current) => (current === "checking" ? "active" : current));
-        setConnectionError("");
-      }
+      setStatus((current) => (current === "checking" ? "active" : current));
+      setConnectionError("");
     } catch {
       /* Connectivity does not imply expiry or discard in-memory work. */
     }
@@ -136,8 +135,8 @@ export function SessionBoundary({ children }: { children: ReactNode }) {
     )
       return;
     try {
-      const response = await fetch("/api/access/logout", { method: "POST" });
-      if (!response.ok && response.status !== 401) throw new Error();
+      const { error } = await authClient.signOut();
+      if (error && error.status !== 401) throw new Error();
       channel.current?.postMessage("logout");
       leave();
     } catch {
