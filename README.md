@@ -110,3 +110,9 @@ Quadro, Horas, Faturas, Cadastros e Configurações herdam o guard de `/_app`. E
 Login, logout e observação da sessão continuam no SDK nativo do Better Auth. Após reautenticação, o ciclo de sessão limpa o cache e aguarda `router.invalidate({ sync: true })` antes de mostrar os formulários novamente.
 
 A seleção do menu usa `Link.activeOptions` e `activeProps`; `aria-current` é fornecido pelo TanStack. Entrada e saída usam `router.navigate` com `reloadDocument: true`, preservando o recarregamento e a substituição do histórico na saída. O polling de sessão usa `sessionOptions.refetchInterval: 60` do Better Auth. Ele pode consultar em segundo plano enquanto houver sessão, sempre com `disableRefresh: true`; somente os eventos de atividade em aba visível solicitam renovação.
+
+### Estado de interface com TanStack Store
+
+`@tanstack/react-store` gerencia status de acesso, erros de conexão, registro de formulários alterados, participação de outras abas e última atividade. Cada `SessionBoundary` cria seu store com `useCreateStore`; o contexto nativo compartilha a instância e as ações com os descendentes. Não existe store global entre requisições SSR. Seletores observam apenas os campos exibidos, e os conjuntos de alterações recebem atualizações imutáveis.
+
+Cada `LoginForm` também cria um store para erro e visibilidade da senha. Valor da senha e envio continuam no TanStack Form; dados do servidor ficam no React Query e a sessão autenticada continua sob responsabilidade do Better Auth. Os rascunhos dos próximos formulários permanecem nos respectivos formulários; o Store registra quais têm alterações não salvas.

@@ -54,3 +54,9 @@ O teste de navegador adicional verifica redirecionamento SSR de uma sessão aute
 Links ativos e `aria-current` são calculados pelo TanStack, com correspondência exata de caminho independente dos parâmetros da URL. As navegações de entrada e saída usam o roteador com recarregamento do documento; a saída substitui a entrada atual do histórico.
 
 O intervalo customizado foi removido. O Better Auth faz consultas passivas a cada 60 segundos, inclusive em segundo plano enquanto há sessão. Os testes conferem que a expiração não avança nessa consulta e que a seleção do menu permanece correta com parâmetros na URL.
+
+## TanStack Store
+
+O estado de interface da sessão e do login usa `@tanstack/react-store`, com instâncias criadas por montagem e seletores específicos. A coordenação de formulários e abas atualiza conjuntos de forma imutável. Recursos do navegador, como BroadcastChannel, permanecem em referências com descarte no efeito. TanStack Form mantém os valores e o envio; React Query mantém dados do servidor.
+
+A suíte de navegador verifica erro e visibilidade da senha, preservação de rascunhos na reentrada, confirmação entre abas e descarte da participação ao desmontar. Build, typecheck, lint, formatação, os 12 testes de integração e os 18 testes de navegador foram executados após a migração.

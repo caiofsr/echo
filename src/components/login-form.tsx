@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCreateStore, useSelector } from "@tanstack/react-store";
 import { useForm } from "@tanstack/react-form";
 import { authClient, ECHO_LOGIN_EMAIL } from "../lib/auth-client";
 import { EchoIcon } from "./icons";
@@ -12,8 +12,11 @@ export function LoginForm({
   onSuccess: () => void | Promise<void>;
   expired?: boolean;
 }) {
-  const [error, setError] = useState("");
-  const [visible, setVisible] = useState(false);
+  const store = useCreateStore({ error: "", visible: false });
+  const error = useSelector(store, (state) => state.error);
+  const visible = useSelector(store, (state) => state.visible);
+  const setError = (error: string) =>
+    store.setState((state) => ({ ...state, error }));
   const form = useForm({
     defaultValues: { password: "" },
     onSubmit: async ({ value }) => {
@@ -89,7 +92,12 @@ export function LoginForm({
                   className="password-toggle"
                   aria-label={visible ? "Ocultar senha" : "Mostrar senha"}
                   aria-pressed={visible}
-                  onClick={() => setVisible(!visible)}
+                  onClick={() =>
+                    store.setState((state) => ({
+                      ...state,
+                      visible: !state.visible,
+                    }))
+                  }
                 >
                   <EchoIcon name={visible ? "hide" : "show"} size={18} />
                 </Button>
