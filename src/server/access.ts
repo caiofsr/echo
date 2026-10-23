@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { APIError, createAuthMiddleware } from "better-auth/api";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { hashPassword } from "better-auth/crypto";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
@@ -45,6 +46,18 @@ export function createAccess(
         "/sign-out": false,
       },
     },
+    hooks: {
+      before: createAuthMiddleware(async (ctx) => {
+        if (
+          ctx.path === "/sign-in/email" &&
+          ctx.body?.email !== undefined &&
+          ctx.body.email !== EMAIL
+        )
+          throw new APIError("UNAUTHORIZED", {
+            message: "Senha incorreta. Confira e tente novamente.",
+          });
+      }),
+    },
     plugins: [tanstackStartCookies()],
   });
 
@@ -86,34 +99,6 @@ export function createAccess(
 
     let owner: { version: string } | undefined;
     if (signIn) {
-      let body: unknown;
-      try {
-        if (
-          (request.headers.get("content-type") ?? "").split(";")[0] !==
-          "application/json"
-        )
-          return json({ message: "Envie a senha em JSON." }, 415);
-        const text = await request.clone().text();
-        if (text.length > 8192)
-          return json({ message: "Senha inválida." }, 400);
-        body = JSON.parse(text);
-      } catch {
-        return json({ message: "Informe sua senha." }, 400);
-      }
-      if (
-        typeof body !== "object" ||
-        body === null ||
-        !("email" in body) ||
-        body.email !== EMAIL ||
-        !("password" in body) ||
-        typeof body.password !== "string" ||
-        !body.password ||
-        body.password.length > 1024
-      )
-        return json(
-          { message: "Senha incorreta. Confira e tente novamente." },
-          401,
-        );
       [owner] = await db
         .select({ version: schema.user.credentialVersion })
         .from(schema.user)

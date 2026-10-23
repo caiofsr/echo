@@ -146,3 +146,23 @@ test("o limite nativo mantém cinco tentativas mesmo com requisições concorren
     3,
   );
 });
+
+test("o handler nativo valida o login e o hook restringe a identidade pessoal", async () => {
+  const app = await createAccessFixture();
+  fixtures.push(app);
+  expect((await app.request("login", { password: 123 })).status).toBe(400);
+  const oversized = await app.request("login", { password: "a".repeat(1025) });
+  expect(oversized.status).toBe(400);
+  expect((await oversized.json()).code).toBe("PASSWORD_TOO_LONG");
+  expect(
+    (
+      await app.request("login", {
+        email: "other@example.com",
+        password: app.password,
+      })
+    ).status,
+  ).toBe(401);
+  expect((await app.request("login", { password: app.password })).status).toBe(
+    200,
+  );
+});

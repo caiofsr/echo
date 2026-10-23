@@ -7,6 +7,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { getGlobalBroadcastChannel } from "better-auth/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "@tanstack/react-router";
 import { authClient } from "../lib/auth-client";
@@ -29,6 +30,8 @@ export function SessionBoundary({ children }: { children: ReactNode }) {
     "active",
   );
   const [connectionError, setConnectionError] = useState("");
+  const session = authClient.useSession();
+  const { refetch } = session;
   const dirtyForms = useRef(new Set<string>());
   const tabId = useRef("");
   const otherDirtyTabs = useRef(new Set<string>());
@@ -42,31 +45,32 @@ export function SessionBoundary({ children }: { children: ReactNode }) {
     setStatus("checking");
     window.location.replace("/entrar");
   }, [queries]);
-  const check = useCallback(async (active = false) => {
-    try {
-      const { data, error } = active
-        ? await authClient.getSession()
-        : await authClient.getSession({ query: { disableRefresh: true } });
-      if (error) return;
-      if (!data) {
-        setStatus("expired");
-        return;
-      }
+  const check = useCallback(
+    async (active = false) => {
+      await refetch({ query: { disableRefresh: !active } });
+    },
+    [refetch],
+  );
+  useEffect(() => {
+    if (session.isPending || session.isRefetching || session.error) return;
+    if (!session.data) setStatus("expired");
+    else {
       setStatus((current) => (current === "checking" ? "active" : current));
       setConnectionError("");
-    } catch {
-      /* Connectivity does not imply expiry or discard in-memory work. */
     }
-  }, []);
+  }, [session.data, session.isPending, session.isRefetching, session.error]);
+  useEffect(
+    () =>
+      getGlobalBroadcastChannel().subscribe((message) => {
+        if (message.data?.trigger === "signout") leave();
+      }),
+    [leave],
+  );
   useEffect(() => {
     channel.current = new BroadcastChannel("echo-session");
     tabId.current ||= crypto.randomUUID();
     channel.current.onmessage = (event) => {
       const message = event.data;
-      if (message === "logout") {
-        leave();
-        return;
-      }
       if (message?.type === "dirty" && typeof message.tab === "string") {
         if (message.value) otherDirtyTabs.current.add(message.tab);
         else otherDirtyTabs.current.delete(message.tab);
@@ -125,7 +129,7 @@ export function SessionBoundary({ children }: { children: ReactNode }) {
       window.removeEventListener("pageshow", pageShow);
       clearInterval(interval);
     };
-  }, [check, leave, status]);
+  }, [check, status]);
   async function logout() {
     if (
       (dirtyForms.current.size > 0 || otherDirtyTabs.current.size > 0) &&
@@ -137,7 +141,6 @@ export function SessionBoundary({ children }: { children: ReactNode }) {
     try {
       const { error } = await authClient.signOut();
       if (error && error.status !== 401) throw new Error();
-      channel.current?.postMessage("logout");
       leave();
     } catch {
       setConnectionError(

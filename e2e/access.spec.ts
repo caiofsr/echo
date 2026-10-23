@@ -99,3 +99,56 @@ test("limite nativo informa a espera em português", async ({
     /Muitas tentativas\. Tente novamente em \d+ segundos\./,
   );
 });
+
+test("o handler nativo interpreta JSON e formulário sem expor outra identidade", async ({
+  request,
+}) => {
+  const headers = { Origin: "http://localhost:4318" };
+  const malformed = await request.post("/api/auth/sign-in/email", {
+    headers: { ...headers, "Content-Type": "application/json" },
+    data: "{",
+  });
+  expect(malformed.status()).toBe(400);
+  const invalid = await request.post("/api/auth/sign-in/email", {
+    headers,
+    data: { email: "owner@echo.invalid", password: 123 },
+  });
+  expect(invalid.status()).toBe(400);
+  const otherIdentity = await request.post("/api/auth/sign-in/email", {
+    headers,
+    form: { email: "other@example.com", password },
+  });
+  expect(otherIdentity.status()).toBe(401);
+  const login = await request.post("/api/auth/sign-in/email", {
+    headers,
+    form: { email: "owner@echo.invalid", password },
+  });
+  expect(login.status()).toBe(200);
+});
+
+test("observação nativa e consultas periódicas não renovam; atividade visível renova", async ({
+  page,
+}) => {
+  await page.clock.install();
+  await page.goto("/horas");
+  await page.getByLabel("Senha pessoal").fill(password);
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Horas");
+  const sessionRead = (refreshDisabled: boolean) =>
+    page.waitForRequest((request) => {
+      const url = new URL(request.url());
+      return (
+        url.pathname === "/api/auth/get-session" &&
+        url.searchParams.get("disableRefresh") === String(refreshDisabled)
+      );
+    });
+  const reconnect = sessionRead(true);
+  await page.evaluate(() => window.dispatchEvent(new Event("online")));
+  await reconnect;
+  const passive = sessionRead(true);
+  await page.clock.fastForward(61_000);
+  await passive;
+  const active = sessionRead(false);
+  await page.getByRole("heading", { level: 1 }).click();
+  await active;
+});
