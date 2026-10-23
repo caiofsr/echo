@@ -19,16 +19,25 @@ export function LoginForm({
     onSubmit: async ({ value }) => {
       setError("");
       try {
-        const { error } = await authClient.signIn.email({
-          email: ECHO_LOGIN_EMAIL,
-          password: value.password,
-          rememberMe: true,
-        });
+        let retryAfter: string | null = null;
+        const { error } = await authClient.signIn.email(
+          {
+            email: ECHO_LOGIN_EMAIL,
+            password: value.password,
+            rememberMe: true,
+          },
+          {
+            onError: ({ response }) => {
+              retryAfter = response.headers.get("X-Retry-After");
+            },
+          },
+        );
         if (error) {
           setError(
             error.status === 429
-              ? (error.message ??
-                  "Muitas tentativas. Tente novamente em breve.")
+              ? retryAfter
+                ? `Muitas tentativas. Tente novamente em ${retryAfter} segundos.`
+                : "Muitas tentativas. Tente novamente em breve."
               : "Senha incorreta. Confira e tente novamente.",
           );
           return;

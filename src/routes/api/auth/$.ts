@@ -7,7 +7,7 @@ async function handle({ request }: { request: Request }) {
   const address =
     process.env.NODE_ENV === "production"
       ? (request.headers.get("x-echo-client-ip") ?? "unknown")
-      : "development";
+      : "127.0.0.1";
   return getAccess().handleAuth(request, address);
 }
 

@@ -9,7 +9,6 @@ import * as schema from "./schema";
 const OWNER = "echo-owner";
 const EMAIL = "owner@echo.invalid";
 const SESSION_SECONDS = 30 * 24 * 60 * 60;
-const ATTEMPT_WINDOW = 60_000;
 
 export function createAccess(
   db: Database,
@@ -31,9 +30,21 @@ export function createAccess(
       updateAge: 0,
       cookieCache: { enabled: false },
     },
-    advanced: { useSecureCookies: options.secureCookies, cookiePrefix: "echo" },
+    advanced: {
+      useSecureCookies: options.secureCookies,
+      cookiePrefix: "echo",
+      ipAddress: { ipAddressHeaders: ["x-echo-client-ip"] },
+    },
     trustedOrigins: [origin],
-    rateLimit: { enabled: false },
+    rateLimit: {
+      enabled: true,
+      storage: "database",
+      customRules: {
+        "/sign-in/email": { window: 60, max: 5 },
+        "/get-session": false,
+        "/sign-out": false,
+      },
+    },
     plugins: [tanstackStartCookies()],
   });
 
@@ -75,32 +86,6 @@ export function createAccess(
 
     let owner: { version: string } | undefined;
     if (signIn) {
-      const now = Date.now();
-      const [attempt] = await db
-        .insert(schema.loginAttempt)
-        .values({ origin: clientAddress, startedAt: now, count: 1 })
-        .onConflictDoUpdate({
-          target: schema.loginAttempt.origin,
-          set: {
-            startedAt: sql`CASE WHEN ${schema.loginAttempt.startedAt} <= ${now - ATTEMPT_WINDOW} THEN ${now} ELSE ${schema.loginAttempt.startedAt} END`,
-            count: sql`CASE WHEN ${schema.loginAttempt.startedAt} <= ${now - ATTEMPT_WINDOW} THEN 1 ELSE ${schema.loginAttempt.count} + 1 END`,
-          },
-        })
-        .returning();
-      if (attempt.count > 5) {
-        const retryAfter = Math.max(
-          1,
-          Math.ceil((attempt.startedAt + ATTEMPT_WINDOW - now) / 1000),
-        );
-        return json(
-          {
-            message: `Muitas tentativas. Tente novamente em ${retryAfter} segundos.`,
-            retryAfter,
-          },
-          429,
-          { "Retry-After": String(retryAfter) },
-        );
-      }
       let body: unknown;
       try {
         if (
@@ -140,6 +125,7 @@ export function createAccess(
         );
     }
 
+    request.headers.set("x-echo-client-ip", clientAddress);
     const response = await auth.handler(request);
     if (signIn && response.ok && owner) {
       const { token } = await response.clone().json();
@@ -166,9 +152,6 @@ export function createAccess(
           401,
         );
       }
-      await db
-        .delete(schema.loginAttempt)
-        .where(eq(schema.loginAttempt.origin, clientAddress));
     }
     const headers = new Headers(response.headers);
     headers.set("Cache-Control", "no-store");

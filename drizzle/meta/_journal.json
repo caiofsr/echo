@@ -15,6 +15,13 @@
       "when": 1792678552957,
       "tag": "0001_magenta_impossible_man",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1792715852650,
+      "tag": "0002_native_rate_limit",
+      "breakpoints": true
     }
   ]
 }

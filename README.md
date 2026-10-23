@@ -62,7 +62,7 @@ Antes da primeira inicialização, aplique `bun run db:migrate` no ambiente de d
 
 O proxy deve terminar HTTPS e encaminhar à porta interna da aplicação. Cookies de produção usam Secure, HttpOnly e SameSite=Lax. Operações de escrita verificam a origem exata. Páginas e respostas de sessão usam `Cache-Control: no-store`; não habilite cache de proxy para conteúdo dinâmico.
 
-O servidor substitui qualquer `x-echo-client-ip` recebido pelo endereço real da conexão. Cabeçalhos de IP encaminhados pelo proxy não são confiados automaticamente. Atrás do Dokploy, conexões do mesmo proxy compartilham o limite de cinco tentativas por minuto, suficiente para este aplicativo pessoal. A espera é temporária e persistida no banco, sem bloqueio permanente.
+O servidor substitui qualquer `x-echo-client-ip` recebido pelo endereço real da conexão. Cabeçalhos de IP encaminhados pelo proxy não são confiados automaticamente. Atrás do Dokploy, conexões do mesmo proxy compartilham o limite de cinco tentativas por minuto, suficiente para este aplicativo pessoal. O rate limiter nativo do Better Auth usa `storage: "database"` e a tabela SQLite `rate_limit`. A espera é temporária e persistida no banco, sem bloqueio permanente; consultas de sessão e saída não consomem o limite de entrada. A interface traduz a resposta 429 usando `X-Retry-After`. A migração `0002_native_rate_limit` cria essa tabela e remove a antiga `login_attempt`; execute `bun run db:migrate` antes de iniciar a versão atualizada.
 
 Para reproduzir a validação local da imagem, com Docker e um BuildKit disponíveis:
 

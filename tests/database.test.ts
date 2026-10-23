@@ -7,7 +7,7 @@ import {
   migrateDatabase,
   openDatabase,
 } from "../src/server/database";
-import { loginAttempt } from "../src/server/schema";
+import { rateLimit } from "../src/server/schema";
 
 test("uma falha reverte todas as escritas na transação SQLite nativa", async () => {
   const dir = await mkdtemp(join(tmpdir(), "echo-transaction-"));
@@ -16,15 +16,21 @@ test("uma falha reverte todas as escritas na transação SQLite nativa", async (
     await migrateDatabase(database.db);
     await expect(
       atomicWrites(database.db, (tx) => [
-        tx
-          .insert(loginAttempt)
-          .values({ origin: "same-origin", startedAt: 1, count: 1 }),
-        tx
-          .insert(loginAttempt)
-          .values({ origin: "same-origin", startedAt: 2, count: 2 }),
+        tx.insert(rateLimit).values({
+          id: "same-id",
+          key: "same-origin",
+          lastRequest: 1,
+          count: 1,
+        }),
+        tx.insert(rateLimit).values({
+          id: "same-id",
+          key: "same-origin",
+          lastRequest: 2,
+          count: 2,
+        }),
       ]),
     ).rejects.toThrow();
-    expect(await database.db.select().from(loginAttempt)).toEqual([]);
+    expect(await database.db.select().from(rateLimit)).toEqual([]);
   } finally {
     database.close();
     await rm(dir, { recursive: true, force: true });

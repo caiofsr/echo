@@ -52,8 +52,9 @@ export const verification = sqliteTable("verification", {
   createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp_ms" }).notNull(),
 });
-export const loginAttempt = sqliteTable("login_attempt", {
-  origin: text("origin").primaryKey(),
-  startedAt: integer("started_at").notNull(),
+export const rateLimit = sqliteTable("rate_limit", {
+  id: text("id").primaryKey(),
+  key: text("key").notNull().unique(),
   count: integer("count").notNull(),
+  lastRequest: integer("last_request").notNull(),
 });

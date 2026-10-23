@@ -76,7 +76,7 @@ test("tentativas são limitadas por origem, persistem após reinício e liberam 
   await app.restart();
   const blocked = await app.request("login", { password: app.password });
   expect(blocked.status).toBe(429);
-  expect(blocked.headers.get("retry-after")).toBe("60");
+  expect(blocked.headers.get("x-retry-after")).toBe("60");
   expect(
     (
       await app.request(
@@ -129,4 +129,20 @@ test("entrada concorrente com redefinição nunca mantém acesso pela credencial
       ).toBe(401);
     } else expect(response.status).toBe(401);
   }
+});
+
+test("o limite nativo mantém cinco tentativas mesmo com requisições concorrentes", async () => {
+  const app = await createAccessFixture();
+  fixtures.push(app);
+  const responses = await Promise.all(
+    Array.from({ length: 8 }, () =>
+      app.request("login", { password: "errada" }),
+    ),
+  );
+  expect(responses.filter((response) => response.status === 401)).toHaveLength(
+    5,
+  );
+  expect(responses.filter((response) => response.status === 429)).toHaveLength(
+    3,
+  );
 });

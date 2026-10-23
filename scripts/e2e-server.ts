@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { openDatabase, migrateDatabase } from "../src/server/database";
 import { createAccess } from "../src/server/access";
+import { rateLimit } from "../src/server/schema";
 const dir = await mkdtemp(join(tmpdir(), "echo-browser-"));
 process.env.DATABASE_URL = `file:${join(dir, "browser.db")}`;
 const database = openDatabase(process.env.DATABASE_URL);
@@ -17,10 +18,14 @@ const control = process.env.ECHO_TEST_CONTROL_PORT
       hostname: "127.0.0.1",
       port: Number(process.env.ECHO_TEST_CONTROL_PORT),
       async fetch(request) {
-        if (
-          request.method !== "POST" ||
-          new URL(request.url).pathname !== "/reset-password"
-        )
+        if (request.method !== "POST")
+          return new Response(null, { status: 404 });
+        const path = new URL(request.url).pathname;
+        if (path === "/reset-rate-limit") {
+          database.db.delete(rateLimit).run();
+          return new Response(null, { status: 204 });
+        }
+        if (path !== "/reset-password")
           return new Response(null, { status: 404 });
         await createAccess(database.db, {
           baseURL: process.env.BETTER_AUTH_URL!,

@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
 const password = "senha pessoal de teste no navegador";
+test.beforeEach(async ({ request }) => {
+  const response = await request.post("http://127.0.0.1:4319/reset-rate-limit");
+  expect(response.status()).toBe(204);
+});
 test("acesso protegido, destino interno, sessão após recarga e saída em todas as abas", async ({
   page,
   context,
@@ -75,4 +79,23 @@ test("sessão revogada pede reentrada na mesma página sem recarregar", async ({
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Horas");
   await expect(page).toHaveURL("/horas");
+});
+
+test("limite nativo informa a espera em português", async ({
+  page,
+  request,
+}) => {
+  for (let i = 0; i < 5; i++) {
+    const response = await request.post("/api/auth/sign-in/email", {
+      headers: { Origin: "http://localhost:4318" },
+      data: { email: "owner@echo.invalid", password: "errada" },
+    });
+    expect(response.status()).toBe(401);
+  }
+  await page.goto("/entrar");
+  await page.getByLabel("Senha pessoal").fill(password);
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page.getByRole("alert")).toHaveText(
+    /Muitas tentativas\. Tente novamente em \d+ segundos\./,
+  );
 });
