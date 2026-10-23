@@ -22,6 +22,9 @@ export function LoginForm({
         .email(
           { email: ECHO_LOGIN_EMAIL, password: value.password },
           {
+            // A fresh login reloads the document; only reentry needs to notify
+            // the session observers in the current page.
+            disableSignal: !expired,
             onError: ({ response }) => {
               retryAfter = response.headers.get("X-Retry-After");
             },

@@ -111,7 +111,7 @@ Quadro, Horas, Faturas, Cadastros e Configurações herdam o guard de `/_app`. E
 
 Login, logout e observação da sessão continuam no SDK nativo do Better Auth. Após reautenticação, o ciclo de sessão limpa o cache e aguarda `router.invalidate({ sync: true })` antes de mostrar os formulários novamente.
 
-A seleção do menu usa `Link.activeOptions` e `activeProps`; `aria-current` é fornecido pelo TanStack. Entrada e saída usam `router.navigate` com `reloadDocument: true`, preservando o recarregamento e a substituição do histórico na saída. O polling de sessão usa `sessionOptions.refetchInterval: 60` do Better Auth. Ele pode consultar em segundo plano enquanto houver sessão, sempre com `disableRefresh: true`; somente os eventos de atividade em aba visível solicitam renovação.
+A seleção do menu usa `Link.activeOptions` e `activeProps`; `aria-current` é fornecido pelo TanStack. Entrada e saída usam `router.navigate` com `reloadDocument: true`, preservando o recarregamento e a substituição do histórico na saída. O login inicial passa `disableSignal: true` ao Better Auth para não iniciar uma consulta na página que será encerrada; a reentrada mantém a notificação nativa. Montar a tela apenas observa a sessão. A renovação depende de atividade real e aguarda a conclusão de consultas já em andamento. O polling de sessão usa `sessionOptions.refetchInterval: 60` do Better Auth. Ele pode consultar em segundo plano enquanto houver sessão, sempre com `disableRefresh: true`; somente os eventos de atividade em aba visível solicitam renovação.
 
 ### Estado de interface com TanStack Store
 

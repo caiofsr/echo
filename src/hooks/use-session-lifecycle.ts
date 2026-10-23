@@ -67,6 +67,8 @@ export function useSessionLifecycle() {
     if (
       document.visibilityState !== "visible" ||
       status !== "active" ||
+      isPending ||
+      isRefetching ||
       Date.now() - store.state.lastActivity < 60_000
     )
       return;
@@ -129,7 +131,6 @@ export function useSessionLifecycle() {
     document.addEventListener("visibilitychange", visibility);
     window.addEventListener("pagehide", pageHide);
     window.addEventListener("pageshow", pageShow);
-    onActivity();
     return () => {
       pageHide();
       unsubscribe();

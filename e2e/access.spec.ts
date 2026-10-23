@@ -149,13 +149,12 @@ test("observação nativa e consultas periódicas não renovam; atividade visív
     const url = new URL(response.url());
     return (
       url.pathname === "/api/auth/get-session" &&
-      !url.searchParams.has("disableRefresh")
+      url.searchParams.get("disableRefresh") === "true"
     );
   });
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Horas");
-  // The initial activity read must finish before reconnect can refetch;
-  // otherwise Better Auth may cancel the reconnect request in favor of it.
+  // Mount only observes. Wait for the native read before testing reconnect.
   await (await initialized).finished();
   const sessionRead = (refreshDisabled: boolean) =>
     page.waitForRequest((request) => {
@@ -327,4 +326,43 @@ test("beforeLoad usa a sessão atual no SSR e na navegação após revogação",
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page).toHaveURL("/directory");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Cadastros");
+});
+
+test("login não interrompe consultas de sessão ao abrir o destino", async ({
+  page,
+}) => {
+  await page.goto("/login?destination=%2Fhours");
+  await page.getByLabel("Senha pessoal").fill(password);
+  const documentNavigations: string[] = [];
+  const failedSessionRequests: string[] = [];
+  const sessionQueries: string[] = [];
+  page.on("request", (request) => {
+    if (request.isNavigationRequest() && request.frame() === page.mainFrame())
+      documentNavigations.push(request.url());
+    const url = new URL(request.url());
+    if (url.pathname === "/api/auth/get-session")
+      sessionQueries.push(url.search);
+  });
+  page.on("requestfailed", (request) => {
+    if (new URL(request.url()).pathname === "/api/auth/get-session")
+      failedSessionRequests.push(request.failure()?.errorText ?? "failed");
+  });
+  const sessionResponse = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === "/api/auth/get-session" &&
+      response.ok(),
+  );
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Horas");
+  expect(await (await sessionResponse).finished()).toBeNull();
+  expect(documentNavigations).toEqual(["http://localhost:4318/hours"]);
+  expect(failedSessionRequests).toEqual([]);
+  expect(sessionQueries.length).toBeGreaterThan(0);
+  expect(
+    sessionQueries.every(
+      (query) => new URLSearchParams(query).get("disableRefresh") === "true",
+    ),
+  ).toBe(true);
+  await page.reload();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Horas");
 });

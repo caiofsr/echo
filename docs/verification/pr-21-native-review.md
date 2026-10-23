@@ -31,3 +31,13 @@ O CLI oficial inicializou `components.json` com `base-nova` e gerou Button e Inp
 A comparação visual em 1440, 390 e 320 px preservou posição, dimensões, cores, tamanho de fonte e bordas dos controles do login e cabeçalho. As capturas foram produzidas com banco isolado de teste. O tema mantém a fonte do sistema, a paleta do Echo, os SVGs próprios e os textos em português. Radix Slot e as dependências diretas de clsx e tailwind-merge foram removidos; o componente gerado usa `cn`.
 
 O detector visual apontou seis avisos consultivos em cores e tamanhos já presentes antes desta alteração. Eles foram mantidos para preservar o visual solicitado. Não houve achados novos nos componentes TSX.
+
+## Cancelamento de consulta no login
+
+O login retornava 200 e abria a aplicação, mas consultas concorrentes de sessão podiam ser interrompidas e registradas como `DOMException: AbortError` pelo servidor. A reprodução em Vite confirmou o erro com banco isolado.
+
+O login inicial agora usa a opção nativa `disableSignal` do Better Auth, pois a página será recarregada. A reentrada preserva a notificação de sessão. Montar a fronteira não solicita renovação: a leitura inicial pertence ao Better Auth, e somente atividade real em aba visível pode renovar. Eventos de atividade não iniciam outra consulta enquanto a leitura nativa estiver pendente.
+
+A suíte de navegador verifica destino interno, leitura inicial passiva, conclusão da resposta e ausência de consultas abortadas durante a entrada. Os testes existentes continuam cobrindo renovação por atividade, polling passivo, recarga e reentrada após revogação. A navegação cliente sem recarga foi descartada porque mantinha estado de sessão antigo após revogação.
+
+O teste de regressão falhou com `net::ERR_ABORTED` antes da correção. Após a correção, os 20 testes de navegador passaram. A reprodução em desenvolvimento terminou sem ocorrências de `AbortError`. Cancelamentos deliberados por recarga ou encerramento de uma página ainda podem ser registrados pelo framework; nenhum filtro global de erros foi adicionado.

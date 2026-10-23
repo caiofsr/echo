@@ -51,7 +51,7 @@ O teste de navegador adicional verifica redirecionamento SSR de uma sessão aute
 
 ## Simplificações nativas de navegação e observação
 
-Links ativos e `aria-current` são calculados pelo TanStack, com correspondência exata de caminho independente dos parâmetros da URL. As navegações de entrada e saída usam o roteador com recarregamento do documento; a saída substitui a entrada atual do histórico.
+Links ativos e `aria-current` são calculados pelo TanStack, com correspondência exata de caminho independente dos parâmetros da URL. As navegações de entrada e saída usam o roteador com recarregamento do documento; a saída substitui a entrada atual do histórico. O login inicial usa `disableSignal` do Better Auth para evitar uma consulta que seria cancelada pela recarga.
 
 O intervalo customizado foi removido. O Better Auth faz consultas passivas a cada 60 segundos, inclusive em segundo plano enquanto há sessão. Os testes conferem que a expiração não avança nessa consulta e que a seleção do menu permanece correta com parâmetros na URL.
 
