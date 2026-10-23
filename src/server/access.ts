@@ -71,7 +71,7 @@ export function createAccess(
     response.headers.set("Cache-Control", "no-store");
     return response;
   }
-  async function handleAuth(request: Request, clientAddress: string) {
+  async function handleAuth(request: Request) {
     const url = new URL(request.url);
     const method = request.method;
     const signIn =
@@ -125,7 +125,6 @@ export function createAccess(
         );
     }
 
-    request.headers.set("x-echo-client-ip", clientAddress);
     const response = await auth.handler(request);
     if (signIn && response.ok && owner) {
       const { token } = await response.clone().json();

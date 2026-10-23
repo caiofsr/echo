@@ -50,6 +50,7 @@ export async function createAccessFixture(secureCookies = false) {
             method,
             headers: {
               origin,
+              "x-echo-client-ip": address,
               "content-type": "application/json",
               ...(cookie ? { cookie } : {}),
             },
@@ -57,7 +58,6 @@ export async function createAccessFixture(secureCookies = false) {
               ? {}
               : { body: JSON.stringify(requestBody) }),
           }),
-          address,
         )
         .then(async (response) => {
           if (action !== "session" && action !== "activity") return response;
