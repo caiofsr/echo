@@ -78,3 +78,11 @@ Removidos todos os hooks customizados e o arquivo `personal-credentials.ts`. A A
 A migração `0003_remove_credential_revision` remove os dois campos de revisão. Um teste aplica as migrações anteriores, cria credencial e sessão, aplica a migração nova e verifica preservação dos dados e leitura da sessão. O teste anterior de rollback do helper removido foi substituído por essa cobertura de migração. Os testes de revisão e corrida de login foram removidos conforme a nova decisão.
 
 O adapter mantém transações assíncronas desativadas, compatível com `bun:sqlite`; a aplicação segue o comportamento nativo de revogar antes de gravar a senha e não promete atomicidade adicional. A revogação não garante impedir uma sessão criada posteriormente por um login concorrente já em andamento.
+
+## Instância de autenticação e pasta do banco
+
+`src/lib/auth.ts` exporta a instância diretamente. Rota e server function importam `auth`; `getAuth`, `src/server/runtime.ts` e a factory de acesso de produção foram removidos. `src/lib/auth-options.ts` compartilha opções declarativas com as instâncias isoladas dos testes. O comando administrativo recebe a instância e chama as APIs nativas de senha.
+
+Conexão, abertura/migração e tabelas ficam em `src/db`. O `drizzle.config.ts`, comandos e testes usam os novos caminhos. O preload de testes usa uma conexão em memória para impedir que imports de SSR abram o banco local da aplicação.
+
+O CLI oficial gerou um schema temporário usando `src/lib/auth.ts`, sem sobrescrever as tabelas do projeto. O script `auth:generate` usa essa configuração e direciona a saída para `src/db/schema.ts`. Os testes de integração, navegador, CLI administrativo e os checks foram reexecutados após a reorganização.

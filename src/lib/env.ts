@@ -1,7 +1,4 @@
 import { env } from "node:process";
-import { mkdirSync } from "node:fs";
-import { openDatabase } from "./database";
-import { createAccess } from "./access";
 
 export function readEnvironment() {
   const production = env.NODE_ENV === "production";
@@ -13,21 +10,9 @@ export function readEnvironment() {
   const parsed = new URL(baseURL);
   if (production && parsed.protocol !== "https:")
     throw new Error("BETTER_AUTH_URL deve usar HTTPS em produção.");
-  const url = env.DATABASE_URL ?? "file:.data/echo.db";
-  if (url.startsWith("file:")) mkdirSync(".data", { recursive: true });
   return {
-    url,
     baseURL,
     secret,
     secureCookies: production,
   };
-}
-let auth: ReturnType<typeof createAccess>["auth"] | undefined;
-export function getAuth() {
-  if (!auth) {
-    const env = readEnvironment();
-    const { db } = openDatabase(env.url);
-    auth = createAccess(db, env).auth;
-  }
-  return auth;
 }

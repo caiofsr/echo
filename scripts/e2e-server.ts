@@ -1,9 +1,9 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { openDatabase, migrateDatabase } from "../src/server/database";
-import { createAccess } from "../src/server/access";
-import { rateLimit } from "../src/server/schema";
+import { openDatabase, migrateDatabase } from "../src/db/connection";
+import { createAccess } from "../tests/helpers/create-access";
+import { rateLimit } from "../src/db/schema";
 
 const dir = await mkdtemp(join(tmpdir(), "echo-browser-"));
 process.env.DATABASE_URL = `file:${join(dir, "browser.db")}`;

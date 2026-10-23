@@ -1,7 +1,7 @@
 import { isAPIError } from "better-auth/api";
-import { openDatabase } from "../src/server/database";
-import { createAccess } from "../src/server/access";
-import { readEnvironment } from "../src/server/runtime";
+import { closeDatabase } from "../src/db";
+import { auth } from "../src/lib/auth";
+import { setPassword } from "../src/server/password";
 
 async function readPassword() {
   const stdin = process.stdin;
@@ -57,10 +57,8 @@ async function readPassword() {
 }
 
 const password = await readPassword();
-const env = readEnvironment();
-const database = openDatabase(env.url);
 try {
-  await createAccess(database.db, env).setPassword(password);
+  await setPassword(auth, password);
   console.log("Senha definida. Todas as sessões anteriores foram encerradas.");
 } catch (error) {
   const code = isAPIError(error) ? error.body?.code : undefined;
@@ -75,5 +73,5 @@ try {
   );
   process.exitCode = 1;
 } finally {
-  database.close();
+  closeDatabase();
 }

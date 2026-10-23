@@ -1,11 +1,9 @@
-import { openDatabase, migrateDatabase } from "../src/server/database";
-import { readEnvironment } from "../src/server/runtime";
+import { db, closeDatabase } from "../src/db";
+import { migrateDatabase } from "../src/db/connection";
 
-const env = readEnvironment();
-const database = openDatabase(env.url);
 try {
-  await migrateDatabase(database.db);
+  await migrateDatabase(db);
   console.log("Migrações aplicadas.");
 } finally {
-  database.close();
+  closeDatabase();
 }

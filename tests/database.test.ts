@@ -11,9 +11,9 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { sql } from "drizzle-orm";
 import { migrate } from "drizzle-orm/bun-sqlite/migrator";
-import { migrateDatabase, openDatabase } from "../src/server/database";
-import { createAccess } from "../src/server/access";
-import * as schema from "../src/server/schema";
+import { migrateDatabase, openDatabase } from "../src/db/connection";
+import { createAccess } from "./helpers/create-access";
+import * as schema from "../src/db/schema";
 
 test("remover a revisão preserva credencial e sessão de um banco existente", async () => {
   const dir = await mkdtemp(join(tmpdir(), "echo-migration-"));

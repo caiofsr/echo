@@ -3,13 +3,13 @@ import {
   getRequestHeaders,
   setResponseHeader,
 } from "@tanstack/react-start/server";
-import { getAuth } from "./runtime";
+import { auth } from "../lib/auth";
 
 export const hasSession = createServerFn({ method: "GET" }).handler(
   async () => {
     setResponseHeader("Cache-Control", "no-store");
     return Boolean(
-      await getAuth().api.getSession({
+      await auth.api.getSession({
         headers: getRequestHeaders(),
         query: { disableRefresh: true },
       }),

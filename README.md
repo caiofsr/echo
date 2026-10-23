@@ -128,3 +128,19 @@ Não há hooks customizados, wrapper HTTP ou reconstrução da resposta do Bette
 A validação de Origin usa a proteção nativa e a origem derivada de `baseURL`, incluindo o tratamento padrão de clientes sem Origin. `disableOriginCheck: false` mantém essa validação ativa também em testes. Não há lista customizada de endpoints nem cabeçalho global aplicado por hook; a leitura nativa de sessão fornece `Cache-Control: no-store`.
 
 A migração `0003_remove_credential_revision` remove as colunas de revisão de usuário e sessão, preservando as credenciais e sessões existentes. Execute `bun run db:migrate` antes de iniciar a versão atualizada.
+
+### Organização de autenticação e banco
+
+`src/lib/auth.ts` exporta a instância `auth` do Better Auth, usada diretamente pela rota HTTP e pela server function. Não há `getAuth` nem instância obtida por getter. As opções sem conexão ficam em `src/lib/auth-options.ts` para serem compartilhadas com os testes isolados. O comando administrativo usa `src/server/password.ts`.
+
+`src/db/index.ts` exporta a conexão da aplicação. `src/db/connection.ts` contém abertura e migração do SQLite, e `src/db/schema.ts` reúne as tabelas. O Drizzle aponta para esse schema. O comando de migração depende apenas de `DATABASE_URL`, sem exigir segredo de autenticação.
+
+Com o `.env` configurado, gere o schema e depois a migração:
+
+```sh
+bun run auth:generate
+bunx --bun drizzle-kit generate
+bun run db:migrate
+```
+
+`auth:generate` chama o CLI oficial com `--config ./src/lib/auth.ts --output ./src/db/schema.ts`. Revise o schema e o SQL antes de aplicar a migração.

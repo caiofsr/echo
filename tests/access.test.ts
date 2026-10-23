@@ -1,5 +1,5 @@
 import { afterEach, expect, test, setSystemTime } from "bun:test";
-import * as schema from "../src/server/schema";
+import * as schema from "../src/db/schema";
 import { createAccessFixture } from "./helpers/access";
 
 const email = "owner@echo.invalid";

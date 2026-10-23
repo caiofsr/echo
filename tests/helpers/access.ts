@@ -1,8 +1,8 @@
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { openDatabase, migrateDatabase } from "../../src/server/database";
-import { createAccess } from "../../src/server/access";
+import { openDatabase, migrateDatabase } from "../../src/db/connection";
+import { createAccess } from "./create-access";
 
 export async function createAccessFixture(secureCookies = false) {
   const dir = await mkdtemp(join(tmpdir(), "echo-test-"));

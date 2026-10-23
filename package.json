@@ -14,7 +14,8 @@
     "test": "bun test tests",
     "test:e2e": "playwright test",
     "db:migrate": "bun scripts/migrate.ts",
-    "auth:password": "bun scripts/password.ts"
+    "auth:password": "bun scripts/password.ts",
+    "auth:generate": "bunx --bun auth@latest generate --config ./src/lib/auth.ts --output ./src/db/schema.ts"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.5.0",
