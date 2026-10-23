@@ -3,7 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import type { Database } from "../../src/db/connection";
 import * as schema from "../../src/db/schema";
 import { authOptions } from "../../src/lib/auth-options";
-import { setPassword } from "../../src/server/password";
+import { setPassword } from "../../scripts/password";
 
 export function createAccess(
   db: Database,

@@ -131,7 +131,7 @@ A migração `0003_remove_credential_revision` remove as colunas de revisão de 
 
 ### Organização de autenticação e banco
 
-`src/lib/auth.ts` exporta a instância `auth` do Better Auth, usada diretamente pela rota HTTP e pela server function. Não há `getAuth` nem instância obtida por getter. As opções sem conexão ficam em `src/lib/auth-options.ts` para serem compartilhadas com os testes isolados. O comando administrativo usa `src/server/password.ts`.
+`src/lib/auth.ts` exporta a instância `auth` do Better Auth, usada diretamente pela rota HTTP e pela server function. Não há `getAuth` nem instância obtida por getter. As opções sem conexão ficam em `src/lib/auth-options.ts` para serem compartilhadas com os testes isolados. A instância administrativa e o fluxo de senha ficam inteiramente em `scripts/password.ts`, executados como comando local.
 
 `src/db/index.ts` exporta a conexão da aplicação. `src/db/connection.ts` contém abertura e migração do SQLite, e `src/db/schema.ts` reúne as tabelas. O Drizzle aponta para esse schema. O comando de migração depende apenas de `DATABASE_URL`, sem exigir segredo de autenticação.
 

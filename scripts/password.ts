@@ -1,7 +1,36 @@
+import { betterAuth, type BetterAuthOptions } from "better-auth";
 import { isAPIError } from "better-auth/api";
-import { closeDatabase } from "../src/db";
-import { auth } from "../src/lib/auth";
-import { setPassword } from "../src/server/password";
+
+const PERSONAL_EMAIL = "owner@echo.invalid";
+
+export async function setPassword(
+  auth: { options: BetterAuthOptions },
+  password: string,
+) {
+  // This instance is used only by the local administrative command. Its
+  // bootstrap and reset APIs are never mounted as HTTP handlers.
+  let token: string | undefined;
+  const admin = betterAuth({
+    ...auth.options,
+    emailAndPassword: {
+      ...auth.options.emailAndPassword,
+      enabled: true,
+      disableSignUp: false,
+      autoSignIn: false,
+      sendResetPassword: async (reset) => {
+        token = reset.token;
+      },
+    },
+  });
+  await admin.api.requestPasswordReset({ body: { email: PERSONAL_EMAIL } });
+  if (token) {
+    await admin.api.resetPassword({ body: { token, newPassword: password } });
+  } else {
+    await admin.api.signUpEmail({
+      body: { email: PERSONAL_EMAIL, name: "Echo", password },
+    });
+  }
+}
 
 async function readPassword() {
   const stdin = process.stdin;
@@ -56,22 +85,30 @@ async function readPassword() {
   }
 }
 
-const password = await readPassword();
-try {
-  await setPassword(auth, password);
-  console.log("Senha definida. Todas as sessões anteriores foram encerradas.");
-} catch (error) {
-  const code = isAPIError(error) ? error.body?.code : undefined;
-  console.error(
-    code === "PASSWORD_TOO_SHORT"
-      ? "A senha deve ter pelo menos 15 caracteres."
-      : code === "PASSWORD_TOO_LONG"
-        ? "A senha deve ter no máximo 1024 caracteres."
-        : error instanceof Error
-          ? error.message
-          : "Não foi possível definir a senha.",
-  );
-  process.exitCode = 1;
-} finally {
-  closeDatabase();
+// Importing the administrative helper for tests must not initialize the app,
+// read stdin or open its database. Only direct CLI execution does that.
+if (import.meta.main) {
+  const { auth } = await import("../src/lib/auth");
+  const { closeDatabase } = await import("../src/db");
+  const password = await readPassword();
+  try {
+    await setPassword(auth, password);
+    console.log(
+      "Senha definida. Todas as sessões anteriores foram encerradas.",
+    );
+  } catch (error) {
+    const code = isAPIError(error) ? error.body?.code : undefined;
+    console.error(
+      code === "PASSWORD_TOO_SHORT"
+        ? "A senha deve ter pelo menos 15 caracteres."
+        : code === "PASSWORD_TOO_LONG"
+          ? "A senha deve ter no máximo 1024 caracteres."
+          : error instanceof Error
+            ? error.message
+            : "Não foi possível definir a senha.",
+    );
+    process.exitCode = 1;
+  } finally {
+    closeDatabase();
+  }
 }

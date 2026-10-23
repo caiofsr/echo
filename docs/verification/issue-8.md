@@ -81,7 +81,7 @@ O adapter mantém transações assíncronas desativadas, compatível com `bun:sq
 
 ## Instância de autenticação e pasta do banco
 
-`src/lib/auth.ts` exporta a instância diretamente. Rota e server function importam `auth`; `getAuth`, `src/server/runtime.ts` e a factory de acesso de produção foram removidos. `src/lib/auth-options.ts` compartilha opções declarativas com as instâncias isoladas dos testes. O comando administrativo recebe a instância e chama as APIs nativas de senha.
+`src/lib/auth.ts` exporta a instância diretamente. Rota e server function importam `auth`; `getAuth`, `src/server/runtime.ts` e a factory de acesso de produção foram removidos. `src/lib/auth-options.ts` compartilha opções declarativas com as instâncias isoladas dos testes. A lógica e a instância administrativa ficam em `scripts/password.ts`; não há módulo de senha em `src/server`. O script só inicializa a aplicação e lê stdin quando executado diretamente, e os testes importam a função administrativa sem executar o comando.
 
 Conexão, abertura/migração e tabelas ficam em `src/db`. O `drizzle.config.ts`, comandos e testes usam os novos caminhos. O preload de testes usa uma conexão em memória para impedir que imports de SSR abram o banco local da aplicação.
 
