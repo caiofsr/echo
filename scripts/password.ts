@@ -1,3 +1,4 @@
+import { isAPIError } from "better-auth/api";
 import { openDatabase } from "../src/server/database";
 import { createAccess } from "../src/server/access";
 import { readEnvironment } from "../src/server/runtime";
@@ -62,10 +63,15 @@ try {
   await createAccess(database.db, env).setPassword(password);
   console.log("Senha definida. Todas as sessões anteriores foram encerradas.");
 } catch (error) {
+  const code = isAPIError(error) ? error.body?.code : undefined;
   console.error(
-    error instanceof Error
-      ? error.message
-      : "Não foi possível definir a senha.",
+    code === "PASSWORD_TOO_SHORT"
+      ? "A senha deve ter pelo menos 15 caracteres."
+      : code === "PASSWORD_TOO_LONG"
+        ? "A senha deve ter no máximo 1024 caracteres."
+        : error instanceof Error
+          ? error.message
+          : "Não foi possível definir a senha.",
   );
   process.exitCode = 1;
 } finally {

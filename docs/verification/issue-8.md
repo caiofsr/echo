@@ -1,11 +1,11 @@
 # Issue #8: acesso e sessão
 
-Verificação local em 22/10/2026. Implementa [Entrar no Echo com sessão persistida](https://github.com/caiofsr/echo/issues/8), conforme o refinamento aprovado. Não houve publicação em produção.
+Verificação local atualizada em 23/10/2026. Implementa [Entrar no Echo com sessão persistida](https://github.com/caiofsr/echo/issues/8), conforme o refinamento aprovado. Não houve publicação em produção.
 
 ## Resultado
 
 - `bun run typecheck`: passou.
-- `bun test tests`: 13 testes passaram, com 67 verificações na execução final usando `bun:sqlite`. SQLite real isolado, migrações, persistência após reabrir banco, revogação, cookies, expiração/renovação, limite nativo persistente do Better Auth, concorrência e rollback de escritas atômicas.
+- `bun test tests`: 12 testes passaram, com 70 verificações na execução final usando `bun:sqlite`. SQLite real isolado, migrações, persistência após reabrir banco, revogação, cookies, expiração/renovação, limite nativo persistente do Better Auth, concorrência do rate limiter e migração de banco existente.
 - `bun run build`: passou, gerando cliente e servidor do TanStack Start.
 - `bun run test:e2e`: 18 testes passaram, em desktop e celular. Entrada inválida/válida, mostrar senha, destino interno, recarga, navegação, saída em múltiplas abas e reentrada após revogação. O limite nativo também foi conferido na interface, com a mensagem de espera em português.
 - Railpack 0.43.0: build local inicial da imagem `echo-issue-8`, runtime Bun 1.3.14. Teste com `bun scripts/smoke-image.ts echo-issue-8` passou, incluindo migrações, definição administrativa de senha, cookie seguro, SSR protegido, assets, sessão após reinício do contêiner e saída. Essa validação da imagem antecede a troca para `bun:sqlite`; não foi repetida depois da troca.
@@ -13,7 +13,7 @@ Verificação local em 22/10/2026. Implementa [Entrar no Echo com sessão persis
 
 ## Standards
 
-Revisão independente encontrou uma corrida entre entrada e redefinição de senha. O teste público concorrente reproduziu acesso válido pela credencial anterior após a redefinição. A correção associa cada sessão a uma versão da credencial, confirma essa versão atomicamente antes de devolver o cookie e verifica a associação a cada autorização. A revisão confirmou a resolução e não encontrou outro problema material.
+O usuário optou pelo fluxo nativo de redefinição e revogação do Better Auth. O controle de revisão da credencial foi removido, incluindo as colunas correspondentes. A suíte verifica revogação de sessões existentes, recusa da senha antiga, aceitação da nova senha e preservação da sessão quando a nova senha é inválida. A garantia adicional contra login concorrente ao reset deixou de fazer parte do contrato.
 
 ## Spec
 
@@ -35,7 +35,7 @@ Formulários de trabalho e cronômetro operacional pertencem às próximas issue
 
 O ciclo de sessão no navegador fica em `useSessionLifecycle`, separado da renderização. A comunicação de rascunhos tem vida estável durante expiração e reentrada e anuncia a participação da aba ao restaurar uma página.
 
-A regra de revisão da credencial fica em `personalCredentials`, integrada pelos hooks nativos do Better Auth. Leituras HTTP e do servidor rejeitam sessões sem revisão confirmada. O teste concorrente agora pausa a escrita real da sessão após a verificação nativa da senha, redefine a senha pelo mesmo caminho administrativo e libera a escrita: o login pendente retorna 401 e não mantém sessão.
+Os hooks de acesso preservam apenas a superfície HTTP do Echo, Origin explícito, identidade pessoal e respostas sem cache. O comando administrativo usa os endpoints nativos de criação inicial e reset, com token restrito à memória daquela execução. Os endpoints administrativos não são expostos pelo handler público.
 
 O fixture de integração retorna status e payload nativos, incluindo sessão ausente como JSON `null`. Os testes de navegador usam um formulário temporário com os hooks públicos para verificar retenção do rascunho, confirmação entre abas após reentrada, retorno pelo histórico e desmontagem. A renovação por atividade verifica o avanço real de `expiresAt`; o parâmetro `disableRefresh` é omitido nessa chamada, evitando a coerção de `false` textual para verdadeiro.
 
@@ -65,12 +65,20 @@ A suíte de navegador verifica erro e visibilidade da senha, preservação de ra
 
 Removidos `handleAuth` e `readSession`. A rota usa o handler nativo e a server function chama `auth.api.getSession` diretamente. O plugin de cookies segue como último plugin. Restrições adicionais do Echo ficam nos hooks, sem recriar a resposta HTTP. A configuração não repete os padrões de tamanho máximo de senha e cache de cookie.
 
-Os testes passam pelo handler nativo e pela API do servidor. A cobertura de política verifica também endpoints de listagem de sessões e atualização de usuário, Origin ausente e a mesma origem com porta diferente. A suíte soma 12 testes e 63 asserções, além dos 18 testes de navegador em desktop e mobile.
+Os testes passam pelo handler nativo e pela API do servidor. A cobertura de política verifica também endpoints de listagem de sessões e atualização de usuário, Origin ausente e a mesma origem com porta diferente. A suíte soma 12 testes e 70 asserções, além dos 18 testes de navegador em desktop e mobile.
 
 ## Auditoria dos hooks
 
 Removidas a comparação customizada do valor de Origin, a repetição de `baseURL` em `trustedOrigins` e a resposta customizada para credencial inexistente. Os testes verificam o código nativo `INVALID_ORIGIN` e o código nativo `INVALID_EMAIL_OR_PASSWORD`. A configuração explicita `disableOriginCheck: false` porque o Better Auth omite essa checagem por padrão sob `NODE_ENV=test`.
 
-Permanecem as regras adicionais do Echo. O Origin deve estar explícito, sem fallback para Referer ou inferência de Origin nulo. Somente três endpoints HTTP são publicados; `disabledPaths` é uma lista de bloqueio de caminhos exatos, não substitui essa lista de permissão. O cabeçalho sem cache cobre também a resposta de login, que não o define nativamente nesta versão. A revisão protege a interleaving entre verificação de senha, reset e criação da sessão; revogar sessões já existentes no reset não cobre essa criação posterior. Leituras sem revisão confirmada continuam rejeitadas.
+Permanecem as regras adicionais do Echo. O Origin deve estar explícito, sem fallback para Referer ou inferência de Origin nulo. Somente três endpoints HTTP são publicados; `disabledPaths` é uma lista de bloqueio de caminhos exatos, não substitui essa lista de permissão. O cabeçalho sem cache cobre também a resposta de login, que não o define nativamente nesta versão.
 
-Validação após a simplificação: 13 testes de integração, 67 asserções, 18 testes de navegador em desktop e mobile, build, typecheck, lint e formatação.
+Validação após a simplificação: 12 testes de integração, 70 asserções, 18 testes de navegador em desktop e mobile, build, typecheck, lint e formatação.
+
+## Redefinição e revogação nativas
+
+`revokeSessionsOnPasswordReset: true` delega a revogação ao Better Auth. A criação inicial usa `signUpEmail` sem sessão automática numa instância apenas administrativa. Para redefinir, o comando captura o token de `requestPasswordReset` em memória e chama `resetPassword`. Validação, hash, gravação da senha, consumo do token e remoção das sessões seguem as implementações nativas. Não há escrita direta de credenciais nem helper de transação customizado.
+
+A migração `0003_remove_credential_revision` remove os dois campos de revisão. Um teste aplica as migrações anteriores, cria credencial e sessão, aplica a migração nova e verifica preservação dos dados e leitura da sessão. O teste anterior de rollback do helper removido foi substituído por essa cobertura de migração. Os testes de revisão e corrida de login foram removidos conforme a nova decisão.
+
+O adapter mantém transações assíncronas desativadas, compatível com `bun:sqlite`; a aplicação segue o comportamento nativo de revogar antes de gravar a senha e não promete atomicidade adicional. A revogação não garante impedir uma sessão criada posteriormente por um login concorrente já em andamento.

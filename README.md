@@ -87,7 +87,9 @@ Não há formulários de trabalho nem cronômetro operacional nesta issue. Essas
 
 `useSessionLifecycle` concentra as transições de acesso, atividade visível e limpeza das consultas. A comunicação de alterações não salvas permanece montada durante expiração e reentrada; ao desmontar ou restaurar uma página, a participação da aba é atualizada. `SessionBoundary` renderiza esse estado e mantém os formulários montados.
 
-`personalCredentials` concentra a regra adicional de revisão da credencial nos hooks nativos do Better Auth. A confirmação após entrada e a validação de leitura pertencem ao mesmo módulo; leituras HTTP e do servidor usam a mesma verificação. A redefinição atualiza a credencial e remove todas as sessões na transação SQLite.
+`personalAccessHooks` concentra apenas a superfície HTTP, a exigência de Origin explícito e a identidade pessoal. O comando `auth:password` cria a conta inicial por `signUpEmail`, sem sessão automática. Para uma conta existente, chama `requestPasswordReset` e `resetPassword`, com `revokeSessionsOnPasswordReset: true`. O token fica somente na memória do comando; nenhum email é enviado e os endpoints de reset permanecem bloqueados no servidor público.
+
+A revogação segue o comportamento nativo do Better Auth. Não existe revisão customizada da credencial nem garantia adicional contra um login concorrente que crie uma sessão depois do reset. O adapter Drizzle com `bun:sqlite` mantém transações assíncronas desativadas; não há promessa de atomicidade adicional ao fluxo nativo.
 
 O cliente mantém `fetchOptions.query.disableRefresh: true` como padrão. Atividade visível sobrescreve o valor com `undefined`, omitindo o parâmetro para solicitar renovação. Nesta versão do Better Auth, a string `false` na URL também é convertida para verdadeiro.
 
@@ -121,6 +123,8 @@ Cada `LoginForm` também cria um store para erro e visibilidade da senha. Valor 
 
 A rota `/api/auth/$` encaminha GET e POST diretamente para `auth.handler`, conforme a [integração oficial com TanStack Start](https://better-auth.com/docs/integrations/tanstack). A server function de acesso chama `auth.api.getSession` com os cabeçalhos da requisição; os guards continuam no `beforeLoad`, usando a consulta compartilhada do React Query. `tanstackStartCookies()` permanece como último plugin.
 
-Não há wrapper HTTP ou reconstrução da resposta do Better Auth. Os hooks concentram as restrições do Echo: endpoints pessoais publicados, Origin explícito obrigatório nos POSTs, respostas sem cache e proteção contra login concorrente à redefinição da senha. O limite máximo de senha e a desativação do cache de cookie usam os padrões da biblioteca.
+Não há wrapper HTTP ou reconstrução da resposta do Better Auth. Os hooks concentram as restrições do Echo: endpoints pessoais publicados, Origin explícito obrigatório nos POSTs, respostas sem cache. O limite máximo de senha e a desativação do cache de cookie usam os padrões da biblioteca.
 
-A validação do valor de Origin usa a proteção nativa do Better Auth e a origem derivada de `baseURL`. `disableOriginCheck: false` mantém essa validação ativa também em testes, pois a biblioteca a desativa por padrão nesse ambiente. Credenciais inexistentes recebem o erro nativo de login. O hook conserva apenas a exigência de Origin explícito, a identidade pessoal, a lista de endpoints publicados e a revisão da credencial.
+A validação do valor de Origin usa a proteção nativa do Better Auth e a origem derivada de `baseURL`. `disableOriginCheck: false` mantém essa validação ativa também em testes, pois a biblioteca a desativa por padrão nesse ambiente. Credenciais inexistentes recebem o erro nativo de login. O hook conserva apenas a exigência de Origin explícito, a identidade pessoal, a lista de endpoints publicados.
+
+A migração `0003_remove_credential_revision` remove as colunas de revisão de usuário e sessão, preservando as credenciais e sessões existentes. Execute `bun run db:migrate` antes de iniciar a versão atualizada.

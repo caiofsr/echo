@@ -2,7 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import type { Database } from "./database";
-import { personalCredentials } from "./personal-credentials";
+import { PERSONAL_EMAIL, personalAccessHooks } from "./personal-credentials";
 import * as schema from "./schema";
 
 const SESSION_SECONDS = 30 * 24 * 60 * 60;
@@ -11,7 +11,6 @@ export function createAccess(
   db: Database,
   options: { baseURL: string; secret: string; secureCookies: boolean },
 ) {
-  const credentials = personalCredentials(db);
   const auth = betterAuth({
     baseURL: options.baseURL,
     secret: options.secret,
@@ -19,6 +18,7 @@ export function createAccess(
     emailAndPassword: {
       enabled: true,
       disableSignUp: true,
+      revokeSessionsOnPasswordReset: true,
       minPasswordLength: 15,
     },
     session: {
@@ -41,10 +41,36 @@ export function createAccess(
         "/sign-out": false,
       },
     },
-    hooks: credentials.hooks,
+    hooks: personalAccessHooks,
     plugins: [tanstackStartCookies()],
   });
 
-  return { auth, setPassword: credentials.setPassword };
+  async function setPassword(password: string) {
+    // This instance is used only by the local administrative command. Its
+    // bootstrap and reset APIs are never mounted as HTTP handlers.
+    let token: string | undefined;
+    const admin = betterAuth({
+      ...auth.options,
+      emailAndPassword: {
+        ...auth.options.emailAndPassword,
+        enabled: true,
+        disableSignUp: false,
+        autoSignIn: false,
+        sendResetPassword: async (reset) => {
+          token = reset.token;
+        },
+      },
+    });
+    await admin.api.requestPasswordReset({ body: { email: PERSONAL_EMAIL } });
+    if (token) {
+      await admin.api.resetPassword({ body: { token, newPassword: password } });
+    } else {
+      await admin.api.signUpEmail({
+        body: { email: PERSONAL_EMAIL, name: "Echo", password },
+      });
+    }
+  }
+
+  return { auth, setPassword };
 }
 export type Access = ReturnType<typeof createAccess>;

@@ -1,4 +1,4 @@
-import { afterEach, expect, test, setSystemTime, spyOn } from "bun:test";
+import { afterEach, expect, test, setSystemTime } from "bun:test";
 import * as schema from "../src/server/schema";
 import { createAccessFixture } from "./helpers/access";
 
@@ -192,7 +192,9 @@ test("origens externas e endpoints não publicados são recusados; cookie de pro
   expect(login.headers.get("set-cookie")).toContain("Secure");
   expect(login.headers.get("set-cookie")).toContain("SameSite=Lax");
   expect(login.headers.get("cache-control")).toBe("no-store");
-  await expect(app.setPassword("curta")).rejects.toThrow("15");
+  await expect(app.setPassword("curta")).rejects.toMatchObject({
+    body: { code: "PASSWORD_TOO_SHORT" },
+  });
 });
 
 test("o limite nativo mantém cinco tentativas mesmo com requisições concorrentes", async () => {
@@ -250,70 +252,32 @@ test("Better Auth recusa a credencial ausente sem resposta customizada", async (
   expect(await app.db.select().from(schema.session)).toHaveLength(0);
 });
 
-test("leituras HTTP e do servidor recusam uma sessão sem revisão confirmada", async () => {
+test("reset nativo valida a senha antes de revogar e não publica o endpoint administrativo", async () => {
   const app = await createAccessFixture();
   fixtures.push(app);
   const cookie = app.cookie(
     await app.request("/sign-in/email", { email, password: app.password }),
   );
+  await expect(app.setPassword("curta")).rejects.toMatchObject({
+    body: { code: "PASSWORD_TOO_SHORT" },
+  });
   expect(await app.readSession(cookie)).not.toBeNull();
   expect(
-    (
-      await (
-        await app.request("/get-session?disableRefresh=true", undefined, cookie)
-      ).json()
-    ).session,
-  ).toBeDefined();
-  await app.db.update(schema.session).set({ credentialVersion: null });
-  expect(await app.readSession(cookie)).toBeNull();
+    (await app.request("/sign-in/email", { email, password: app.password }))
+      .status,
+  ).toBe(200);
+  expect((await app.request("/request-password-reset", { email })).status).toBe(
+    404,
+  );
   expect(
-    await (
-      await app.request("/get-session?disableRefresh=true", undefined, cookie)
-    ).json(),
-  ).toBeNull();
-});
-
-test("redefinição entre verificação da senha e criação da sessão recusa o login pendente", async () => {
-  const app = await createAccessFixture();
-  fixtures.push(app);
-  const reachedInsert = Promise.withResolvers<void>();
-  const resumeInsert = Promise.withResolvers<void>();
-  const originalInsert = app.db.insert.bind(app.db);
-  // Hold the real SQLite insert after native password verification. Reset uses
-  // the real access interface while the sign-in is paused at this exact point.
-  const insertion = spyOn(app.db, "insert").mockImplementation((table) => {
-    const builder = originalInsert(table);
-    if (Object.is(table, schema.session)) {
-      const values = builder.values.bind(builder);
-      builder.values = ((...args: Parameters<typeof values>) => {
-        const query = values(...args);
-        const returning = query.returning.bind(query);
-        query.returning = (async () => {
-          reachedInsert.resolve();
-          await resumeInsert.promise;
-          return await returning();
-        }) as unknown as typeof query.returning;
-        return query;
-      }) as typeof builder.values;
-    }
-    return builder;
-  });
-  const pendingLogin = app.request("/sign-in/email", {
-    email,
-    password: app.password,
-  });
-  try {
-    await reachedInsert.promise;
-    await app.setPassword("senha substituta longa para concorrencia");
-    resumeInsert.resolve();
-    const response = await pendingLogin;
-    expect(response.status).toBe(401);
-    expect((await response.json()).message).toContain("redefinida");
-    expect(await app.db.select().from(schema.session)).toHaveLength(0);
-    expect(await app.readSession(app.cookie(response))).toBeNull();
-  } finally {
-    resumeInsert.resolve();
-    await pendingLogin;
-    insertion.mockRestore();
-  }
+    (
+      await app.request("/reset-password", {
+        token: "invalid",
+        newPassword: app.password,
+      })
+    ).status,
+  ).toBe(404);
+  await app.setPassword("uma nova senha pessoal longa");
+  expect(await app.readSession(cookie)).toBeNull();
+  expect(await app.db.select().from(schema.session)).toHaveLength(0);
 });

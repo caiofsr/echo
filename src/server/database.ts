@@ -21,13 +21,3 @@ export function openDatabase(url: string): {
 export function migrateDatabase(db: Database) {
   migrate(db, { migrationsFolder: "./drizzle" });
 }
-
-// Native SQLite transactions must finish synchronously, including all writes.
-export async function atomicWrites(
-  db: Database,
-  create: (tx: Database) => { run(): unknown }[],
-) {
-  db.transaction((tx) => {
-    for (const query of create(tx)) query.run();
-  });
-}
