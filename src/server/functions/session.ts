@@ -3,7 +3,7 @@ import {
   getRequestHeaders,
   setResponseHeader,
 } from "@tanstack/react-start/server";
-import { auth } from "../lib/auth";
+import { auth } from "../../lib/auth";
 
 export const hasSession = createServerFn({ method: "GET" }).handler(
   async () => {

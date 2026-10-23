@@ -1,7 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
-import { accessQueryOptions } from "../lib/access-query";
-import { SessionBoundary } from "../components/session-boundary";
-import { AppShell } from "../components/app-shell";
+import { accessQueryOptions } from "../queries/access";
+import { SessionBoundary } from "../components/auth/session-boundary";
+import { AppShell } from "../components/layout/app-shell";
 
 export const Route = createFileRoute("/_app")({
   beforeLoad: async ({ context, location }) => {

@@ -12,7 +12,6 @@ await migrateDatabase(database.db);
 await createAccess(database.db, {
   baseURL: process.env.BETTER_AUTH_URL!,
   secret: process.env.BETTER_AUTH_SECRET!,
-  secureCookies: false,
 }).setPassword("senha pessoal de teste no navegador");
 const control = process.env.ECHO_TEST_CONTROL_PORT
   ? Bun.serve({
@@ -31,7 +30,6 @@ const control = process.env.ECHO_TEST_CONTROL_PORT
         await createAccess(database.db, {
           baseURL: process.env.BETTER_AUTH_URL!,
           secret: process.env.BETTER_AUTH_SECRET!,
-          secureCookies: false,
         }).setPassword("senha pessoal de teste no navegador");
         return new Response(null, { status: 204 });
       },

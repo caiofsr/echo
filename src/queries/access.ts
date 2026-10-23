@@ -1,5 +1,5 @@
 import { queryOptions } from "@tanstack/react-query";
-import { hasSession } from "../server/session";
+import { hasSession } from "../server/functions/session";
 
 // Route access always consults the server, including after a preload. This is
 // navigation state, not authorization for future private reads or mutations.

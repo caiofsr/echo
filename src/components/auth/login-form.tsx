@@ -1,9 +1,9 @@
 import { useCreateStore, useSelector } from "@tanstack/react-store";
 import { useForm } from "@tanstack/react-form";
-import { authClient, ECHO_LOGIN_EMAIL } from "../lib/auth-client";
-import { EchoIcon } from "./icons";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
+import { authClient, ECHO_LOGIN_EMAIL } from "../../lib/auth-client";
+import { EchoIcon } from "../ui/icons";
+import { Button } from "../ui/button";
+import { Input } from "../ui/input";
 
 export function LoginForm({
   onSuccess,
@@ -12,22 +12,17 @@ export function LoginForm({
   onSuccess: () => void | Promise<void>;
   expired?: boolean;
 }) {
-  const store = useCreateStore({ error: "", visible: false });
-  const error = useSelector(store, (state) => state.error);
+  const store = useCreateStore({ visible: false });
   const visible = useSelector(store, (state) => state.visible);
-  const setError = (error: string) =>
-    store.setState((state) => ({ ...state, error }));
   const form = useForm({
     defaultValues: { password: "" },
     onSubmit: async ({ value }) => {
-      setError("");
       try {
         let retryAfter: string | null = null;
         const { error } = await authClient.signIn.email(
           {
             email: ECHO_LOGIN_EMAIL,
             password: value.password,
-            rememberMe: true,
           },
           {
             onError: ({ response }) => {
@@ -54,6 +49,9 @@ export function LoginForm({
       }
     },
   });
+  const error = useSelector(form.store, (state) => state.errors.join(" "));
+  const setError = (message: string) =>
+    form.setErrorMap({ onSubmit: { form: message, fields: {} } });
   return (
     <div className="login-content">
       <h1>{expired ? "Entre novamente" : "Seu trabalho, no seu ritmo."}</h1>
@@ -65,6 +63,7 @@ export function LoginForm({
       <form
         onSubmit={(event) => {
           event.preventDefault();
+          form.setErrorMap({ onSubmit: undefined });
           void form.handleSubmit();
         }}
       >

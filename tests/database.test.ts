@@ -15,7 +15,6 @@ test("migration inicial pode ser reaplicada sem perder credencial ou sessão", a
     const { auth, setPassword } = createAccess(database.db, {
       baseURL: "https://echo.test",
       secret: "test-only-secret-at-least-thirty-two-characters",
-      secureCookies: false,
     });
     await setPassword("uma senha longa para migracao");
     const response = await auth.handler(

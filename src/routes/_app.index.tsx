@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Unavailable } from "../components/app-shell";
+import { Unavailable } from "../components/ui/unavailable";
 
 export const Route = createFileRoute("/_app/")({
   component: () => (

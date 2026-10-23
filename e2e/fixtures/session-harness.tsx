@@ -8,11 +8,9 @@ import {
   RouterProvider,
   Outlet,
 } from "@tanstack/react-router";
-import {
-  SessionBoundary,
-  useSession,
-} from "../../src/components/session-boundary";
-import { useUnsavedChanges } from "../../src/components/use-unsaved-changes";
+import { SessionBoundary } from "../../src/components/auth/session-boundary";
+import { useSession } from "../../src/contexts/session";
+import { useUnsavedChanges } from "../../src/hooks/use-unsaved-changes";
 
 // Only bundled by the isolated browser fixture, never by the application build.
 // Future forms use these same public hooks; no lifecycle internals are exposed.

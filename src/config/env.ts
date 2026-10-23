@@ -13,6 +13,5 @@ export function readEnvironment() {
   return {
     baseURL,
     secret,
-    secureCookies: production,
   };
 }

@@ -147,7 +147,7 @@ test("tentativas são limitadas por origem, persistem após reinício e liberam 
 });
 
 test("proteções nativas de origem, sessão e cadastro permanecem ativas", async () => {
-  const app = await createAccessFixture(true);
+  const app = await createAccessFixture();
   fixtures.push(app);
   const rejectedOrigin = await app.request(
     "/sign-in/email",

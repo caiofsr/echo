@@ -193,19 +193,16 @@ export function useSessionLifecycle() {
     },
     [store],
   );
-  const expire = useCallback(() => setStatus("expired"), [setStatus]);
   const reauthenticate = useCallback(async () => {
     queries.clear();
     await router.invalidate({ sync: true });
     setStatus("active");
   }, [queries, router, setStatus]);
   return {
-    store,
     status,
     connectionError,
     logout,
     setDirty,
-    expire,
     reauthenticate,
   };
 }

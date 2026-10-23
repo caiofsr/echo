@@ -79,7 +79,7 @@ Ainda deve ser conferido no servidor Dokploy: versão disponível do Railpack, d
 
 ## Formulários das próximas entregas
 
-`SessionBoundary` mantém seus filhos montados e ocultos durante reentrada, preservando estado React somente na memória daquela aba. Após autenticar, limpa consultas e invalida os dados do roteador sem enviar formulários. Formulários protegidos devem usar `useUnsavedChanges`, sinalizar respostas 401 com `useSession().expire()` e exigir ação explícita para salvar após atualizar os dados. Sair pede confirmação de alterações sinalizadas nesta ou em outra aba e encerra o acesso em todas as abas daquele navegador pela notificação nativa de saída do Better Auth. O BroadcastChannel do Echo comunica apenas alterações não salvas. A sessão é observada por `authClient.useSession()`; consultas automáticas não renovam a validade, e somente eventos de atividade em aba visível solicitam renovação. Não altera sessões de outros dispositivos.
+`SessionBoundary` mantém seus filhos montados e ocultos durante reentrada, preservando estado React somente na memória daquela aba. Após autenticar, limpa consultas e invalida os dados do roteador sem enviar formulários. Formulários protegidos devem usar `useUnsavedChanges`, consultar a sessão pelo cliente nativo ao receber 401 e exigir ação explícita para salvar após atualizar os dados. Sair pede confirmação de alterações sinalizadas nesta ou em outra aba e encerra o acesso em todas as abas daquele navegador pela notificação nativa de saída do Better Auth. O BroadcastChannel do Echo comunica apenas alterações não salvas. A sessão é observada por `authClient.useSession()`; consultas automáticas não renovam a validade, e somente eventos de atividade em aba visível solicitam renovação. Não altera sessões de outros dispositivos.
 
 Não há formulários de trabalho nem cronômetro operacional nesta issue. Essas entregas devem integrar a proteção de sessão sem parar o cronômetro quando o acesso expira ou termina.
 
@@ -115,9 +115,9 @@ A seleção do menu usa `Link.activeOptions` e `activeProps`; `aria-current` é 
 
 ### Estado de interface com TanStack Store
 
-`@tanstack/react-store` gerencia status de acesso, erros de conexão, registro de formulários alterados, participação de outras abas e última atividade. Cada `SessionBoundary` cria seu store com `useCreateStore`; o contexto nativo compartilha a instância e as ações com os descendentes. Não existe store global entre requisições SSR. Seletores observam apenas os campos exibidos, e os conjuntos de alterações recebem atualizações imutáveis.
+`@tanstack/react-store` gerencia status de acesso, erros de conexão, registro de formulários alterados, participação de outras abas e última atividade. Cada `SessionBoundary` cria seu store com `useCreateStore`; o contexto nativo compartilha as ações usadas pelos descendentes. Não existe store global entre requisições SSR. Seletores observam apenas os campos exibidos, e os conjuntos de alterações recebem atualizações imutáveis.
 
-Cada `LoginForm` também cria um store para erro e visibilidade da senha. Valor da senha e envio continuam no TanStack Form; dados do servidor ficam no React Query e a sessão autenticada continua sob responsabilidade do Better Auth. Os rascunhos dos próximos formulários permanecem nos respectivos formulários; o Store registra quais têm alterações não salvas.
+Cada `LoginForm` também cria um store para visibilidade da senha. Valor da senha, envio e erros ficam no TanStack Form; dados do servidor ficam no React Query e a sessão autenticada continua sob responsabilidade do Better Auth. Os rascunhos dos próximos formulários permanecem nos respectivos formulários; o Store registra quais têm alterações não salvas.
 
 ### Integração direta do Better Auth
 
@@ -131,7 +131,7 @@ O histórico foi reiniciado em `0000_initial`, a partir do schema gerado pelo CL
 
 ### Organização de autenticação e banco
 
-`src/lib/auth.ts` exporta a instância `auth` do Better Auth, usada diretamente pela rota HTTP e pela server function. Não há `getAuth` nem instância obtida por getter. As opções sem conexão ficam em `src/lib/auth-options.ts` para serem compartilhadas com os testes isolados. A instância administrativa e o fluxo de senha ficam inteiramente em `scripts/password.ts`, executados como comando local.
+`src/lib/auth.ts` exporta a instância `auth` do Better Auth, usada diretamente pela rota HTTP e pela server function. Não há `getAuth` nem instância obtida por getter. As opções sem conexão ficam em `src/config/auth.ts` para serem compartilhadas com os testes isolados. A instância administrativa e o fluxo de senha ficam inteiramente em `scripts/password.ts`, executados como comando local.
 
 `src/db/index.ts` exporta a conexão da aplicação. `src/db/connection.ts` contém abertura e migração do SQLite, e `src/db/schema.ts` reúne as tabelas. O Drizzle aponta para esse schema. O comando de migração depende apenas de `DATABASE_URL`, sem exigir segredo de autenticação.
 
@@ -144,3 +144,5 @@ bun run db:migrate
 ```
 
 `auth:generate` chama o CLI oficial com `--config ./src/lib/auth.ts --output ./src/db/schema.ts`. Revise o schema e o SQL antes de aplicar a migração.
+
+A estrutura completa está em [Organização do código](docs/architecture/source-layout.md). A [revisão da PR 21](docs/verification/pr-21-native-review.md) registra as simplificações e as regras do Echo que continuam necessárias. Secure cookies e a persistência do login usam os padrões nativos do Better Auth; não há override que desative Secure em uma origem HTTPS de desenvolvimento.

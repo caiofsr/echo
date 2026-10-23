@@ -145,8 +145,18 @@ test("observação nativa e consultas periódicas não renovam; atividade visív
   await page.clock.install();
   await page.goto("/hours");
   await page.getByLabel("Senha pessoal").fill(password);
+  const initialized = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return (
+      url.pathname === "/api/auth/get-session" &&
+      !url.searchParams.has("disableRefresh")
+    );
+  });
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Horas");
+  // The initial activity read must finish before reconnect can refetch;
+  // otherwise Better Auth may cancel the reconnect request in favor of it.
+  await (await initialized).finished();
   const sessionRead = (refreshDisabled: boolean) =>
     page.waitForRequest((request) => {
       const url = new URL(request.url());

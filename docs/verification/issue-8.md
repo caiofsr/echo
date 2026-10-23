@@ -81,7 +81,7 @@ O adapter mantém transações assíncronas desativadas, compatível com `bun:sq
 
 ## Instância de autenticação e pasta do banco
 
-`src/lib/auth.ts` exporta a instância diretamente. Rota e server function importam `auth`; `getAuth`, `src/server/runtime.ts` e a factory de acesso de produção foram removidos. `src/lib/auth-options.ts` compartilha opções declarativas com as instâncias isoladas dos testes. A lógica e a instância administrativa ficam em `scripts/password.ts`; não há módulo de senha em `src/server`. O script só inicializa a aplicação e lê stdin quando executado diretamente, e os testes importam a função administrativa sem executar o comando.
+`src/lib/auth.ts` exporta a instância diretamente. Rota e server function importam `auth`; `getAuth`, `src/server/runtime.ts` e a factory de acesso de produção foram removidos. `src/config/auth.ts` compartilha opções declarativas com as instâncias isoladas dos testes. A lógica e a instância administrativa ficam em `scripts/password.ts`; não há módulo de senha em `src/server`. O script só inicializa a aplicação e lê stdin quando executado diretamente, e os testes importam a função administrativa sem executar o comando.
 
 Conexão, abertura/migração e tabelas ficam em `src/db`. O `drizzle.config.ts`, comandos e testes usam os novos caminhos. O preload de testes usa uma conexão em memória para impedir que imports de SSR abram o banco local da aplicação.
 
@@ -90,3 +90,9 @@ O CLI oficial regenerou `src/db/schema.ts` usando `src/lib/auth.ts`, incluindo a
 ## Baseline aplicada ao banco local
 
 As quatro migrations anteriores e seus snapshots foram excluídos. O histórico agora contém apenas `0000_initial`, com as cinco tabelas atuais do Better Auth. O banco local `.data/echo.db` foi removido conforme autorização do usuário e recriado por `bun run db:migrate`. A consulta ao banco confirmou uma migration aplicada e as tabelas `account`, `rate_limit`, `session`, `user` e `verification`. Nenhuma senha foi definida no banco local recriado; o próximo acesso requer executar `bun run auth:password`.
+
+## Revisão final de recursos nativos e pastas
+
+A revisão por standards e spec está em `docs/verification/pr-21-native-review.md`, e o mapa das pastas está em `docs/architecture/source-layout.md`. Foram removidos os overrides redundantes de persistência de login e Secure cookies; o Better Auth infere cookies seguros pela URL HTTPS. O login usa o mapa de erros nativo do TanStack Form. O contexto da sessão expõe somente as ações efetivamente usadas.
+
+Server functions ficam em `src/server/functions`, opções de biblioteca em `src/config`, consultas em `src/queries`, ciclo de interface em `src/hooks` e o contexto em `src/contexts`. Componentes de autenticação, layout e UI ficam em pastas próprias. A instância `src/lib/auth.ts`, o banco em `src/db`, o script administrativo e a baseline de migrations foram preservados.

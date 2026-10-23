@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { openDatabase, migrateDatabase } from "../../src/db/connection";
 import { createAccess } from "./create-access";
 
-export async function createAccessFixture(secureCookies = false) {
+export async function createAccessFixture() {
   const dir = await mkdtemp(join(tmpdir(), "echo-test-"));
   const url = `file:${join(dir, "test.db")}`;
   let database = openDatabase(url);
@@ -12,7 +12,6 @@ export async function createAccessFixture(secureCookies = false) {
   const options = {
     baseURL: "https://echo.test",
     secret: "test-only-secret-at-least-thirty-two-characters",
-    secureCookies,
   };
   let access = createAccess(database.db, options);
   const password = "uma frase longa para os testes";

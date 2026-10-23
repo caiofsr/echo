@@ -1,6 +1,6 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
-import { accessQueryOptions } from "../lib/access-query";
-import { LoginForm } from "../components/login-form";
+import { accessQueryOptions } from "../queries/access";
+import { LoginForm } from "../components/auth/login-form";
 
 const destinations = ["/", "/hours", "/invoices", "/directory", "/settings"];
 function safeDestination(value: unknown) {

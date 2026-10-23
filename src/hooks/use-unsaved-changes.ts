@@ -1,5 +1,5 @@
 import { useEffect, useId } from "react";
-import { useSession } from "./session-boundary";
+import { useSession } from "../contexts/session";
 
 // Protected forms use this hook; their values stay in component memory.
 export function useUnsavedChanges(dirty: boolean) {

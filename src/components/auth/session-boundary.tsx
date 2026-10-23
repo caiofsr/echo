@@ -1,30 +1,18 @@
 import { type ReactNode } from "react";
-import { createStoreContext } from "@tanstack/react-store";
+import { SessionProvider } from "../../contexts/session";
 import { LoginForm } from "./login-form";
-import { useSessionLifecycle } from "./use-session-lifecycle";
+import { useSessionLifecycle } from "../../hooks/use-session-lifecycle";
 
-const { StoreProvider, useStoreContext } =
-  createStoreContext<
-    Pick<
-      ReturnType<typeof useSessionLifecycle>,
-      "store" | "logout" | "setDirty" | "expire"
-    >
-  >();
-export function useSession() {
-  return useStoreContext();
-}
 // Future protected forms report unsaved work through setDirty. They remain
 // mounted during reauthentication; only an explicit exit discards their state.
 export function SessionBoundary({ children }: { children: ReactNode }) {
   const lifecycle = useSessionLifecycle();
   const { status, connectionError, reauthenticate } = lifecycle;
   return (
-    <StoreProvider
+    <SessionProvider
       value={{
-        store: lifecycle.store,
         logout: lifecycle.logout,
         setDirty: lifecycle.setDirty,
-        expire: lifecycle.expire,
       }}
     >
       <div hidden={status !== "active"}>
@@ -48,6 +36,6 @@ export function SessionBoundary({ children }: { children: ReactNode }) {
           <p role="status">Conferindo acesso…</p>
         </main>
       )}
-    </StoreProvider>
+    </SessionProvider>
   );
 }
