@@ -2,9 +2,9 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { tanstackStartCookies } from "better-auth/tanstack-start";
 import type { Database } from "./database";
-import { PERSONAL_EMAIL, personalAccessHooks } from "./personal-credentials";
 import * as schema from "./schema";
 
+const PERSONAL_EMAIL = "owner@echo.invalid";
 const SESSION_SECONDS = 30 * 24 * 60 * 60;
 
 export function createAccess(
@@ -41,7 +41,6 @@ export function createAccess(
         "/sign-out": false,
       },
     },
-    hooks: personalAccessHooks,
     plugins: [tanstackStartCookies()],
   });
 

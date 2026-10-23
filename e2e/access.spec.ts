@@ -113,7 +113,7 @@ test("limite nativo informa a espera em português", async ({
   );
 });
 
-test("o handler nativo interpreta JSON e formulário sem expor outra identidade", async ({
+test("o handler nativo interpreta JSON e formulário e recusa credenciais desconhecidas", async ({
   request,
 }) => {
   const headers = { Origin: "http://localhost:4318" };

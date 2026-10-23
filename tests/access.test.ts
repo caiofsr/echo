@@ -146,7 +146,7 @@ test("tentativas são limitadas por origem, persistem após reinício e liberam 
   ).toBe(200);
 });
 
-test("origens externas e endpoints não publicados são recusados; cookie de produção é seguro", async () => {
+test("proteções nativas de origem, sessão e cadastro permanecem ativas", async () => {
   const app = await createAccessFixture(true);
   fixtures.push(app);
   const rejectedOrigin = await app.request(
@@ -158,11 +158,18 @@ test("origens externas e endpoints não publicados são recusados; cookie de pro
   );
   expect(rejectedOrigin.status).toBe(403);
   expect((await rejectedOrigin.json()).code).toBe("INVALID_ORIGIN");
-  expect((await app.request("/sign-up/email", {})).status).toBe(404);
-  expect((await app.request("/list-sessions")).status).toBe(404);
+  const signUp = await app.request("/sign-up/email", {
+    email: "other@example.com",
+    password: app.password,
+    name: "Outra conta",
+  });
+  expect(signUp.status).toBe(400);
+  expect((await signUp.json()).code).toBe("EMAIL_PASSWORD_SIGN_UP_DISABLED");
+  expect((await app.request("/list-sessions")).status).toBe(401);
   expect(
     (await app.request("/update-user", { name: "Outro nome" })).status,
-  ).toBe(404);
+  ).toBe(401);
+  // Native Better Auth accepts non-browser callers without Origin/metadata.
   expect(
     (
       await app.request(
@@ -173,7 +180,7 @@ test("origens externas e endpoints não publicados são recusados; cookie de pro
         "",
       )
     ).status,
-  ).toBe(403);
+  ).toBe(200);
   expect(
     (
       await app.request(
@@ -191,7 +198,31 @@ test("origens externas e endpoints não publicados são recusados; cookie de pro
   });
   expect(login.headers.get("set-cookie")).toContain("Secure");
   expect(login.headers.get("set-cookie")).toContain("SameSite=Lax");
-  expect(login.headers.get("cache-control")).toBe("no-store");
+  const session = await app.request(
+    "/get-session?disableRefresh=true",
+    undefined,
+    app.cookie(login),
+  );
+  expect(session.headers.get("cache-control")).toBe("no-store");
+  const sessions = await app.request(
+    "/list-sessions",
+    undefined,
+    app.cookie(login),
+  );
+  expect(sessions.status).toBe(200);
+  expect(Array.isArray(await sessions.json())).toBe(true);
+  expect(
+    (
+      await app.request(
+        "/update-user",
+        { name: "Nome atualizado" },
+        app.cookie(login),
+      )
+    ).status,
+  ).toBe(200);
+  expect((await app.readSession(app.cookie(login)))?.user.name).toBe(
+    "Nome atualizado",
+  );
   await expect(app.setPassword("curta")).rejects.toMatchObject({
     body: { code: "PASSWORD_TOO_SHORT" },
   });
@@ -213,7 +244,7 @@ test("o limite nativo mantém cinco tentativas mesmo com requisições concorren
   );
 });
 
-test("o handler nativo valida o login e o hook restringe a identidade pessoal", async () => {
+test("o handler nativo valida o login e recusa credenciais desconhecidas", async () => {
   const app = await createAccessFixture();
   fixtures.push(app);
   expect(
@@ -252,7 +283,7 @@ test("Better Auth recusa a credencial ausente sem resposta customizada", async (
   expect(await app.db.select().from(schema.session)).toHaveLength(0);
 });
 
-test("reset nativo valida a senha antes de revogar e não publica o endpoint administrativo", async () => {
+test("reset nativo valida a senha antes de revogar e recusa tokens inválidos", async () => {
   const app = await createAccessFixture();
   fixtures.push(app);
   const cookie = app.cookie(
@@ -266,9 +297,9 @@ test("reset nativo valida a senha antes de revogar e não publica o endpoint adm
     (await app.request("/sign-in/email", { email, password: app.password }))
       .status,
   ).toBe(200);
-  expect((await app.request("/request-password-reset", { email })).status).toBe(
-    404,
-  );
+  const publicReset = await app.request("/request-password-reset", { email });
+  expect(publicReset.status).toBe(400);
+  expect((await publicReset.json()).code).toBe("RESET_PASSWORD_DISABLED");
   expect(
     (
       await app.request("/reset-password", {
@@ -276,7 +307,7 @@ test("reset nativo valida a senha antes de revogar e não publica o endpoint adm
         newPassword: app.password,
       })
     ).status,
-  ).toBe(404);
+  ).toBe(400);
   await app.setPassword("uma nova senha pessoal longa");
   expect(await app.readSession(cookie)).toBeNull();
   expect(await app.db.select().from(schema.session)).toHaveLength(0);
