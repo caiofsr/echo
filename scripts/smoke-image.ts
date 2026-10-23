@@ -77,7 +77,7 @@ try {
   baseURL = `http://127.0.0.1:${port}`;
   await ready();
   assert.equal(
-    (await fetch(`${baseURL}/horas`, { redirect: "manual" })).status,
+    (await fetch(`${baseURL}/hours`, { redirect: "manual" })).status,
     307,
   );
   const login = await fetch(`${baseURL}/api/auth/sign-in/email`, {
@@ -91,7 +91,7 @@ try {
     .getSetCookie()
     .map((value) => value.split(";")[0])
     .join("; ");
-  const page = await fetch(`${baseURL}/horas`, { headers: { cookie } });
+  const page = await fetch(`${baseURL}/hours`, { headers: { cookie } });
   assert.equal(page.status, 200);
   const html = await page.text();
   assert.match(html, />Horas</);

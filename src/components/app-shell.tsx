@@ -4,17 +4,17 @@ import { Button } from "./ui/button";
 import { useSession } from "./session-boundary";
 
 const links = [
-  { to: "/", label: "Quadro", icon: "quadro" },
-  { to: "/horas", label: "Horas", icon: "horas" },
-  { to: "/faturas", label: "Faturas", icon: "faturas" },
-  { to: "/cadastros", label: "Cadastros", icon: "cadastros" },
+  { to: "/", label: "Quadro", icon: "board" },
+  { to: "/hours", label: "Horas", icon: "hours" },
+  { to: "/invoices", label: "Faturas", icon: "invoices" },
+  { to: "/directory", label: "Cadastros", icon: "directory" },
 ] as const;
 export function AppShell() {
   const { logout } = useSession();
   const pathname = useLocation({ select: (location) => location.pathname });
   return (
     <>
-      <a className="skip-link" href="#conteudo">
+      <a className="skip-link" href="#content">
         Pular para o conteúdo
       </a>
       <header className="app-header">
@@ -37,22 +37,22 @@ export function AppShell() {
         <div className="header-actions">
           <Button asChild variant="ghost">
             <Link
-              to="/configuracoes"
+              to="/settings"
               aria-label="Configurações"
-              aria-current={pathname === "/configuracoes" ? "page" : undefined}
+              aria-current={pathname === "/settings" ? "page" : undefined}
             >
-              <EchoIcon name="configuracoes" size={19} />
+              <EchoIcon name="settings" size={19} />
             </Link>
           </Button>
           <Button variant="ghost" onClick={() => void logout()}>
-            <EchoIcon name="sair" size={17} />
+            <EchoIcon name="logout" size={17} />
             <span>Sair</span>
           </Button>
         </div>
       </header>
-      <main id="conteudo" className="workspace" tabIndex={-1}>
+      <main id="content" className="workspace" tabIndex={-1}>
         <div className="timer-placeholder">
-          <EchoIcon name="cronometro" size={21} />
+          <EchoIcon name="timer" size={21} />
           <div>
             <strong>Cronômetro global</strong>
             <p>Disponível em uma próxima entrega.</p>

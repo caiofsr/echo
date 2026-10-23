@@ -8,7 +8,7 @@ test("acesso protegido, destino interno, sessão após recarga e saída em todas
   page,
   context,
 }) => {
-  await page.goto("/horas");
+  await page.goto("/hours");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Seu trabalho, no seu ritmo.",
   );
@@ -26,18 +26,18 @@ test("acesso protegido, destino interno, sessão após recarga e saída em todas
   await page.reload();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Horas");
   const second = await context.newPage();
-  await second.goto("/faturas");
+  await second.goto("/invoices");
   await expect(second.getByRole("heading", { level: 1 })).toHaveText("Faturas");
   await page.getByRole("button", { name: "Sair" }).click();
-  await expect(page).toHaveURL(/\/entrar/);
-  await expect(second).toHaveURL(/\/entrar/);
-  await page.goto("/cadastros");
-  await expect(page).toHaveURL(/\/entrar/);
+  await expect(page).toHaveURL(/\/login/);
+  await expect(second).toHaveURL(/\/login/);
+  await page.goto("/directory");
+  await expect(page).toHaveURL(/\/login/);
 });
 test("navegação responsiva sem dados fictícios e sem redirecionamento externo", async ({
   page,
 }) => {
-  await page.goto("/entrar?destino=https://example.com");
+  await page.goto("/login?destination=https://example.com");
   await page.getByLabel("Senha pessoal").fill(password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page).toHaveURL("/");
@@ -66,7 +66,7 @@ test("sessão revogada pede reentrada na mesma página sem recarregar", async ({
   request,
 }) => {
   await page.clock.install();
-  await page.goto("/horas");
+  await page.goto("/hours");
   await page.getByLabel("Senha pessoal").fill(password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Horas");
@@ -78,7 +78,7 @@ test("sessão revogada pede reentrada na mesma página sem recarregar", async ({
   await page.getByLabel("Senha pessoal").fill(password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Horas");
-  await expect(page).toHaveURL("/horas");
+  await expect(page).toHaveURL("/hours");
 });
 
 test("limite nativo informa a espera em português", async ({
@@ -92,7 +92,7 @@ test("limite nativo informa a espera em português", async ({
     });
     expect(response.status()).toBe(401);
   }
-  await page.goto("/entrar");
+  await page.goto("/login");
   await page.getByLabel("Senha pessoal").fill(password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page.getByRole("alert")).toHaveText(
@@ -130,7 +130,7 @@ test("observação nativa e consultas periódicas não renovam; atividade visív
   page,
 }) => {
   await page.clock.install();
-  await page.goto("/horas");
+  await page.goto("/hours");
   await page.getByLabel("Senha pessoal").fill(password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Horas");

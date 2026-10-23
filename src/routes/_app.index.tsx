@@ -5,7 +5,7 @@ export const Route = createFileRoute("/_app/")({
     <Unavailable
       title="Quadro"
       description="Aqui você vai organizar suas tarefas e acompanhar o trabalho em andamento."
-      icon="quadro"
+      icon="board"
     />
   ),
 });

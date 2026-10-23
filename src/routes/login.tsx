@@ -1,13 +1,7 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { hasSession } from "../server/session";
 import { LoginForm } from "../components/login-form";
-const destinations = [
-  "/",
-  "/horas",
-  "/faturas",
-  "/cadastros",
-  "/configuracoes",
-];
+const destinations = ["/", "/hours", "/invoices", "/directory", "/settings"];
 function safeDestination(value: unknown) {
   if (
     typeof value !== "string" ||
@@ -21,17 +15,17 @@ function safeDestination(value: unknown) {
     ? `${url.pathname}${url.search}${url.hash}`
     : "/";
 }
-export const Route = createFileRoute("/entrar")({
+export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>) => ({
-    destino: safeDestination(search.destino),
+    destination: safeDestination(search.destination),
   }),
   beforeLoad: async ({ search }) => {
-    if (await hasSession()) throw redirect({ href: search.destino });
+    if (await hasSession()) throw redirect({ href: search.destination });
   },
   component: LoginPage,
 });
 function LoginPage() {
-  const { destino } = Route.useSearch();
+  const { destination } = Route.useSearch();
   return (
     <main className="login-page">
       <div className="login-brand brand">
@@ -39,7 +33,7 @@ function LoginPage() {
       </div>
       <LoginForm
         onSuccess={() => {
-          window.location.assign(destino);
+          window.location.assign(destination);
         }}
       />
       <footer className="login-footer">

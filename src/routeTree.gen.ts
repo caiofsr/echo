@@ -10,21 +10,21 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AppRouteImport } from './routes/_app'
-import { Route as EntrarRouteImport } from './routes/entrar'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
-import { Route as AppCadastrosRouteImport } from './routes/_app.cadastros'
-import { Route as AppConfiguracoesRouteImport } from './routes/_app.configuracoes'
-import { Route as AppFaturasRouteImport } from './routes/_app.faturas'
-import { Route as AppHorasRouteImport } from './routes/_app.horas'
+import { Route as AppDirectoryRouteImport } from './routes/_app.directory'
+import { Route as AppHoursRouteImport } from './routes/_app.hours'
+import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const EntrarRoute = EntrarRouteImport.update({
-  id: '/entrar',
-  path: '/entrar',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppIndexRoute = AppIndexRouteImport.update({
@@ -32,24 +32,24 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
-const AppCadastrosRoute = AppCadastrosRouteImport.update({
-  id: '/cadastros',
-  path: '/cadastros',
+const AppDirectoryRoute = AppDirectoryRouteImport.update({
+  id: '/directory',
+  path: '/directory',
   getParentRoute: () => AppRoute,
 } as any)
-const AppConfiguracoesRoute = AppConfiguracoesRouteImport.update({
-  id: '/configuracoes',
-  path: '/configuracoes',
+const AppHoursRoute = AppHoursRouteImport.update({
+  id: '/hours',
+  path: '/hours',
   getParentRoute: () => AppRoute,
 } as any)
-const AppFaturasRoute = AppFaturasRouteImport.update({
-  id: '/faturas',
-  path: '/faturas',
+const AppInvoicesRoute = AppInvoicesRouteImport.update({
+  id: '/invoices',
+  path: '/invoices',
   getParentRoute: () => AppRoute,
 } as any)
-const AppHorasRoute = AppHorasRouteImport.update({
-  id: '/horas',
-  path: '/horas',
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
 const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
@@ -60,30 +60,30 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
-  '/entrar': typeof EntrarRoute
-  '/cadastros': typeof AppCadastrosRoute
-  '/configuracoes': typeof AppConfiguracoesRoute
-  '/faturas': typeof AppFaturasRoute
-  '/horas': typeof AppHorasRoute
+  '/login': typeof LoginRoute
+  '/directory': typeof AppDirectoryRoute
+  '/hours': typeof AppHoursRoute
+  '/invoices': typeof AppInvoicesRoute
+  '/settings': typeof AppSettingsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesByTo {
-  '/entrar': typeof EntrarRoute
-  '/cadastros': typeof AppCadastrosRoute
-  '/configuracoes': typeof AppConfiguracoesRoute
-  '/faturas': typeof AppFaturasRoute
-  '/horas': typeof AppHorasRoute
+  '/login': typeof LoginRoute
+  '/directory': typeof AppDirectoryRoute
+  '/hours': typeof AppHoursRoute
+  '/invoices': typeof AppInvoicesRoute
+  '/settings': typeof AppSettingsRoute
   '/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
-  '/entrar': typeof EntrarRoute
-  '/_app/cadastros': typeof AppCadastrosRoute
-  '/_app/configuracoes': typeof AppConfiguracoesRoute
-  '/_app/faturas': typeof AppFaturasRoute
-  '/_app/horas': typeof AppHorasRoute
+  '/login': typeof LoginRoute
+  '/_app/directory': typeof AppDirectoryRoute
+  '/_app/hours': typeof AppHoursRoute
+  '/_app/invoices': typeof AppInvoicesRoute
+  '/_app/settings': typeof AppSettingsRoute
   '/_app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
 }
@@ -91,36 +91,36 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/entrar'
-    | '/cadastros'
-    | '/configuracoes'
-    | '/faturas'
-    | '/horas'
+    | '/login'
+    | '/directory'
+    | '/hours'
+    | '/invoices'
+    | '/settings'
     | '/api/auth/$'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/entrar'
-    | '/cadastros'
-    | '/configuracoes'
-    | '/faturas'
-    | '/horas'
+    | '/login'
+    | '/directory'
+    | '/hours'
+    | '/invoices'
+    | '/settings'
     | '/'
     | '/api/auth/$'
   id:
     | '__root__'
     | '/_app'
-    | '/entrar'
-    | '/_app/cadastros'
-    | '/_app/configuracoes'
-    | '/_app/faturas'
-    | '/_app/horas'
+    | '/login'
+    | '/_app/directory'
+    | '/_app/hours'
+    | '/_app/invoices'
+    | '/_app/settings'
     | '/_app/'
     | '/api/auth/$'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
-  EntrarRoute: typeof EntrarRoute
+  LoginRoute: typeof LoginRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
 }
 
@@ -133,11 +133,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/entrar': {
-      id: '/entrar'
-      path: '/entrar'
-      fullPath: '/entrar'
-      preLoaderRoute: typeof EntrarRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/': {
@@ -147,32 +147,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/cadastros': {
-      id: '/_app/cadastros'
-      path: '/cadastros'
-      fullPath: '/cadastros'
-      preLoaderRoute: typeof AppCadastrosRouteImport
+    '/_app/directory': {
+      id: '/_app/directory'
+      path: '/directory'
+      fullPath: '/directory'
+      preLoaderRoute: typeof AppDirectoryRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/configuracoes': {
-      id: '/_app/configuracoes'
-      path: '/configuracoes'
-      fullPath: '/configuracoes'
-      preLoaderRoute: typeof AppConfiguracoesRouteImport
+    '/_app/hours': {
+      id: '/_app/hours'
+      path: '/hours'
+      fullPath: '/hours'
+      preLoaderRoute: typeof AppHoursRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/faturas': {
-      id: '/_app/faturas'
-      path: '/faturas'
-      fullPath: '/faturas'
-      preLoaderRoute: typeof AppFaturasRouteImport
+    '/_app/invoices': {
+      id: '/_app/invoices'
+      path: '/invoices'
+      fullPath: '/invoices'
+      preLoaderRoute: typeof AppInvoicesRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/horas': {
-      id: '/_app/horas'
-      path: '/horas'
-      fullPath: '/horas'
-      preLoaderRoute: typeof AppHorasRouteImport
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
     '/api/auth/$': {
@@ -186,18 +186,18 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
-  AppCadastrosRoute: typeof AppCadastrosRoute
-  AppConfiguracoesRoute: typeof AppConfiguracoesRoute
-  AppFaturasRoute: typeof AppFaturasRoute
-  AppHorasRoute: typeof AppHorasRoute
+  AppDirectoryRoute: typeof AppDirectoryRoute
+  AppHoursRoute: typeof AppHoursRoute
+  AppInvoicesRoute: typeof AppInvoicesRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
-  AppCadastrosRoute: AppCadastrosRoute,
-  AppConfiguracoesRoute: AppConfiguracoesRoute,
-  AppFaturasRoute: AppFaturasRoute,
-  AppHorasRoute: AppHorasRoute,
+  AppDirectoryRoute: AppDirectoryRoute,
+  AppHoursRoute: AppHoursRoute,
+  AppInvoicesRoute: AppInvoicesRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
@@ -205,7 +205,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
-  EntrarRoute: EntrarRoute,
+  LoginRoute: LoginRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
 }
 export const routeTree = rootRouteImport

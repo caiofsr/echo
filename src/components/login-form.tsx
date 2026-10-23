@@ -91,7 +91,7 @@ export function LoginForm({
                   aria-pressed={visible}
                   onClick={() => setVisible(!visible)}
                 >
-                  <EchoIcon name={visible ? "ocultar" : "mostrar"} size={18} />
+                  <EchoIcon name={visible ? "hide" : "show"} size={18} />
                 </Button>
               </div>
             </div>
@@ -107,12 +107,12 @@ export function LoginForm({
             <Button type="submit" className="login-submit" disabled={pending}>
               {pending ? (
                 <>
-                  <EchoIcon name="carregando" className="spin" size={18} />{" "}
+                  <EchoIcon name="loading" className="spin" size={18} />{" "}
                   Entrando…
                 </>
               ) : (
                 <>
-                  Entrar <EchoIcon name="entrar" size={18} />
+                  Entrar <EchoIcon name="login" size={18} />
                 </>
               )}
             </Button>

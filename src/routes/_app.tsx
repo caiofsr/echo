@@ -5,7 +5,7 @@ import { AppShell } from "../components/app-shell";
 export const Route = createFileRoute("/_app")({
   beforeLoad: async ({ location }) => {
     if (!(await hasSession()))
-      throw redirect({ to: "/entrar", search: { destino: location.href } });
+      throw redirect({ to: "/login", search: { destination: location.href } });
   },
   component: () => (
     <SessionBoundary>

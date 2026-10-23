@@ -13,7 +13,7 @@ export default defineConfig({
   ],
   webServer: {
     command: "bun scripts/e2e-server.ts",
-    url: "http://localhost:4318/entrar",
+    url: "http://localhost:4318/login",
     reuseExistingServer: false,
     env: {
       NODE_ENV: "development",

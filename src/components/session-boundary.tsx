@@ -43,7 +43,7 @@ export function SessionBoundary({ children }: { children: ReactNode }) {
     dirtyForms.current.clear();
     queries.clear();
     setStatus("checking");
-    window.location.replace("/entrar");
+    window.location.replace("/login");
   }, [queries]);
   const check = useCallback(
     async (active = false) => {
