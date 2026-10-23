@@ -82,3 +82,13 @@ Ainda deve ser conferido no servidor Dokploy: versão disponível do Railpack, d
 `SessionBoundary` mantém seus filhos montados e ocultos durante reentrada, preservando estado React somente na memória daquela aba. Após autenticar, limpa consultas e invalida os dados do roteador sem enviar formulários. Formulários protegidos devem usar `useUnsavedChanges`, sinalizar respostas 401 com `useSession().expire()` e exigir ação explícita para salvar após atualizar os dados. Sair pede confirmação de alterações sinalizadas nesta ou em outra aba e encerra o acesso em todas as abas daquele navegador pela notificação nativa de saída do Better Auth. O BroadcastChannel do Echo comunica apenas alterações não salvas. A sessão é observada por `authClient.useSession()`; consultas automáticas não renovam a validade, e somente eventos de atividade em aba visível solicitam renovação. Não altera sessões de outros dispositivos.
 
 Não há formulários de trabalho nem cronômetro operacional nesta issue. Essas entregas devem integrar a proteção de sessão sem parar o cronômetro quando o acesso expira ou termina.
+
+## Organização da sessão
+
+`useSessionLifecycle` concentra as transições de acesso, atividade visível e limpeza das consultas. A comunicação de alterações não salvas permanece montada durante expiração e reentrada; ao desmontar ou restaurar uma página, a participação da aba é atualizada. `SessionBoundary` renderiza esse estado e mantém os formulários montados.
+
+`personalCredentials` concentra a regra adicional de revisão da credencial nos hooks nativos do Better Auth. A confirmação após entrada e a validação de leitura pertencem ao mesmo módulo; leituras HTTP e do servidor usam a mesma verificação. A redefinição atualiza a credencial e remove todas as sessões na transação SQLite.
+
+O cliente mantém `fetchOptions.query.disableRefresh: true` como padrão. Atividade visível sobrescreve o valor com `undefined`, omitindo o parâmetro para solicitar renovação. Nesta versão do Better Auth, a string `false` na URL também é convertida para verdadeiro.
+
+Os testes de integração observam as respostas nativas sem transformar status ou payload. O servidor isolado dos testes de navegador gera um formulário temporário em `dist/client/__tests__` para exercitar os hooks públicos e remove esses arquivos ao encerrar; esse formulário não faz parte do build da aplicação.

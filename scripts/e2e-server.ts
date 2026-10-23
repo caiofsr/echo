@@ -36,6 +36,18 @@ const control = process.env.ECHO_TEST_CONTROL_PORT
       },
     })
   : undefined;
+const harness = await Bun.build({
+  entrypoints: ["./e2e/fixtures/session-harness.tsx"],
+  outdir: "dist/client/__tests__",
+  target: "browser",
+  define: { "process.env.NODE_ENV": JSON.stringify("production") },
+});
+if (!harness.success)
+  throw new AggregateError(harness.logs, "Session harness build failed");
+await Bun.write(
+  "dist/client/__tests__/session.html",
+  `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Session test</title></head><body><div id="root"></div><script type="module" src="/__tests__/session-harness.js"></script></body></html>`,
+);
 const child = Bun.spawn(["bun", "server.ts"], {
   env: process.env,
   stdout: "inherit",
@@ -46,6 +58,7 @@ async function stop() {
   database.close();
   child.kill();
   await child.exited;
+  await rm("dist/client/__tests__", { recursive: true, force: true });
   await rm(dir, { recursive: true, force: true });
   process.exit();
 }
@@ -54,4 +67,5 @@ process.on("SIGINT", () => void stop());
 await child.exited;
 control?.stop();
 database.close();
+await rm("dist/client/__tests__", { recursive: true, force: true });
 await rm(dir, { recursive: true, force: true });

@@ -139,7 +139,8 @@ test("observação nativa e consultas periódicas não renovam; atividade visív
       const url = new URL(request.url());
       return (
         url.pathname === "/api/auth/get-session" &&
-        url.searchParams.get("disableRefresh") === String(refreshDisabled)
+        url.searchParams.get("disableRefresh") ===
+          (refreshDisabled ? "true" : null)
       );
     });
   const reconnect = sessionRead(true);
@@ -148,7 +149,112 @@ test("observação nativa e consultas periódicas não renovam; atividade visív
   const passive = sessionRead(true);
   await page.clock.fastForward(61_000);
   await passive;
+  const before = await (
+    await page.request.get("/api/auth/get-session?disableRefresh=true")
+  ).json();
   const active = sessionRead(false);
+  const renewed = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return (
+      url.pathname === "/api/auth/get-session" &&
+      !url.searchParams.has("disableRefresh")
+    );
+  });
   await page.getByRole("heading", { level: 1 }).click();
   await active;
+  const after = await (await renewed).json();
+  expect(Date.parse(after.session.expiresAt)).toBeGreaterThan(
+    Date.parse(before.session.expiresAt),
+  );
+});
+
+test("rascunho e confirmação entre abas sobrevivem à expiração e à reentrada", async ({
+  page,
+  context,
+  request,
+}) => {
+  await page.clock.install();
+  await page.goto("/login");
+  await page.getByLabel("Senha pessoal").fill(password);
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page).toHaveURL("/");
+  await page.goto("/__tests__/session.html");
+  await page.getByLabel("Rascunho").fill("Trabalho ainda não salvo");
+  const other = await context.newPage();
+  await other.goto("/__tests__/session.html");
+  await expect(other.getByLabel("Rascunho")).toBeVisible();
+  await request.post("http://127.0.0.1:4319/reset-password");
+  await other.evaluate(() => window.dispatchEvent(new Event("online")));
+  await expect(
+    other.getByRole("heading", { name: "Entre novamente" }),
+  ).toBeVisible();
+  await page.clock.fastForward(61_000);
+  await expect(
+    page.getByRole("heading", { name: "Entre novamente" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Rascunho")).toHaveValue(
+    "Trabalho ainda não salvo",
+  );
+  await page.getByLabel("Senha pessoal").fill(password);
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page.getByLabel("Rascunho")).toBeVisible();
+  await expect(page.getByLabel("Rascunho")).toHaveValue(
+    "Trabalho ainda não salvo",
+  );
+  await other.getByLabel("Senha pessoal").fill(password);
+  await other.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(other.getByLabel("Rascunho")).toBeVisible();
+  const confirmation = other.waitForEvent("dialog");
+  const click = other.getByRole("button", { name: "Sair" }).click();
+  const dialog = await confirmation;
+  expect(dialog.message()).toContain("alterações não salvas em todas as abas");
+  await dialog.dismiss();
+  await click;
+  await expect(other).toHaveURL("/__tests__/session.html");
+  await expect(page.getByLabel("Rascunho")).toHaveValue(
+    "Trabalho ainda não salvo",
+  );
+});
+
+test("página restaurada anuncia seus rascunhos e desmontar remove a participação antiga", async ({
+  page,
+  context,
+}) => {
+  await page.goto("/login");
+  await page.getByLabel("Senha pessoal").fill(password);
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page).toHaveURL("/");
+  await page.goto("/__tests__/session.html");
+  const other = await context.newPage();
+  await other.goto("/__tests__/session.html");
+  await other.getByLabel("Rascunho").fill("Rascunho restaurado");
+  await other.evaluate(() => {
+    window.dispatchEvent(
+      new PageTransitionEvent("pagehide", { persisted: true }),
+    );
+    window.dispatchEvent(
+      new PageTransitionEvent("pageshow", { persisted: true }),
+    );
+  });
+  await expect(other.getByLabel("Rascunho")).toBeVisible();
+  const confirmation = page.waitForEvent("dialog");
+  const click = page.getByRole("button", { name: "Sair" }).click();
+  const dialog = await confirmation;
+  await dialog.dismiss();
+  await click;
+  await expect(page).toHaveURL("/__tests__/session.html");
+  await other.getByRole("button", { name: "Desmontar formulário" }).click();
+  await other
+    .getByRole("button", { name: "Montar formulário", exact: true })
+    .click();
+  await expect(other.getByLabel("Rascunho")).toHaveValue("");
+  let unexpectedConfirmation = false;
+  page.on("dialog", async (event) => {
+    unexpectedConfirmation = true;
+    await event.dismiss();
+  });
+  await page.getByRole("button", { name: "Sair" }).click();
+  await expect(page).toHaveURL(/\/login/);
+  await expect(other).toHaveURL(/\/login/);
+  expect(unexpectedConfirmation).toBe(false);
 });
