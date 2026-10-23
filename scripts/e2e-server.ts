@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { openDatabase, migrateDatabase } from "../src/server/database";
 import { createAccess } from "../src/server/access";
 import { rateLimit } from "../src/server/schema";
+
 const dir = await mkdtemp(join(tmpdir(), "echo-browser-"));
 process.env.DATABASE_URL = `file:${join(dir, "browser.db")}`;
 const database = openDatabase(process.env.DATABASE_URL);

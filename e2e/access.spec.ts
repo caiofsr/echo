@@ -1,4 +1,5 @@
 import { test, expect } from "@playwright/test";
+
 const password = "senha pessoal de teste no navegador";
 test.beforeEach(async ({ request }) => {
   const response = await request.post("http://127.0.0.1:4319/reset-rate-limit");

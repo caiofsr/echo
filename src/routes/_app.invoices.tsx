@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Unavailable } from "../components/app-shell";
+
 export const Route = createFileRoute("/_app/invoices")({
   component: () => (
     <Unavailable
