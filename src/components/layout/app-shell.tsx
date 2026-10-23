@@ -1,6 +1,6 @@
 import { Link, Outlet } from "@tanstack/react-router";
 import { EchoIcon } from "../ui/icons";
-import { Button } from "../ui/button";
+import { Button, buttonVariants } from "../ui/button";
 import { useSession } from "../../contexts/session";
 
 const links = [
@@ -40,15 +40,14 @@ export function AppShell() {
           ))}
         </nav>
         <div className="header-actions">
-          <Button asChild variant="ghost">
-            <Link
-              to="/settings"
-              aria-label="Configurações"
-              activeOptions={{ exact: true, includeSearch: false }}
-            >
-              <EchoIcon name="settings" size={19} />
-            </Link>
-          </Button>
+          <Link
+            className={buttonVariants({ variant: "ghost" })}
+            to="/settings"
+            aria-label="Configurações"
+            activeOptions={{ exact: true, includeSearch: false }}
+          >
+            <EchoIcon name="settings" size={19} />
+          </Link>
           <Button variant="ghost" onClick={() => void logout()}>
             <EchoIcon name="logout" size={17} />
             <span>Sair</span>

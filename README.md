@@ -162,3 +162,15 @@ return <form ref={draftRef}>...</form>;
 ```
 
 O registro acompanha a montagem, as alterações do estado dirty e a remoção do elemento. Não há efeito de registro por formulário.
+
+### Componentes shadcn/ui com Base UI
+
+O `components.json` configura o shadcn/ui para TanStack Start, Tailwind 4 e o estilo `base-nova`, baseado em Base UI. `Button` e `Input` foram adicionados pelo CLI oficial e usam `@base-ui/react/button` e `@base-ui/react/input`. Os tokens em `src/styles.css` e as classes do Echo preservam cores, tipografia, dimensões, foco e ícones SVG próprios. Os textos continuam em português.
+
+Para adicionar componentes:
+
+```sh
+bunx --bun shadcn add <componente>
+```
+
+Revise os estilos gerados para manter o visual do Echo. O CLI está nas dependências de desenvolvimento; não use `--overwrite` sem revisar as adaptações locais. Links usam o `Link` do TanStack com `buttonVariants`, conforme a composição recomendada pelo shadcn. A escolha de biblioteca de ícones no CLI não substitui os SVGs próprios exigidos pelo projeto.

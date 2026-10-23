@@ -23,3 +23,11 @@ Nenhum hook customizado de autenticação foi reintroduzido. A instância admini
 A suíte de navegador também passou a aguardar a conclusão da consulta inicial por atividade antes de simular reconexão. O trace da falha mostrou uma consulta passiva abortada pela consulta inicial concorrente; o teste não dependia de uma garantia de ordenação da biblioteca. A correção sincroniza as etapas pelos eventos HTTP reais, sem alterar o ciclo de sessão da aplicação ou acrescentar esperas fixas.
 
 Resultado final: 12 testes de integração, 76 asserções, 18 testes de navegador em desktop e mobile, build, typecheck, lint e formatação passaram. O CLI oficial gerou um schema temporário com a configuração reorganizada. O comando de senha passou em criação inicial, redefinição e validação em português. O schema do projeto e o banco local não foram recriados nesta revisão.
+
+## Componentes oficiais do shadcn/ui
+
+O CLI oficial inicializou `components.json` com `base-nova` e gerou Button e Input usando os primitives do Base UI. A adaptação altera estilos, preservando a API e o comportamento desses componentes. A navegação para Configurações usa `Link` com `buttonVariants`, sem `asChild` ou um botão envolvendo o link.
+
+A comparação visual em 1440, 390 e 320 px preservou posição, dimensões, cores, tamanho de fonte e bordas dos controles do login e cabeçalho. As capturas foram produzidas com banco isolado de teste. O tema mantém a fonte do sistema, a paleta do Echo, os SVGs próprios e os textos em português. Radix Slot e as dependências diretas de clsx e tailwind-merge foram removidos; o componente gerado usa `cn`.
+
+O detector visual apontou seis avisos consultivos em cores e tamanhos já presentes antes desta alteração. Eles foram mantidos para preservar o visual solicitado. Não houve achados novos nos componentes TSX.
