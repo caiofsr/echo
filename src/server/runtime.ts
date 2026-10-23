@@ -15,11 +15,8 @@ export function readEnvironment() {
     throw new Error("BETTER_AUTH_URL deve usar HTTPS em produção.");
   const url = env.DATABASE_URL ?? "file:.data/echo.db";
   if (url.startsWith("file:")) mkdirSync(".data", { recursive: true });
-  if (url.startsWith("libsql:") && !env.DATABASE_AUTH_TOKEN)
-    throw new Error("Defina DATABASE_AUTH_TOKEN para o Turso.");
   return {
     url,
-    authToken: env.DATABASE_AUTH_TOKEN,
     baseURL,
     secret,
     secureCookies: production,
@@ -29,7 +26,7 @@ let access: ReturnType<typeof createAccess> | undefined;
 export function getAccess() {
   if (!access) {
     const env = readEnvironment();
-    const { db } = openDatabase(env.url, env.authToken);
+    const { db } = openDatabase(env.url);
     access = createAccess(db, env);
   }
   return access;

@@ -6,7 +6,7 @@ import { readEnvironment } from "../src/server/runtime";
 const input = await Bun.stdin.text();
 const password = input.replace(/\r?\n$/, "");
 const env = readEnvironment();
-const database = openDatabase(env.url, env.authToken);
+const database = openDatabase(env.url);
 try {
   await createAccess(database.db, env).setPassword(password);
   console.log("Senha definida. Todas as sessões anteriores foram encerradas.");

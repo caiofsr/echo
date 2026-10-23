@@ -27,6 +27,6 @@ A revisão usou o protótipo aprovado e o contrato fornecido; não houve nova ro
 
 ## Limites
 
-Turso remoto foi adiado pelo usuário. Domínio, HTTPS, variáveis e execução no Dokploy ainda precisam ser conferidos no servidor de destino. Os testes locais não constituem essa validação.
+O usuário escolheu SQLite local com bun:sqlite também em produção e removeu o suporte ao Turso/libSQL. Domínio, HTTPS, variáveis e execução no Dokploy ainda precisam ser conferidos no servidor de destino. Os testes locais não constituem essa validação.
 
 Formulários de trabalho e cronômetro operacional pertencem às próximas issues. A infraestrutura de sessão mantém filhos montados durante reentrada, oferece registro de alterações não salvas por formulário e sincroniza saída entre abas. Os próximos formulários devem sinalizar alterações e respostas 401, atualizar dados após reautenticação e exigir confirmação explícita antes de salvar. Não há dados de trabalho fictícios na aplicação.

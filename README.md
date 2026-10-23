@@ -21,7 +21,7 @@ bun run dev
 
 O exemplo de leitura da senha usa zsh, shell do ambiente de desenvolvimento. Em outro shell, use sua leitura silenciosa equivalente. A senha deve ter de 15 a 1024 caracteres, aceita espaços e não exige composição específica. Não há senha padrão nem cadastro público. A operação `auth:password` também redefine a senha e revoga todas as sessões, preservando os demais dados. Execute-a apenas administrativamente no servidor, com o mesmo banco e segredo da aplicação. Não passe a senha em argumentos ou arquivos versionados.
 
-`DATABASE_URL=file:.data/echo.db` usa SQLite persistente local com o driver nativo `bun:sqlite` e o adaptador `drizzle-orm/bun-sqlite`. Chaves estrangeiras e WAL são habilitados na conexão. Para Turso, configure `DATABASE_URL=libsql://…` e `DATABASE_AUTH_TOKEN`; somente esse caminho remoto usa `@libsql/client`. Nunca versione `.env` ou arquivos de banco. A conexão remota com Turso foi adiada por decisão do produto.
+`DATABASE_URL=file:.data/echo.db` usa SQLite persistente local com o driver nativo `bun:sqlite` e o adaptador `drizzle-orm/bun-sqlite`. Chaves estrangeiras e WAL são habilitados na conexão. Desenvolvimento e produção usam esse mesmo driver; no Dokploy, configure um caminho absoluto em volume persistente, como `file:/data/echo.db`. Nunca versione `.env` ou arquivos de banco.
 
 ## Build e execução
 
@@ -55,10 +55,10 @@ Em produção, configure:
 - `NODE_ENV=production`.
 - `BETTER_AUTH_URL=https://seu-dominio`, exatamente a origem pública, sem caminho.
 - `BETTER_AUTH_SECRET` estável, aleatório e com pelo menos 32 caracteres.
-- `DATABASE_URL` e, para Turso, `DATABASE_AUTH_TOKEN`.
+- `DATABASE_URL=file:/data/echo.db`, apontando para o volume persistente.
 - `PORT=3000`, ou a porta configurada no serviço.
 
-Antes da primeira inicialização, aplique `bun run db:migrate` no ambiente de destino e defina a senha com `bun run auth:password`. Em SQLite, monte um volume persistente e use um caminho absoluto como `file:/data/echo.db`. Crie previamente o diretório do volume e garanta permissão de escrita. Use uma única instância, sem múltiplas réplicas independentes com arquivos SQLite diferentes. Migrações não são executadas automaticamente a cada requisição.
+Antes da primeira inicialização, aplique `bun run db:migrate` no ambiente de destino e defina a senha com `bun run auth:password`. Monte um volume persistente e use um caminho absoluto como `file:/data/echo.db`. Crie previamente o diretório do volume e garanta permissão de escrita. Use uma única instância, sem múltiplas réplicas independentes com arquivos SQLite diferentes. Migrações não são executadas automaticamente a cada requisição.
 
 O proxy deve terminar HTTPS e encaminhar à porta interna da aplicação. Cookies de produção usam Secure, HttpOnly e SameSite=Lax. Operações de escrita verificam a origem exata. Páginas e respostas de sessão usam `Cache-Control: no-store`; não habilite cache de proxy para conteúdo dinâmico.
 
@@ -75,7 +75,7 @@ docker stop echo-buildkit
 
 O teste usa banco, senha e segredo temporários, verifica entrada, cookie seguro, página protegida, assets, persistência após reiniciar o contêiner e saída. O entrypoint padrão da imagem Railpack é `/bin/bash -c`; comandos administrativos com `docker run` precisam de `--entrypoint bun`, como feito no script.
 
-Ainda deve ser conferido no servidor Dokploy: versão disponível do Railpack, domínio e HTTPS, variáveis, volume/permissões quando aplicável, execução de migrações, inicialização e sessão entre visitas. Esta entrega não publica em produção nem comprova a conexão remota com Turso. A política de backup continua adiada.
+Ainda deve ser conferido no servidor Dokploy: versão disponível do Railpack, domínio e HTTPS, variáveis, volume/permissões quando aplicável, execução de migrações, inicialização e sessão entre visitas. Esta entrega não publica em produção. A política de backup continua adiada.
 
 ## Formulários das próximas entregas
 

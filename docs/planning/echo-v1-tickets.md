@@ -16,7 +16,7 @@ Estado: divisão aprovada e tickets publicados com dependências nativas verific
 
 - [ ] Aplicação TanStack Start com interface em português, shadcn/ui e navegação aprovada; usuário sem sessão não acessa dados ou operações protegidas.
 - [ ] Better Auth com única credencial pessoal, sem cadastro público; cookie seguro e expiração deslizante de 30 dias.
-- [ ] Drizzle/libSQL com SQLite local e configuração de Turso por ambiente; inicialização e migrações documentadas sem segredos versionados.
+- [ ] Drizzle com bun:sqlite e SQLite local em desenvolvimento e produção; caminho por ambiente, volume persistente no Dokploy, inicialização e migrações documentadas sem segredos versionados.
 - [ ] Bun com versão fixa, bun.lock versionado e comando de inicialização explícito; build pelo Railpack e execução da imagem resultante validados com acesso, sessão e banco real, sem Dockerfile; documentar requisitos e limites a verificar no servidor sem publicar em produção.
 - [ ] Testes da operação pública de acesso com SQLite real e fluxo no navegador; infraestrutura reutilizável para banco isolado e controle de tempo.
 
@@ -38,7 +38,7 @@ Confirmado em 22/10/2026.
 - A definição e a redefinição administrativa exigem senha de pelo menos 15 caracteres, permitem frases e não exigem combinações de maiúsculas, números ou símbolos. A entrada aceita colagem e preenchimento por gerenciadores de senha.
 - Bun é o runtime escolhido para o Echo, substituindo a decisão anterior de executar em Node.js. Fixar a versão, versionar bun.lock e definir o comando de inicialização explicitamente.
 - A validação da issue #8 inclui build pelo Railpack e execução da imagem resultante com Bun, cobrindo entrada, sessão e banco real. A validação no Dokploy é uma etapa separada, sem publicação em produção nesta issue. O suporte documentado do Railpack ao Bun não substitui esse teste: https://railpack.com/languages/bun.
-- O teste com um banco remoto Turso fica adiado e não bloqueia a conclusão da issue #8. A configuração por ambiente continua no escopo; o acesso remoto não deve ser declarado validado sem teste.
+- SQLite local com o driver nativo bun:sqlite e Drizzle é usado tanto em desenvolvimento quanto em produção no Dokploy. O suporte ao Turso/libSQL foi removido por decisão do usuário; configurar o caminho do banco por ambiente e um volume persistente no servidor.
 - A renovação da sessão considera o uso em uma aba visível. Uma aba inativa em segundo plano não renova a sessão indefinidamente. A expiração não interrompe o cronômetro.
 - O rascunho preservado após expiração fica somente na memória da aba aberta. Recarregar ou fechar a página descarta esse rascunho, sem armazenamento local persistente dos dados do formulário.
 
