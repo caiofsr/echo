@@ -1,4 +1,4 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { accessQueryOptions } from "../lib/access-query";
 import { LoginForm } from "../components/login-form";
 const destinations = ["/", "/hours", "/invoices", "/directory", "/settings"];
@@ -26,6 +26,7 @@ export const Route = createFileRoute("/login")({
   component: LoginPage,
 });
 function LoginPage() {
+  const router = useRouter();
   const { destination } = Route.useSearch();
   return (
     <main className="login-page">
@@ -33,9 +34,9 @@ function LoginPage() {
         echo<span>.</span>
       </div>
       <LoginForm
-        onSuccess={() => {
-          window.location.assign(destination);
-        }}
+        onSuccess={() =>
+          router.navigate({ href: destination, reloadDocument: true })
+        }
       />
       <footer className="login-footer">
         Seu espaço pessoal de trabalho freelancer.

@@ -24,8 +24,12 @@ export function useSessionLifecycle() {
     dirtyForms.current.clear();
     queries.clear();
     setStatus("checking");
-    window.location.replace("/login");
-  }, [queries]);
+    return router.navigate({
+      href: "/login",
+      reloadDocument: true,
+      replace: true,
+    });
+  }, [queries, router]);
   const check = useCallback(
     async (active = false) => {
       // Omit the native flag for renewal: the HTTP schema coerces the string
@@ -45,7 +49,7 @@ export function useSessionLifecycle() {
   useEffect(
     () =>
       getGlobalBroadcastChannel().subscribe((message) => {
-        if (message.data?.trigger === "signout") leave();
+        if (message.data?.trigger === "signout") void leave();
       }),
     [leave],
   );
@@ -116,9 +120,6 @@ export function useSessionLifecycle() {
     document.addEventListener("scroll", activity, { passive: true });
     document.addEventListener("visibilitychange", visibility);
     window.addEventListener("pageshow", pageShow);
-    const interval = window.setInterval(() => {
-      if (document.visibilityState === "visible") void check();
-    }, 60_000);
     if (status === "active") activity();
     else void check();
     return () => {
@@ -127,7 +128,6 @@ export function useSessionLifecycle() {
       document.removeEventListener("scroll", activity);
       document.removeEventListener("visibilitychange", visibility);
       window.removeEventListener("pageshow", pageShow);
-      clearInterval(interval);
     };
   }, [check, status]);
   async function logout() {
@@ -141,7 +141,7 @@ export function useSessionLifecycle() {
     try {
       const { error } = await authClient.signOut();
       if (error && error.status !== 401) throw new Error();
-      leave();
+      await leave();
     } catch {
       setConnectionError(
         "Não foi possível sair. Confira sua conexão e tente novamente.",

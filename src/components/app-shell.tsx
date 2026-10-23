@@ -1,4 +1,4 @@
-import { Link, Outlet, useLocation } from "@tanstack/react-router";
+import { Link, Outlet } from "@tanstack/react-router";
 import { EchoIcon, type IconName } from "./icons";
 import { Button } from "./ui/button";
 import { useSession } from "./session-boundary";
@@ -11,14 +11,18 @@ const links = [
 ] as const;
 export function AppShell() {
   const { logout } = useSession();
-  const pathname = useLocation({ select: (location) => location.pathname });
   return (
     <>
       <a className="skip-link" href="#content">
         Pular para o conteúdo
       </a>
       <header className="app-header">
-        <Link className="brand" to="/" aria-label="Echo, início">
+        <Link
+          className="brand"
+          to="/"
+          aria-label="Echo, início"
+          activeOptions={{ exact: true, includeSearch: false }}
+        >
           echo<span>.</span>
         </Link>
         <nav aria-label="Principal">
@@ -26,8 +30,9 @@ export function AppShell() {
             <Link
               key={to}
               to={to}
-              className={`nav-link ${pathname === to ? "selected" : ""}`}
-              aria-current={pathname === to ? "page" : undefined}
+              className="nav-link"
+              activeOptions={{ exact: true, includeSearch: false }}
+              activeProps={{ className: "selected" }}
             >
               <EchoIcon name={icon} size={17} />
               {label}
@@ -39,7 +44,7 @@ export function AppShell() {
             <Link
               to="/settings"
               aria-label="Configurações"
-              aria-current={pathname === "/settings" ? "page" : undefined}
+              activeOptions={{ exact: true, includeSearch: false }}
             >
               <EchoIcon name="settings" size={19} />
             </Link>

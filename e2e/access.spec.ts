@@ -48,12 +48,24 @@ test("navegação responsiva sem dados fictícios e sem redirecionamento externo
     "Configurações",
     "Quadro",
   ]) {
-    await page.getByRole("link", { name: title, exact: true }).click();
+    const link = page.getByRole("link", { name: title, exact: true });
+    await link.click();
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
+    await expect(link).toHaveAttribute("aria-current", "page");
+    await expect(page.locator("nav .selected")).toHaveCount(
+      title === "Configurações" ? 0 : 1,
+    );
     await expect(
       page.getByText("Este espaço está sendo preparado"),
     ).toBeVisible();
   }
+  await page.goto("/hours?filter=test");
+  await expect(
+    page.getByRole("link", { name: "Horas", exact: true }),
+  ).toHaveClass(/selected/);
+  await expect(
+    page.getByRole("link", { name: "Quadro", exact: true }),
+  ).not.toHaveAttribute("aria-current", "page");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -144,8 +156,16 @@ test("observação nativa e consultas periódicas não renovam; atividade visív
       );
     });
   const reconnect = sessionRead(true);
+  const reconnected = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return (
+      url.pathname === "/api/auth/get-session" &&
+      url.searchParams.get("disableRefresh") === "true"
+    );
+  });
   await page.evaluate(() => window.dispatchEvent(new Event("online")));
   await reconnect;
+  await (await reconnected).finished();
   const passive = sessionRead(true);
   await page.clock.fastForward(61_000);
   await passive;
@@ -166,6 +186,22 @@ test("observação nativa e consultas periódicas não renovam; atividade visív
   expect(Date.parse(after.session.expiresAt)).toBeGreaterThan(
     Date.parse(before.session.expiresAt),
   );
+  await page.evaluate(() =>
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      get: () => "hidden",
+    }),
+  );
+  const background = page.waitForResponse((response) => {
+    const url = new URL(response.url());
+    return (
+      url.pathname === "/api/auth/get-session" &&
+      url.searchParams.get("disableRefresh") === "true"
+    );
+  });
+  await page.clock.fastForward(61_000);
+  const observed = await (await background).json();
+  expect(observed.session.expiresAt).toBe(after.session.expiresAt);
 });
 
 test("rascunho e confirmação entre abas sobrevivem à expiração e à reentrada", async ({

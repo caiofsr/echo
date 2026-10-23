@@ -48,3 +48,9 @@ A integração oficial `@tanstack/react-router-ssr-query` está conectada em `ge
 Os guards de `/_app` e `/login` consultam a mesma query, cuja função chama `hasSession` no servidor. O `staleTime: 0` dessa query impede que os 30 segundos de cache padrão adiem a verificação de uma sessão revogada. As cinco páginas privadas herdam esse guard e permanecem sem consultas fictícias de dados de trabalho.
 
 O teste de navegador adicional verifica redirecionamento SSR de uma sessão autenticada na página de login, revogação seguida de navegação cliente e retorno ao destino após nova entrada. A reautenticação aguarda a invalidação síncrona das rotas antes de reexibir os formulários.
+
+## Simplificações nativas de navegação e observação
+
+Links ativos e `aria-current` são calculados pelo TanStack, com correspondência exata de caminho independente dos parâmetros da URL. As navegações de entrada e saída usam o roteador com recarregamento do documento; a saída substitui a entrada atual do histórico.
+
+O intervalo customizado foi removido. O Better Auth faz consultas passivas a cada 60 segundos, inclusive em segundo plano enquanto há sessão. Os testes conferem que a expiração não avança nessa consulta e que a seleção do menu permanece correta com parâmetros na URL.
