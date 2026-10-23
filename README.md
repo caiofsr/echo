@@ -92,3 +92,11 @@ Não há formulários de trabalho nem cronômetro operacional nesta issue. Essas
 O cliente mantém `fetchOptions.query.disableRefresh: true` como padrão. Atividade visível sobrescreve o valor com `undefined`, omitindo o parâmetro para solicitar renovação. Nesta versão do Better Auth, a string `false` na URL também é convertida para verdadeiro.
 
 Os testes de integração observam as respostas nativas sem transformar status ou payload. O servidor isolado dos testes de navegador gera um formulário temporário em `dist/client/__tests__` para exercitar os hooks públicos e remove esses arquivos ao encerrar; esse formulário não faz parte do build da aplicação.
+
+## React Query e SSR
+
+`getRouter` cria um `QueryClient` por requisição SSR e conecta a integração oficial `@tanstack/react-router-ssr-query`. Ela fornece o provider e transfere o cache inicial e consultas em streaming para o navegador. O documento raiz não mantém um segundo provider.
+
+Consultas usam `staleTime` padrão de 30 segundos, que cada consulta pode sobrescrever. `defaultPreloadStaleTime: 0` deixa a decisão de atualização com o React Query. Limpeza de cache na saída e reautenticação continua usando esse mesmo cliente.
+
+Os testes verificam isolamento entre roteadores, hidratação sem repetir a leitura, disponibilidade do provider e transferência de uma consulta iniciada após a desidratação inicial.
