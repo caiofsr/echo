@@ -1,4 +1,5 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { accessQueryOptions } from "../queries/access";
 import { LoginForm } from "../components/auth/login-form";
 
@@ -28,16 +29,19 @@ export const Route = createFileRoute("/login")({
 });
 function LoginPage() {
   const router = useRouter();
-  const { destination } = Route.useSearch();
+  const queries = useQueryClient();
   return (
     <main className="login-page">
       <div className="login-brand brand">
         echo<span>.</span>
       </div>
       <LoginForm
-        onSuccess={() =>
-          router.navigate({ href: destination, reloadDocument: true })
-        }
+        onSuccess={async () => {
+          await queries.invalidateQueries({
+            queryKey: accessQueryOptions.queryKey,
+          });
+          await router.invalidate({ sync: true });
+        }}
       />
       <footer className="login-footer">
         Seu espaço pessoal de trabalho freelancer.

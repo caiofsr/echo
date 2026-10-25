@@ -7,7 +7,7 @@ Verificação local atualizada em 23/10/2026. Implementa [Entrar no Echo com ses
 - `bun run typecheck`: passou.
 - `bun test tests`: 12 testes passaram, com 76 verificações na execução final usando `bun:sqlite`. SQLite real isolado, migrações, persistência após reabrir banco, revogação, cookies, expiração/renovação, limite nativo persistente do Better Auth, concorrência do rate limiter e criação e reaplicação da migration inicial.
 - `bun run build`: passou, gerando cliente e servidor do TanStack Start.
-- `bun run test:e2e`: 18 testes passaram, em desktop e celular. Entrada inválida/válida, mostrar senha, destino interno, recarga, navegação, saída em múltiplas abas e reentrada após revogação. O limite nativo também foi conferido na interface, com a mensagem de espera em português.
+- `bun run test:e2e`: 20 testes passaram, em desktop e celular. Entrada inválida/válida, mostrar senha, destino interno, recarga, navegação, saída em múltiplas abas e reentrada após revogação. O limite nativo também foi conferido na interface, com a mensagem de espera em português.
 - Railpack 0.43.0: build local inicial da imagem `echo-issue-8`, runtime Bun 1.3.14. Teste com `bun scripts/smoke-image.ts echo-issue-8` passou, incluindo migrações, definição administrativa de senha, cookie seguro, SSR protegido, assets, sessão após reinício do contêiner e saída. Essa validação da imagem antecede a troca para `bun:sqlite`; não foi repetida depois da troca.
 - Detector Impeccable: nenhum achado nos componentes, rotas e CSS. Revisão visual real em 1440px, 320px e viewport equivalente ao espaço disponível em zoom de 200%. Os SVGs locais foram validados e inspecionados em branco, cinza e fundo do aplicativo, em 17, 24, 32, 64 e 128px. São versões simplificadas de interface; não são ilustrações 3D.
 
@@ -51,7 +51,7 @@ O teste de navegador adicional verifica redirecionamento SSR de uma sessão aute
 
 ## Simplificações nativas de navegação e observação
 
-Links ativos e `aria-current` são calculados pelo TanStack, com correspondência exata de caminho independente dos parâmetros da URL. As navegações de entrada e saída usam o roteador com recarregamento do documento; a saída substitui a entrada atual do histórico. O login inicial usa `disableSignal` do Better Auth para evitar uma consulta que seria cancelada pela recarga.
+Links ativos e `aria-current` são calculados pelo TanStack, com correspondência exata de caminho independente dos parâmetros da URL. Entrada e saída preservam o documento. Após o login, o `refetch()` nativo atualiza a sessão antes da invalidação da query de acesso e das rotas. O `beforeLoad` encaminha ao destino interno. A saída limpa o cache e substitui a entrada atual do histórico. Não há `disableSignal` ou recarga forçada.
 
 O intervalo customizado foi removido. O Better Auth faz consultas passivas a cada 60 segundos, inclusive em segundo plano enquanto há sessão. Os testes conferem que a expiração não avança nessa consulta e que a seleção do menu permanece correta com parâmetros na URL.
 

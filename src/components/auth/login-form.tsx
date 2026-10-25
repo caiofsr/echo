@@ -12,6 +12,7 @@ export function LoginForm({
   onSuccess: () => void | Promise<void>;
   expired?: boolean;
 }) {
+  const { refetch } = authClient.useSession();
   const store = useCreateStore({ visible: false });
   const visible = useSelector(store, (state) => state.visible);
   const form = useForm({
@@ -22,9 +23,8 @@ export function LoginForm({
         .email(
           { email: ECHO_LOGIN_EMAIL, password: value.password },
           {
-            // A fresh login reloads the document; only reentry needs to notify
-            // the session observers in the current page.
-            disableSignal: !expired,
+            // Settle the native session before the router reads its new state.
+            onSuccess: () => refetch(),
             onError: ({ response }) => {
               retryAfter = response.headers.get("X-Retry-After");
             },

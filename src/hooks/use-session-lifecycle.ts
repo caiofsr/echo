@@ -36,7 +36,6 @@ export function useSessionLifecycle() {
     queries.clear();
     return router.navigate({
       href: "/login",
-      reloadDocument: true,
       replace: true,
     });
   }

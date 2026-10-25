@@ -32,12 +32,14 @@ A comparação visual em 1440, 390 e 320 px preservou posição, dimensões, cor
 
 O detector visual apontou seis avisos consultivos em cores e tamanhos já presentes antes desta alteração. Eles foram mantidos para preservar o visual solicitado. Não houve achados novos nos componentes TSX.
 
-## Cancelamento de consulta no login
+## Sincronização de sessão e navegação
 
-O login retornava 200 e abria a aplicação, mas consultas concorrentes de sessão podiam ser interrompidas e registradas como `DOMException: AbortError` pelo servidor. A reprodução em Vite confirmou o erro com banco isolado.
+O login retornava 200 e abria a aplicação, mas o recarregamento e consultas concorrentes de sessão podiam interromper requisições. A solução atual usa navegação cliente e remove `disableSignal`.
 
-O login inicial agora usa a opção nativa `disableSignal` do Better Auth, pois a página será recarregada. A reentrada preserva a notificação de sessão. Montar a fronteira não solicita renovação: a leitura inicial pertence ao Better Auth, e somente atividade real em aba visível pode renovar. Eventos de atividade não iniciam outra consulta enquanto a leitura nativa estiver pendente.
+O formulário assina `useSession()` e aguarda seu `refetch()` no callback de sucesso do Better Auth, antes de continuar. A página invalida a query de acesso e aguarda `router.invalidate({ sync: true })`; o `beforeLoad` consulta a sessão atual e encaminha ao destino validado. Isso evita que a fronteira de sessão receba o estado antigo após uma revogação. A reentrada mantém os formulários montados até a invalidação das rotas. A saída limpa o cache e navega com substituição de histórico, sem recarregar a página.
 
-A suíte de navegador verifica destino interno, leitura inicial passiva, conclusão da resposta e ausência de consultas abortadas durante a entrada. Os testes existentes continuam cobrindo renovação por atividade, polling passivo, recarga e reentrada após revogação. A navegação cliente sem recarga foi descartada porque mantinha estado de sessão antigo após revogação.
+Montar a fronteira apenas observa a sessão. Somente atividade real em aba visível pode renovar, e eventos de atividade não iniciam consultas concorrentes com uma leitura nativa pendente.
 
-O teste de regressão falhou com `net::ERR_ABORTED` antes da correção. Após a correção, os 20 testes de navegador passaram. A reprodução em desenvolvimento terminou sem ocorrências de `AbortError`. Cancelamentos deliberados por recarga ou encerramento de uma página ainda podem ser registrados pelo framework; nenhum filtro global de erros foi adicionado.
+A suíte de navegador verifica ausência de navegação de documento no login, conclusão das leituras passivas, consultas sem cancelamento e preservação do documento na saída em duas abas. Os testes existentes cobrem destino interno, sessão após recarga manual, reentrada após revogação, rascunhos, polling e renovação por atividade. Resultado: 20 testes de navegador e 12 de integração passaram, além de build, tipos, lint e formatação. Os casos de login e revogação passaram em 12 execuções adicionais em desktop e mobile.
+
+A reprodução em Vite, em 1440 e 390 px com banco isolado, confirmou entrada e saída sem requisições abortadas ou recarga do documento. Ao encerrar o navegador de teste, o adaptador registrou um `AbortError`; esse cancelamento de encerramento continua separado do fluxo de autenticação. Nenhum filtro global de erros foi adicionado.

@@ -29,9 +29,23 @@ test("acesso protegido, destino interno, sessão após recarga e saída em todas
   const second = await context.newPage();
   await second.goto("/invoices");
   await expect(second.getByRole("heading", { level: 1 })).toHaveText("Faturas");
+  await page.evaluate(() => {
+    document.documentElement.dataset.testDocument = "primary";
+  });
+  await second.evaluate(() => {
+    document.documentElement.dataset.testDocument = "secondary";
+  });
   await page.getByRole("button", { name: "Sair" }).click();
   await expect(page).toHaveURL(/\/login/);
   await expect(second).toHaveURL(/\/login/);
+  await expect(page.locator("html")).toHaveAttribute(
+    "data-test-document",
+    "primary",
+  );
+  await expect(second.locator("html")).toHaveAttribute(
+    "data-test-document",
+    "secondary",
+  );
   await page.goto("/directory");
   await expect(page).toHaveURL(/\/login/);
 });
@@ -355,7 +369,7 @@ test("login não interrompe consultas de sessão ao abrir o destino", async ({
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Horas");
   expect(await (await sessionResponse).finished()).toBeNull();
-  expect(documentNavigations).toEqual(["http://localhost:4318/hours"]);
+  expect(documentNavigations).toEqual([]);
   expect(failedSessionRequests).toEqual([]);
   expect(sessionQueries.length).toBeGreaterThan(0);
   expect(
