@@ -18,11 +18,7 @@ export function useSignOut() {
     });
   }
   const mutation = useMutation({
-    mutationFn: async () => {
-      const result = await authClient.signOut();
-      if (result.error && result.error.status !== 401)
-        throw new Error(result.error.message);
-    },
+    mutationFn: () => authClient.signOut({ fetchOptions: { throw: true } }),
     onSuccess: leave,
   });
   const leaveAfterRemoteSignOut = useEffectEvent(() => {
