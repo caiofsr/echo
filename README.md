@@ -73,7 +73,7 @@ bun scripts/smoke-image.ts echo-issue-8
 docker stop echo-buildkit
 ```
 
-O teste usa banco, senha e segredo temporários, verifica entrada, cookie seguro, página protegida, assets, persistência após reiniciar o contêiner e saída. O entrypoint padrão da imagem Railpack é `/bin/bash -c`; comandos administrativos com `docker run` precisam de `--entrypoint bun`, como feito no script.
+O teste usa banco, senha e segredo temporários, verifica entrada, cookie seguro, página protegida, assets, persistência após reiniciar o contêiner e saída. A última validação da imagem ocorreu antes da adoção de `bun:sqlite`; repita o teste com a imagem atual antes do deploy. O entrypoint padrão da imagem Railpack é `/bin/bash -c`; comandos administrativos com `docker run` precisam de `--entrypoint bun`, como feito no script.
 
 Ainda deve ser conferido no servidor Dokploy: versão disponível do Railpack, domínio e HTTPS, variáveis, volume/permissões quando aplicável, execução de migrações, inicialização e sessão entre visitas. Esta entrega não publica em produção. A política de backup continua adiada.
 
@@ -149,7 +149,7 @@ bun run db:migrate
 
 `auth:generate` chama o CLI oficial com `--config ./src/lib/auth.ts --output ./src/db/schema.ts`. Revise o schema e o SQL antes de aplicar a migração.
 
-A estrutura completa está em [Organização do código](docs/architecture/source-layout.md). A [revisão da PR 21](docs/verification/pr-21-native-review.md) registra as simplificações e as regras do Echo que continuam necessárias. Secure cookies e a persistência do login usam os padrões nativos do Better Auth; não há override que desative Secure em uma origem HTTPS de desenvolvimento.
+A estrutura completa está em [Organização do código](docs/architecture/source-layout.md). Secure cookies e a persistência do login usam os padrões nativos do Better Auth; não há override que desative Secure em uma origem HTTPS de desenvolvimento.
 
 ### React Compiler e efeitos
 
