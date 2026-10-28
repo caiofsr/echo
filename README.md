@@ -4,7 +4,7 @@ Aplicação pessoal para trabalho freelancer. Esta primeira entrega implementa a
 
 ## Desenvolvimento
 
-Requer Bun **1.3.14**. Dependências são fixadas em `bun.lock`.
+Requer Bun **1.4.4** (`.tool-versions`, `engines.bun` e `packageManager`). Dependências são fixadas em `bun.lock`.
 
 ```sh
 bun install --frozen-lockfile
@@ -48,7 +48,7 @@ O Playwright testa o artefato compilado em desktop e celular. `scripts/e2e-serve
 
 ## Dokploy e Railpack
 
-Sem Dockerfile. Configure Railpack e preserve o comando `bun run start` do `package.json`, que executa explicitamente o runtime Bun. Fixe a versão 1.3.14. `.dockerignore` exclui segredos, bancos, dependências locais e saídas de build do contexto enviado.
+Sem Dockerfile. Configure Railpack e preserve o comando `bun run start` do `package.json`, que executa explicitamente o runtime Bun. Fixe a versão 1.4.4. `.dockerignore` exclui segredos, bancos, dependências locais e saídas de build do contexto enviado.
 
 Em produção, configure:
 
