@@ -86,7 +86,7 @@ Organizar responsabilidades em acesso e sessão; cadastros e preferências; quad
 ### Stack, persistência e acesso
 
 - Usar TanStack Start, Query, Table e Form, com shadcn/ui.
-- Usar Drizzle com o driver nativo bun:sqlite. Desenvolvimento e produção usam SQLite em arquivo local; no Dokploy, o arquivo fica em um volume persistente e o caminho é configurado por ambiente.
+- Drizzle com o cliente libSQL (`@libsql/client`) e adaptador `drizzle-orm/libsql`: SQLite em arquivo local em desenvolvimento (`file:`) e serviço libSQL do Dokploy em produção (URL interna ou externa com `DATABASE_AUTH_TOKEN`); migrações automáticas na inicialização do servidor.
 - Usar Better Auth na mesma base com adaptador Drizzle/SQLite, credencial pessoal única, sem cadastro público ou gestão de usuários. Sessão com cookie seguro e expiração deslizante de 30 dias, renovada durante o uso.
 - Servir a aplicação com Bun como runtime, com versão fixa e bun.lock versionado. Dokploy executa o build no servidor usando Railpack, sem Dockerfile mantido no projeto. Definir comando de inicialização explícito e validar o build pelo Railpack e a execução da imagem resultante com Bun, incluindo acesso, sessão e banco real; não presumir o fallback do Railpack.
 - Autorizar as operações protegidas no servidor. Query, Table e Form organizam a experiência no cliente, mas o servidor preserva as regras de negócio.

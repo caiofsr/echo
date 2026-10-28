@@ -8,7 +8,7 @@ web
 
 ## Stack
 
-Stack confirmada para implementação: TanStack Start, Query, Table e Form, com shadcn/ui. Bun é o runtime, com versão fixa e bun.lock versionado. Drizzle usa o driver nativo bun:sqlite, com SQLite local em desenvolvimento e em produção no Dokploy, em volume persistente e com caminho configurado por ambiente. Better Auth protege o acesso com uma credencial pessoal única.
+Stack confirmada para implementação: TanStack Start, Query, Table e Form, com shadcn/ui. Bun é o runtime, com versão fixa e bun.lock versionado. Drizzle usa o cliente libSQL (`@libsql/client`), com SQLite em arquivo local em desenvolvimento e serviço libSQL do Dokploy em produção. Better Auth protege o acesso com uma credencial pessoal única.
 
 O destino de deploy é o servidor Dokploy do usuário, com build pelo Railpack e sem Dockerfile mantido no projeto. A compatibilidade do build e da execução deve ser verificada; o destino escolhido não constitui evidência de implantação concluída.
 

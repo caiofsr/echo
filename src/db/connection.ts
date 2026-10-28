@@ -7,17 +7,18 @@ import * as schema from "./schema";
 
 export type Database = LibSQLDatabase<typeof schema>;
 
-const CAMINHO_LOCAL = /^(file:|:memory:)/;
-
 export async function openDatabase(url: string): Promise<{
   db: Database;
   close: () => void;
 }> {
-  if (url !== ":memory:" && !/^(file:|https?:\/\/|libsql:\/\/)/.test(url))
+  // Conexões locais são arquivos ou memória; as demais precisam de um
+  // endpoint de serviço libSQL explícito.
+  const local = url === ":memory:" || url.startsWith("file:");
+  if (!local && !/^(https?:\/\/|libsql:\/\/)/.test(url))
     throw new Error(
       "DATABASE_URL deve usar file:, :memory:, http://, https:// ou libsql://.",
     );
-  if (CAMINHO_LOCAL.test(url) && url !== ":memory:") {
+  if (local && url !== ":memory:") {
     const filename = decodeURIComponent(url.slice(5).split("?")[0]);
     mkdirSync(dirname(filename), { recursive: true });
   }
@@ -26,8 +27,9 @@ export async function openDatabase(url: string): Promise<{
     authToken: process.env.DATABASE_AUTH_TOKEN || undefined,
   });
   await client.execute("PRAGMA foreign_keys = ON");
-  if (CAMINHO_LOCAL.test(url))
-    await client.execute("PRAGMA journal_mode = WAL");
+  // O servidor libSQL é sempre WAL e rejeita o pragma sobre HTTP, então o
+  // journal_mode só se aplica a conexões locais.
+  if (local) await client.execute("PRAGMA journal_mode = WAL");
   const db = drizzle(client, { schema });
   return { db, close: () => client.close() };
 }

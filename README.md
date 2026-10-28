@@ -73,7 +73,7 @@ bun scripts/smoke-image.ts echo-issue-8
 docker stop echo-buildkit
 ```
 
-O teste usa banco, senha e segredo temporários, verifica entrada, cookie seguro, página protegida, assets, persistência após reiniciar o contêiner e saída. A última validação da imagem ocorreu antes da adoção de `bun:sqlite`; repita o teste com a imagem atual antes do deploy. O entrypoint padrão da imagem Railpack é `/bin/bash -c`; comandos administrativos com `docker run` precisam de `--entrypoint bun`, como feito no script.
+O teste usa banco, senha e segredo temporários, verifica entrada, cookie seguro, página protegida, assets, persistência após reiniciar o contêiner e saída. A última validação da imagem ocorreu antes da adoção do cliente libSQL; repita o teste com a imagem atual antes do deploy. O entrypoint padrão da imagem Railpack é `/bin/bash -c`; comandos administrativos com `docker run` precisam de `--entrypoint bun`, como feito no script.
 
 Ainda deve ser conferido no servidor Dokploy: versão disponível do Railpack, domínio e HTTPS, variáveis, volume/permissões quando aplicável, execução de migrações, inicialização e sessão entre visitas. Esta entrega não publica em produção. A política de backup continua adiada.
 
@@ -91,7 +91,7 @@ Não há formulários de trabalho nem cronômetro operacional nesta issue. Essas
 
 O comando `auth:password` cria a conta inicial por `signUpEmail`, sem sessão automática. Para uma conta existente, chama `requestPasswordReset` e `resetPassword`, com `revokeSessionsOnPasswordReset: true`. O token fica somente na memória do comando; nenhum email é enviado e o envio de reset não é configurado na instância pública.
 
-A revogação segue o comportamento nativo do Better Auth. Não existe revisão customizada da credencial nem garantia adicional contra um login concorrente que crie uma sessão depois do reset. O adapter Drizzle com `bun:sqlite` mantém transações assíncronas desativadas; não há promessa de atomicidade adicional ao fluxo nativo.
+A revogação segue o comportamento nativo do Better Auth. Não existe revisão customizada da credencial nem garantia adicional contra um login concorrente que crie uma sessão depois do reset. O adapter Drizzle com o cliente libSQL mantém transações assíncronas desativadas; não há promessa de atomicidade adicional ao fluxo nativo.
 
 O cliente mantém `fetchOptions.query.disableRefresh: true` como padrão. Atividade visível sobrescreve o valor com `undefined`, omitindo o parâmetro para solicitar renovação. Nesta versão do Better Auth, a string `false` na URL também é convertida para verdadeiro.
 

@@ -16,7 +16,7 @@ Estado: divisão aprovada e tickets publicados com dependências nativas verific
 
 - [ ] Aplicação TanStack Start com interface em português, shadcn/ui e navegação aprovada; usuário sem sessão não acessa dados ou operações protegidas.
 - [ ] Better Auth com única credencial pessoal, sem cadastro público; cookie seguro e expiração deslizante de 30 dias.
-- [ ] Drizzle com bun:sqlite e SQLite local em desenvolvimento e produção; caminho por ambiente, volume persistente no Dokploy, inicialização e migrações documentadas sem segredos versionados.
+- [ ] Drizzle com o cliente libSQL (`@libsql/client`): arquivo local em desenvolvimento, serviço libSQL do Dokploy em produção; migrações automáticas na inicialização do servidor e configuração documentada sem segredos versionados.
 - [ ] Bun com versão fixa, bun.lock versionado e comando de inicialização explícito; build pelo Railpack e execução da imagem resultante validados com acesso, sessão e banco real, sem Dockerfile; documentar requisitos e limites a verificar no servidor sem publicar em produção.
 - [ ] Testes da operação pública de acesso com SQLite real e fluxo no navegador; infraestrutura reutilizável para banco isolado e controle de tempo.
 
