@@ -1,0 +1,12 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { Unavailable } from "../components/ui/unavailable";
+
+export const Route = createFileRoute("/_app/directory")({
+  component: () => (
+    <Unavailable
+      title="Cadastros"
+      description="Aqui você vai cadastrar clientes e projetos."
+      icon="directory"
+    />
+  ),
+});
