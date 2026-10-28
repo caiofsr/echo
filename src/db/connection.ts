@@ -11,13 +11,9 @@ export async function openDatabase(url: string): Promise<{
   db: Database;
   close: () => void;
 }> {
-  // Conexões locais são arquivos ou memória; as demais precisam de um
-  // endpoint de serviço libSQL explícito.
+  // O cliente libSQL rejeita sozinho esquemas e URLs inválidos; aqui só
+  // interessa separar conexão local (arquivo ou memória) de serviço remoto.
   const local = url === ":memory:" || url.startsWith("file:");
-  if (!local && !/^(https?:\/\/|libsql:\/\/)/.test(url))
-    throw new Error(
-      "DATABASE_URL deve usar file:, :memory:, http://, https:// ou libsql://.",
-    );
   if (local && url !== ":memory:") {
     const filename = decodeURIComponent(url.slice(5).split("?")[0]);
     mkdirSync(dirname(filename), { recursive: true });

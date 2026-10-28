@@ -7,9 +7,9 @@ import { migrateDatabase, openDatabase } from "../src/db/connection";
 import { createAccess } from "./helpers/create-access";
 import * as schema from "../src/db/schema";
 
-test("abertura recusa URL fora dos esquemas aceitos", async () => {
+test("abertura recusa URL de esquema não suportado", async () => {
   await expect(openDatabase("postgres://db.invalid:5432/echo")).rejects.toThrow(
-    "DATABASE_URL deve usar file:, :memory:, http://, https:// ou libsql://.",
+    /URL_SCHEME_NOT_SUPPORTED/,
   );
 });
 
