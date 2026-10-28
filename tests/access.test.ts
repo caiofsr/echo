@@ -44,6 +44,8 @@ test("sair encerra somente a sessão atual e redefinir a senha revoga todas", as
     await app.request("/sign-in/email", { email, password: app.password }),
   );
   expect((await app.request("/sign-out", {}, first)).status).toBe(200);
+  expect((await app.request("/sign-out", {}, first)).status).toBe(200);
+  expect((await app.request("/sign-out", {})).status).toBe(200);
   expect(
     await (
       await app.request("/get-session?disableRefresh=true", undefined, first)
