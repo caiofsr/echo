@@ -45,3 +45,13 @@ A suíte de navegador verifica ausência de navegação de documento no login, c
 A reprodução em Vite, em 1440 e 390 px com banco isolado, confirmou entrada e saída sem requisições abortadas ou recarga do documento. Ao encerrar o navegador de teste, o adaptador registrou um `AbortError`; esse cancelamento de encerramento continua separado do fluxo de autenticação. Nenhum filtro global de erros foi adicionado.
 
 A [investigação do cancelamento no servidor](tanstack-client-disconnect.md) isolou o registro de encerramento no `createServerEntry` do TanStack, também na última versão publicada. A correção oficial está na PR TanStack/router#8536, ainda aberta na data da investigação. Não foi adicionado tratamento customizado.
+
+## Separação da reautenticação e dos rascunhos
+
+O contexto genérico de sessão e `useSessionLifecycle` foram removidos. `useDraftProtection` compartilha apenas presença de alterações não salvas e confirmação de descarte; `useUnsavedDrafts` mantém esse registro e o canal `echo-drafts`. Valores dos formulários e dados da sessão não são copiados para esse contexto.
+
+`useReauthentication` observa `authClient.useSession()` e mantém somente os bloqueios de interface para reentrada e restauração. A reentrada continua fechada até autenticar explicitamente e invalidar as rotas, inclusive se uma página restaurada encontrar uma sessão válida criada por outra aba. `ReauthenticationBoundary` mantém os formulários montados e ocultos durante esse processo.
+
+`useSignOut` delega envio e erro a `useMutation` do React Query, chamando o SDK do Better Auth. A saída confirmada limpa o cache e navega pelo TanStack, e a notificação nativa `signout` faz as outras abas saírem. O listener é necessário para distinguir saída explícita, que descarta rascunhos, de expiração ou revogação, que preserva rascunhos para reentrada. Não existe protocolo próprio para comunicar autenticação.
+
+Os 22 testes de navegador passaram em desktop e mobile. A cobertura adicional verifica falha de saída com nova tentativa, cancelamento e confirmação do descarte entre abas, descarte dos formulários após confirmação e manutenção da reentrada após restauração de página. Os 12 testes de integração, tipos, lint, formatação e build também passaram.

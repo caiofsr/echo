@@ -7,7 +7,7 @@ Verificação local atualizada em 23/10/2026. Implementa [Entrar no Echo com ses
 - `bun run typecheck`: passou.
 - `bun test tests`: 12 testes passaram, com 76 verificações na execução final usando `bun:sqlite`. SQLite real isolado, migrações, persistência após reabrir banco, revogação, cookies, expiração/renovação, limite nativo persistente do Better Auth, concorrência do rate limiter e criação e reaplicação da migration inicial.
 - `bun run build`: passou, gerando cliente e servidor do TanStack Start.
-- `bun run test:e2e`: 20 testes passaram, em desktop e celular. Entrada inválida/válida, mostrar senha, destino interno, recarga, navegação, saída em múltiplas abas e reentrada após revogação. O limite nativo também foi conferido na interface, com a mensagem de espera em português.
+- `bun run test:e2e`: 22 testes passaram, em desktop e celular. Entrada inválida/válida, mostrar senha, destino interno, recarga, navegação, saída em múltiplas abas e reentrada após revogação. O limite nativo também foi conferido na interface, com a mensagem de espera em português.
 - Railpack 0.43.0: build local inicial da imagem `echo-issue-8`, runtime Bun 1.3.14. Teste com `bun scripts/smoke-image.ts echo-issue-8` passou, incluindo migrações, definição administrativa de senha, cookie seguro, SSR protegido, assets, sessão após reinício do contêiner e saída. Essa validação da imagem antecede a troca para `bun:sqlite`; não foi repetida depois da troca.
 - Detector Impeccable: nenhum achado nos componentes, rotas e CSS. Revisão visual real em 1440px, 320px e viewport equivalente ao espaço disponível em zoom de 200%. Os SVGs locais foram validados e inspecionados em branco, cinza e fundo do aplicativo, em 17, 24, 32, 64 e 128px. São versões simplificadas de interface; não são ilustrações 3D.
 
@@ -33,7 +33,7 @@ Formulários de trabalho e cronômetro operacional pertencem às próximas issue
 
 ## Aprofundamento dos módulos de acesso e sessão
 
-O ciclo de sessão no navegador fica em `useSessionLifecycle`, separado da renderização. A comunicação de rascunhos tem vida estável durante expiração e reentrada e anuncia a participação da aba ao restaurar uma página.
+A reautenticação fica em `useReauthentication`; a saída usa `useSignOut` com mutation do React Query; o contexto `useDraftProtection` compartilha somente a proteção de rascunhos. A comunicação de rascunhos tem vida estável durante expiração e reentrada e anuncia a participação da aba ao restaurar uma página.
 
 Não há hooks customizados do Better Auth. O comando administrativo usa os endpoints nativos de criação inicial e reset, com token restrito à memória daquela execução. O cadastro público fica desativado na configuração nativa; a instância pública não configura envio de reset.
 
@@ -105,7 +105,7 @@ Foram removidas as seis memoizações manuais com `useCallback`. O número de `u
 
 `useUnsavedChanges` retorna um ref callback com cleanup do React 19, aplicado ao elemento raiz do rascunho no fixture. O registro não usa mais efeito. A configuração anuncia o estado dirty inicial depois de abrir o canal, contemplando um elemento já registrado durante o commit.
 
-Os dois efeitos restantes sincronizam a máquina de reentrada com o Better Auth e os recursos do navegador com a montagem da fronteira. A expiração continua retida até o usuário reautenticar e as rotas serem invalidadas, preservando formulários sem revelá-los antes da atualização. Não há mutação de Store ou abertura de canal durante render.
+Efeitos separados sincronizam o bloqueio de reentrada com o Better Auth, os eventos de atividade/restauração, a presença de rascunhos e a notificação nativa de saída. A expiração continua retida até o usuário reautenticar e as rotas serem invalidadas, preservando formulários sem revelá-los antes da atualização. Não há mutação de Store ou abertura de canal durante render.
 
 Validação: 12 testes de integração, 76 asserções e 18 testes de navegador em desktop/mobile passaram, incluindo consultas passivas, renovação por atividade, reentrada com rascunhos e limpeza ao desmontar. Build, typecheck, lint e formatação passaram.
 

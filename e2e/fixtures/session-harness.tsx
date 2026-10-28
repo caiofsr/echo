@@ -8,15 +8,15 @@ import {
   RouterProvider,
   Outlet,
 } from "@tanstack/react-router";
-import { SessionBoundary } from "../../src/components/auth/session-boundary";
-import { useSession } from "../../src/contexts/session";
+import { ReauthenticationBoundary } from "../../src/components/auth/reauthentication-boundary";
+import { useSignOut } from "../../src/hooks/use-sign-out";
 import { useUnsavedChanges } from "../../src/hooks/use-unsaved-changes";
 
 // Only bundled by the isolated browser fixture, never by the application build.
 // Future forms use these same public hooks; no lifecycle internals are exposed.
 function Draft() {
   const [value, setValue] = useState("");
-  const { logout } = useSession();
+  const { signOut } = useSignOut();
   const draftRef = useUnsavedChanges(Boolean(value));
   return (
     <main ref={draftRef}>
@@ -28,7 +28,7 @@ function Draft() {
           onChange={(event) => setValue(event.target.value)}
         />
       </label>
-      <button onClick={() => void logout()}>Sair</button>
+      <button onClick={() => signOut()}>Sair</button>
     </main>
   );
 }
@@ -40,9 +40,9 @@ function Harness() {
         {mounted ? "Desmontar formulário" : "Montar formulário"}
       </button>
       {mounted && (
-        <SessionBoundary>
+        <ReauthenticationBoundary>
           <Draft />
-        </SessionBoundary>
+        </ReauthenticationBoundary>
       )}
     </>
   );

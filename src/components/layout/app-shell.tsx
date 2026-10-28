@@ -1,7 +1,7 @@
 import { Link, Outlet } from "@tanstack/react-router";
 import { EchoIcon } from "../ui/icons";
 import { Button, buttonVariants } from "../ui/button";
-import { useSession } from "../../contexts/session";
+import { useSignOut } from "../../hooks/use-sign-out";
 
 const links = [
   { to: "/", label: "Quadro", icon: "board" },
@@ -10,9 +10,14 @@ const links = [
   { to: "/directory", label: "Cadastros", icon: "directory" },
 ] as const;
 export function AppShell() {
-  const { logout } = useSession();
+  const { signOut, error } = useSignOut();
   return (
     <>
+      {error && (
+        <p role="alert" className="connection-error">
+          Não foi possível sair. Confira sua conexão e tente novamente.
+        </p>
+      )}
       <a className="skip-link" href="#content">
         Pular para o conteúdo
       </a>
@@ -48,7 +53,7 @@ export function AppShell() {
           >
             <EchoIcon name="settings" size={19} />
           </Link>
-          <Button variant="ghost" onClick={() => void logout()}>
+          <Button variant="ghost" onClick={() => signOut()}>
             <EchoIcon name="logout" size={17} />
             <span>Sair</span>
           </Button>

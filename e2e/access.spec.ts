@@ -261,6 +261,14 @@ test("rascunho e confirmação entre abas sobrevivem à expiração e à reentra
   await expect(page.getByLabel("Rascunho")).toHaveValue(
     "Trabalho ainda não salvo",
   );
+  await other.evaluate(() =>
+    window.dispatchEvent(
+      new PageTransitionEvent("pageshow", { persisted: true }),
+    ),
+  );
+  await expect(
+    other.getByRole("heading", { name: "Entre novamente" }),
+  ).toBeVisible();
   await other.getByLabel("Senha pessoal").fill(password);
   await other.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(other.getByLabel("Rascunho")).toBeVisible();
@@ -274,6 +282,12 @@ test("rascunho e confirmação entre abas sobrevivem à expiração e à reentra
   await expect(page.getByLabel("Rascunho")).toHaveValue(
     "Trabalho ainda não salvo",
   );
+  other.once("dialog", (confirmation) => confirmation.accept());
+  await other.getByRole("button", { name: "Sair" }).click();
+  await expect(other).toHaveURL(/\/login/);
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page.getByLabel("Rascunho")).toHaveCount(0);
+  await expect(other.getByLabel("Rascunho")).toHaveCount(0);
 });
 
 test("página restaurada anuncia seus rascunhos e desmontar remove a participação antiga", async ({
@@ -379,4 +393,32 @@ test("login não interrompe consultas de sessão ao abrir o destino", async ({
   ).toBe(true);
   await page.reload();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Horas");
+});
+
+test("falha ao sair mantém o acesso e permite nova tentativa", async ({
+  page,
+}) => {
+  await page.goto("/login");
+  await page.getByLabel("Senha pessoal").fill(password);
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Quadro");
+  await page.route(/\/api\/auth\/sign-out(?:\?|$)/, (route) =>
+    route.fulfill({
+      status: 503,
+      contentType: "application/json",
+      body: JSON.stringify({
+        code: "SERVICE_UNAVAILABLE",
+        message: "unavailable",
+      }),
+    }),
+  );
+  await page.getByRole("button", { name: "Sair", exact: true }).click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "Não foi possível sair. Confira sua conexão e tente novamente.",
+  );
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Quadro");
+  await page.unroute(/\/api\/auth\/sign-out(?:\?|$)/);
+  await page.getByRole("button", { name: "Sair", exact: true }).click();
+  await expect(page).toHaveURL(/\/login/);
+  await expect(page.getByLabel("Senha pessoal")).toBeVisible();
 });

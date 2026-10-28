@@ -79,13 +79,15 @@ Ainda deve ser conferido no servidor Dokploy: versão disponível do Railpack, d
 
 ## Formulários das próximas entregas
 
-`SessionBoundary` mantém seus filhos montados e ocultos durante reentrada, preservando estado React somente na memória daquela aba. Após autenticar, limpa consultas e invalida os dados do roteador sem enviar formulários. Formulários protegidos devem anexar ao `ref` do formulário o retorno de `useUnsavedChanges`, consultar a sessão pelo cliente nativo ao receber 401 e exigir ação explícita para salvar após atualizar os dados. Sair pede confirmação de alterações sinalizadas nesta ou em outra aba e encerra o acesso em todas as abas daquele navegador pela notificação nativa de saída do Better Auth. O BroadcastChannel do Echo comunica apenas alterações não salvas. A sessão é observada por `authClient.useSession()`; consultas automáticas não renovam a validade, e somente eventos de atividade em aba visível solicitam renovação. Não altera sessões de outros dispositivos.
+`ReauthenticationBoundary` mantém seus filhos montados e ocultos durante reentrada, preservando estado React somente na memória daquela aba. Após autenticar, limpa consultas e invalida os dados do roteador sem enviar formulários. Formulários protegidos devem anexar ao `ref` do formulário o retorno de `useUnsavedChanges`, consultar a sessão pelo cliente nativo ao receber 401 e exigir ação explícita para salvar após atualizar os dados. Sair pede confirmação de alterações sinalizadas nesta ou em outra aba e encerra o acesso em todas as abas daquele navegador pela notificação nativa de saída do Better Auth. O BroadcastChannel do Echo comunica apenas alterações não salvas. A sessão é observada por `authClient.useSession()`; consultas automáticas não renovam a validade, e somente eventos de atividade em aba visível solicitam renovação. Não altera sessões de outros dispositivos.
 
 Não há formulários de trabalho nem cronômetro operacional nesta issue. Essas entregas devem integrar a proteção de sessão sem parar o cronômetro quando o acesso expira ou termina.
 
-## Organização da sessão
+## Reautenticação e proteção de rascunhos
 
-`useSessionLifecycle` concentra as transições de acesso, atividade visível e limpeza das consultas. A comunicação de alterações não salvas permanece montada durante expiração e reentrada; ao desmontar ou restaurar uma página, a participação da aba é atualizada. `SessionBoundary` renderiza esse estado e mantém os formulários montados.
+`useReauthentication` observa o Better Auth e mantém apenas o bloqueio da interface até concluir a reentrada e a invalidação das rotas. Ele também solicita renovação por atividade visível. `useUnsavedDrafts` registra a presença de rascunhos nesta e em outras abas; o contexto `useDraftProtection` expõe somente `setDraftDirty` e `confirmDiscard`. Os valores dos formulários permanecem nos próprios formulários.
+
+`useSignOut` usa `authClient.signOut()` e `useMutation` do React Query para envio e erro. Na saída, limpa o cache e navega pelo TanStack Router. A assinatura da notificação nativa `signout` do Better Auth faz as outras abas descartarem seus rascunhos e saírem; expiração e revogação continuam mostrando reentrada. Não existe um `useSession()` customizado ou um contexto que copie a sessão.
 
 O comando `auth:password` cria a conta inicial por `signUpEmail`, sem sessão automática. Para uma conta existente, chama `requestPasswordReset` e `resetPassword`, com `revokeSessionsOnPasswordReset: true`. O token fica somente na memória do comando; nenhum email é enviado e o envio de reset não é configurado na instância pública.
 
@@ -117,7 +119,7 @@ Montar a fronteira apenas observa a sessão. Eventos de atividade não iniciam o
 
 ### Estado de interface com TanStack Store
 
-`@tanstack/react-store` gerencia status de acesso, erros de conexão, registro de formulários alterados, participação de outras abas e última atividade. Cada `SessionBoundary` cria seu store com `useCreateStore`; o contexto nativo compartilha as ações usadas pelos descendentes. Não existe store global entre requisições SSR. Seletores observam apenas os campos exibidos, e os conjuntos de alterações recebem atualizações imutáveis.
+`@tanstack/react-store` mantém somente o bloqueio de reentrada/restauração da interface e os conjuntos de formulários e abas com alterações não salvas. Os stores são criados por montagem, sem estado global entre requisições SSR. O contexto nativo compartilha as ações de proteção de rascunhos. O erro da saída fica na mutation do React Query; a última atividade usa um ref porque não é exibida pela interface. A sessão permanece no Better Auth.
 
 Cada `LoginForm` também cria um store para visibilidade da senha. Valor da senha, envio e erros ficam no TanStack Form; dados do servidor ficam no React Query e a sessão autenticada continua sob responsabilidade do Better Auth. Os rascunhos dos próximos formulários permanecem nos respectivos formulários; o Store registra quais têm alterações não salvas.
 
@@ -153,7 +155,7 @@ A estrutura completa está em [Organização do código](docs/architecture/sourc
 
 O React Compiler está habilitado no cliente pelo preset oficial de `@vitejs/plugin-react`, com `@rolldown/plugin-babel`. O Oxc continua responsável por lint e formatação; suas regras de hooks e dependências estão ativas. Não há `useCallback`, `useMemo` ou wrappers de memoização manuais na aplicação.
 
-O ciclo de sessão mantém dois efeitos. Um processa as transições de autenticação observadas no Better Auth, mantendo a reentrada fechada até a atualização das rotas. O outro conecta eventos do navegador e canais entre abas durante a montagem da fronteira. `useEffectEvent` fornece os valores atuais aos eventos, sem reinstalar os listeners a cada transição.
+Os efeitos têm responsabilidades separadas: observar a sessão para manter o bloqueio de reentrada, conectar eventos de atividade/restauração, comunicar presença de rascunhos e reagir à notificação nativa de saída entre abas. `useEffectEvent` fornece os valores atuais aos eventos, sem reinstalar listeners a cada transição. Nenhum efeito cria uma segunda sessão ou substitui polling e reconexão do Better Auth.
 
 O registro de rascunhos usa um ref callback com cleanup do React 19. Anexe o retorno ao formulário ou ao seu elemento raiz:
 

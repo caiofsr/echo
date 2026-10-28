@@ -7,8 +7,8 @@
 | `src/db`                | Conexão da aplicação, abertura/migração do SQLite e schema gerado pelo Better Auth.                                                               |
 | `src/server/functions`  | RPCs definidas com `createServerFn`, incluindo a leitura de sessão. Essas funções são chamadas do cliente através do mecanismo do TanStack Start. |
 | `src/queries`           | `queryOptions` do React Query, com chave, função de consulta e política de cache.                                                                 |
-| `src/hooks`             | Ciclo de sessão da interface e registro de alterações não salvas.                                                                                 |
-| `src/contexts`          | Contextos tipados que compartilham ações com a árvore de componentes.                                                                             |
+| `src/hooks`             | Reautenticação, saída e registro de alterações não salvas.                                                                                        |
+| `src/contexts`          | Contexto de proteção de rascunhos, sem cópia da sessão autenticada.                                                                               |
 | `src/components/auth`   | Formulário de login e interface de reautenticação.                                                                                                |
 | `src/components/layout` | Estrutura e navegação da aplicação.                                                                                                               |
 | `src/components/ui`     | Componentes visuais reutilizáveis e SVGs da interface.                                                                                            |
@@ -24,4 +24,6 @@ Server functions devem ler cabeçalhos e autorizar acesso dentro de `.handler()`
 
 A aplicação delega estado autenticado ao Better Auth, valores/envio/erros do formulário ao TanStack Form e dados do servidor ao React Query. O TanStack Store mantém estado de interface e coordenação de alterações não salvas. Evite copiar esses estados entre bibliotecas.
 
-O React Compiler realiza a memoização no cliente. A sincronização com eventos externos usa `useEffectEvent`, e o registro de formulários recebe um ref callback com cleanup do React 19. Os dois efeitos restantes pertencem ao ciclo de sessão; não substitua sua sincronização externa por mutações durante render.
+O React Compiler realiza a memoização no cliente. A sincronização com eventos externos usa `useEffectEvent`, e o registro de formulários recebe um ref callback com cleanup do React 19. Os efeitos conectam recursos externos com cleanup por montagem; não substitua essa sincronização por mutações durante render.
+
+`ReauthenticationBoundary` compõe `useReauthentication` e `useUnsavedDrafts`, mantendo os formulários montados durante a reentrada. `useDraftProtection` compartilha apenas registro e confirmação de rascunhos. Componentes com ação de saída usam `useSignOut`; o estado de envio/erro pertence ao `useMutation` do React Query. A atualização da sessão e a notificação entre abas continuam no Better Auth, e os guards e invalidações permanecem no TanStack Router/Start. O Echo mantém apenas as regras de atividade visível e proteção dos rascunhos.

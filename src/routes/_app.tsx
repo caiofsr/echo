@@ -1,6 +1,6 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { accessQueryOptions } from "../queries/access";
-import { SessionBoundary } from "../components/auth/session-boundary";
+import { ReauthenticationBoundary } from "../components/auth/reauthentication-boundary";
 import { AppShell } from "../components/layout/app-shell";
 
 export const Route = createFileRoute("/_app")({
@@ -9,8 +9,8 @@ export const Route = createFileRoute("/_app")({
       throw redirect({ to: "/login", search: { destination: location.href } });
   },
   component: () => (
-    <SessionBoundary>
+    <ReauthenticationBoundary>
       <AppShell />
-    </SessionBoundary>
+    </ReauthenticationBoundary>
   ),
 });
