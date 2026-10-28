@@ -1,27 +1,37 @@
 import { mkdirSync } from "node:fs";
 import { dirname } from "node:path";
-import { Database as BunSQLite } from "bun:sqlite";
-import { drizzle, type BunSQLiteDatabase } from "drizzle-orm/bun-sqlite";
-import { migrate } from "drizzle-orm/bun-sqlite/migrator";
+import { createClient, type Client } from "@libsql/client";
+import { drizzle, type LibSQLDatabase } from "drizzle-orm/libsql";
+import { migrate } from "drizzle-orm/libsql/migrator";
 import * as schema from "./schema";
 
-export type Database = BunSQLiteDatabase<typeof schema>;
+export type Database = LibSQLDatabase<typeof schema>;
 
-export function openDatabase(url: string): {
+const CAMINHO_LOCAL = /^(file:|:memory:)/;
+
+export async function openDatabase(url: string): Promise<{
   db: Database;
   close: () => void;
-} {
-  if (!url.startsWith("file:") && url !== ":memory:")
-    throw new Error("DATABASE_URL deve usar file: para SQLite local.");
-  const filename = url === ":memory:" ? url : decodeURIComponent(url.slice(5));
-  if (filename !== ":memory:")
+}> {
+  if (url !== ":memory:" && !/^(file:|https?:\/\/|libsql:\/\/)/.test(url))
+    throw new Error(
+      "DATABASE_URL deve usar file:, :memory:, http://, https:// ou libsql://.",
+    );
+  if (CAMINHO_LOCAL.test(url) && url !== ":memory:") {
+    const filename = decodeURIComponent(url.slice(5).split("?")[0]);
     mkdirSync(dirname(filename), { recursive: true });
-  const client = new BunSQLite(filename, { create: true });
-  client.exec("PRAGMA foreign_keys = ON; PRAGMA journal_mode = WAL;");
+  }
+  const client: Client = createClient({
+    url,
+    authToken: process.env.DATABASE_AUTH_TOKEN || undefined,
+  });
+  await client.execute("PRAGMA foreign_keys = ON");
+  if (CAMINHO_LOCAL.test(url))
+    await client.execute("PRAGMA journal_mode = WAL");
   const db = drizzle(client, { schema });
   return { db, close: () => client.close() };
 }
 
 export function migrateDatabase(db: Database) {
-  migrate(db, { migrationsFolder: "./drizzle" });
+  return migrate(db, { migrationsFolder: "./drizzle" });
 }
