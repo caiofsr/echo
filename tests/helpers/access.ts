@@ -7,7 +7,7 @@ import { createAccess } from "./create-access";
 export async function createAccessFixture() {
   const dir = await mkdtemp(join(tmpdir(), "echo-test-"));
   const url = `file:${join(dir, "test.db")}`;
-  let database = openDatabase(url);
+  let database = await openDatabase(url);
   await migrateDatabase(database.db);
   const options = {
     baseURL: "https://echo.test",
@@ -60,7 +60,7 @@ export async function createAccessFixture() {
     },
     async restart() {
       database.close();
-      database = openDatabase(url);
+      database = await openDatabase(url);
       access = createAccess(database.db, options);
     },
     async close() {

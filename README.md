@@ -21,7 +21,7 @@ bun run dev
 
 O exemplo de leitura da senha usa zsh, shell do ambiente de desenvolvimento. Em outro shell, use sua leitura silenciosa equivalente. A senha deve ter de 15 a 1024 caracteres, aceita espaços e não exige composição específica. Não há senha padrão nem cadastro público. A operação `auth:password` também redefine a senha e revoga todas as sessões, preservando os demais dados. Execute-a apenas administrativamente no servidor, com o mesmo banco e segredo da aplicação. Não passe a senha em argumentos ou arquivos versionados.
 
-`DATABASE_URL=file:.data/echo.db` usa SQLite persistente local com o driver nativo `bun:sqlite` e o adaptador `drizzle-orm/bun-sqlite`. Chaves estrangeiras e WAL são habilitados na conexão. Desenvolvimento e produção usam esse mesmo driver; no Dokploy, configure um caminho absoluto em volume persistente, como `file:/data/echo.db`. Nunca versione `.env` ou arquivos de banco.
+`DATABASE_URL=file:.data/echo.db` usa SQLite persistente local pelo cliente libSQL (`@libsql/client`) com o adaptador `drizzle-orm/libsql`. Chaves estrangeiras forem habilitadas na conexão e bancos locais rodam em WAL. O mesmo cliente atende `file:`/`:memory:` (local e os comandos locais) e serviços libSQL remotos: no Dokploy, use o serviço libSQL da plataforma com `DATABASE_URL=http://usuario:senha@nome-do-servico:8080` interno, ou um endpoint externo `libsql://` com `DATABASE_AUTH_TOKEN`. Nunca versione `.env` nem passe credenciais em argumentos ou arquivos versionados.
 
 ## Build e execução
 
@@ -55,10 +55,10 @@ Em produção, configure:
 - `NODE_ENV=production`.
 - `BETTER_AUTH_URL=https://seu-dominio`, exatamente a origem pública, sem caminho.
 - `BETTER_AUTH_SECRET` estável, aleatório e com pelo menos 32 caracteres.
-- `DATABASE_URL=file:/data/echo.db`, apontando para o volume persistente.
+- `DATABASE_URL=http://usuario:senha@nome-do-servico:8080`, credenciais internas do serviço libSQL do Dokploy (ou `libsql://` externo com `DATABASE_AUTH_TOKEN`).
 - `PORT=3000`, ou a porta configurada no serviço.
 
-Antes da primeira inicialização, aplique `bun run db:migrate` no ambiente de destino e defina a senha com `bun run auth:password`. Monte um volume persistente e use um caminho absoluto como `file:/data/echo.db`. Crie previamente o diretório do volume e garanta permissão de escrita. Use uma única instância, sem múltiplas réplicas independentes com arquivos SQLite diferentes. Migrações não são executadas automaticamente a cada requisição.
+Crie o serviço libSQL no Dokploy no mesmo projeto do aplicativo e copie as credenciais internas para `DATABASE_URL`. Na primeira inicialização, o servidor aplica as migrações automaticamente; defina a senha com `bun run auth:password` usando as mesmas variáveis do aplicativo. Use uma única instância do banco e evite múltiplas réplicas apontando para endpoints distintos. Migrações não são executadas a cada requisição.
 
 O proxy deve terminar HTTPS e encaminhar à porta interna da aplicação. Cookies de produção usam Secure, HttpOnly e SameSite=Lax. Operações de escrita verificam a origem exata. Páginas e respostas de sessão usam `Cache-Control: no-store`; não habilite cache de proxy para conteúdo dinâmico.
 
@@ -73,7 +73,7 @@ bun scripts/smoke-image.ts echo-issue-8
 docker stop echo-buildkit
 ```
 
-O teste usa banco, senha e segredo temporários, verifica entrada, cookie seguro, página protegida, assets, persistência após reiniciar o contêiner e saída. A última validação da imagem ocorreu antes da adoção de `bun:sqlite`; repita o teste com a imagem atual antes do deploy. O entrypoint padrão da imagem Railpack é `/bin/bash -c`; comandos administrativos com `docker run` precisam de `--entrypoint bun`, como feito no script.
+O teste usa banco, senha e segredo temporários, verifica entrada, cookie seguro, página protegida, assets, persistência após reiniciar o contêiner e saída. A última validação da imagem ocorreu antes da adoção do cliente libSQL; repita o teste com a imagem atual antes do deploy. O entrypoint padrão da imagem Railpack é `/bin/bash -c`; comandos administrativos com `docker run` precisam de `--entrypoint bun`, como feito no script.
 
 Ainda deve ser conferido no servidor Dokploy: versão disponível do Railpack, domínio e HTTPS, variáveis, volume/permissões quando aplicável, execução de migrações, inicialização e sessão entre visitas. Esta entrega não publica em produção. A política de backup continua adiada.
 
@@ -91,7 +91,7 @@ Não há formulários de trabalho nem cronômetro operacional nesta issue. Essas
 
 O comando `auth:password` cria a conta inicial por `signUpEmail`, sem sessão automática. Para uma conta existente, chama `requestPasswordReset` e `resetPassword`, com `revokeSessionsOnPasswordReset: true`. O token fica somente na memória do comando; nenhum email é enviado e o envio de reset não é configurado na instância pública.
 
-A revogação segue o comportamento nativo do Better Auth. Não existe revisão customizada da credencial nem garantia adicional contra um login concorrente que crie uma sessão depois do reset. O adapter Drizzle com `bun:sqlite` mantém transações assíncronas desativadas; não há promessa de atomicidade adicional ao fluxo nativo.
+A revogação segue o comportamento nativo do Better Auth. Não existe revisão customizada da credencial nem garantia adicional contra um login concorrente que crie uma sessão depois do reset. O adapter Drizzle com o cliente libSQL mantém transações assíncronas desativadas; não há promessa de atomicidade adicional ao fluxo nativo.
 
 O cliente mantém `fetchOptions.query.disableRefresh: true` como padrão. Atividade visível sobrescreve o valor com `undefined`, omitindo o parâmetro para solicitar renovação. Nesta versão do Better Auth, a string `false` na URL também é convertida para verdadeiro.
 
@@ -137,7 +137,7 @@ O histórico foi reiniciado em `0000_initial`, a partir do schema gerado pelo CL
 
 `src/lib/auth.ts` exporta a instância `auth` do Better Auth, usada diretamente pela rota HTTP e pela server function. Não há `getAuth` nem instância obtida por getter. As opções sem conexão ficam em `src/config/auth.ts` para serem compartilhadas com os testes isolados. A instância administrativa e o fluxo de senha ficam inteiramente em `scripts/password.ts`, executados como comando local.
 
-`src/db/index.ts` exporta a conexão da aplicação. `src/db/connection.ts` contém abertura e migração do SQLite, e `src/db/schema.ts` reúne as tabelas. O Drizzle aponta para esse schema. O comando de migração depende apenas de `DATABASE_URL`, sem exigir segredo de autenticação.
+`src/db/index.ts` exporta a conexão da aplicação e aplica as migrações automaticamente na inicialização, de forma idempotente. `src/db/connection.ts` contém a abertura da conexão libSQL e a migração, e `src/db/schema.ts` reúne as tabelas. O Drizzle aponta para esse schema. A conexão depende apenas de `DATABASE_URL` (e, quando o endpoint pede, de `DATABASE_AUTH_TOKEN`), sem exigir outros segredos.
 
 Com o `.env` configurado, gere o schema e depois a migração:
 

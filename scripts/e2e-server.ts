@@ -7,7 +7,7 @@ import { rateLimit } from "../src/db/schema";
 
 const dir = await mkdtemp(join(tmpdir(), "echo-browser-"));
 process.env.DATABASE_URL = `file:${join(dir, "browser.db")}`;
-const database = openDatabase(process.env.DATABASE_URL);
+const database = await openDatabase(process.env.DATABASE_URL);
 await migrateDatabase(database.db);
 await createAccess(database.db, {
   baseURL: process.env.BETTER_AUTH_URL!,
@@ -22,7 +22,7 @@ const control = process.env.ECHO_TEST_CONTROL_PORT
           return new Response(null, { status: 404 });
         const path = new URL(request.url).pathname;
         if (path === "/reset-rate-limit") {
-          database.db.delete(rateLimit).run();
+          await database.db.delete(rateLimit).run();
           return new Response(null, { status: 204 });
         }
         if (path !== "/reset-password")

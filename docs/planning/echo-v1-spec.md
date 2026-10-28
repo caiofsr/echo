@@ -86,7 +86,7 @@ Organizar responsabilidades em acesso e sessão; cadastros e preferências; quad
 ### Stack, persistência e acesso
 
 - Usar TanStack Start, Query, Table e Form, com shadcn/ui.
-- Usar Drizzle com o driver nativo bun:sqlite. Desenvolvimento e produção usam SQLite em arquivo local; no Dokploy, o arquivo fica em um volume persistente e o caminho é configurado por ambiente.
+- Drizzle com o cliente libSQL (`@libsql/client`) e adaptador `drizzle-orm/libsql`: SQLite em arquivo local em desenvolvimento (`file:`) e serviço libSQL do Dokploy em produção (URL interna ou externa com `DATABASE_AUTH_TOKEN`); migrações automáticas na inicialização do servidor.
 - Usar Better Auth na mesma base com adaptador Drizzle/SQLite, credencial pessoal única, sem cadastro público ou gestão de usuários. Sessão com cookie seguro e expiração deslizante de 30 dias, renovada durante o uso.
 - Servir a aplicação com Bun como runtime, com versão fixa e bun.lock versionado. Dokploy executa o build no servidor usando Railpack, sem Dockerfile mantido no projeto. Definir comando de inicialização explícito e validar o build pelo Railpack e a execução da imagem resultante com Bun, incluindo acesso, sessão e banco real; não presumir o fallback do Railpack.
 - Autorizar as operações protegidas no servidor. Query, Table e Form organizam a experiência no cliente, mas o servidor preserva as regras de negócio.
@@ -187,6 +187,6 @@ Confirmado em 22/10/2026.
 - A definição e a redefinição administrativa exigem senha de pelo menos 15 caracteres, permitem frases e não exigem combinações de maiúsculas, números ou símbolos. A entrada aceita colagem e preenchimento por gerenciadores de senha.
 - Bun é o runtime escolhido para o Echo, substituindo a decisão anterior de executar em Node.js. Fixar a versão, versionar bun.lock e definir o comando de inicialização explicitamente.
 - A validação da issue #8 inclui build pelo Railpack e execução da imagem resultante com Bun, cobrindo entrada, sessão e banco real. A validação no Dokploy é uma etapa separada, sem publicação em produção nesta issue. O suporte documentado do Railpack ao Bun não substitui esse teste: https://railpack.com/languages/bun.
-- SQLite local com o driver nativo bun:sqlite e Drizzle é usado tanto em desenvolvimento quanto em produção no Dokploy. O suporte ao Turso/libSQL foi removido por decisão do usuário; configurar o caminho do banco por ambiente e um volume persistente no servidor.
+- libSQL via `@libsql/client` com Drizzle é usado em desenvolvimento e produção. Em desenvolvimento e nos comandos locais o banco é um arquivo (`file:`); em produção no Dokploy, o aplicativo conecta ao serviço libSQL da plataforma pela rede interna (`http://usuario:senha@nome-do-servico:8080`) ou externa (`libsql://` com `DATABASE_AUTH_TOKEN`). O driver nativo `bun:sqlite` foi substituído pelo cliente libSQL em toda a aplicação. As migrações são aplicadas automaticamente na inicialização do servidor, de forma idempotente.
 - A renovação da sessão considera o uso em uma aba visível. Uma aba inativa em segundo plano não renova a sessão indefinidamente. A expiração não interrompe o cronômetro.
 - O rascunho preservado após expiração fica somente na memória da aba aberta. Recarregar ou fechar a página descarta esse rascunho, sem armazenamento local persistente dos dados do formulário.

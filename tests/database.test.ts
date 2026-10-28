@@ -7,9 +7,15 @@ import { migrateDatabase, openDatabase } from "../src/db/connection";
 import { createAccess } from "./helpers/create-access";
 import * as schema from "../src/db/schema";
 
+test("abertura recusa URL de esquema não suportado", async () => {
+  await expect(openDatabase("postgres://db.invalid:5432/echo")).rejects.toThrow(
+    /URL_SCHEME_NOT_SUPPORTED/,
+  );
+});
+
 test("migration inicial pode ser reaplicada sem perder credencial ou sessão", async () => {
   const dir = await mkdtemp(join(tmpdir(), "echo-migration-"));
-  const database = openDatabase(`file:${join(dir, "test.db")}`);
+  const database = await openDatabase(`file:${join(dir, "test.db")}`);
   try {
     await migrateDatabase(database.db);
     const { auth, setPassword } = createAccess(database.db, {
@@ -47,16 +53,16 @@ test("migration inicial pode ser reaplicada sem perder credencial ou sessão", a
       }),
     ).not.toBeNull();
     expect(
-      database.db.all<{ count: number }>(
+      await database.db.all<{ count: number }>(
         sql`select count(*) as count from __drizzle_migrations`,
       ),
     ).toEqual([{ count: 1 }]);
     expect(
-      database.db
-        .all<{ name: string }>(
+      (
+        await database.db.all<{ name: string }>(
           sql`select name from sqlite_master where type = 'table' and name not like 'sqlite_%' and name != '__drizzle_migrations' order by name`,
         )
-        .map((table) => table.name),
+      ).map((table) => table.name),
     ).toEqual(["account", "rate_limit", "session", "user", "verification"]);
   } finally {
     database.close();
