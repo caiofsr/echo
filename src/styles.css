@@ -383,11 +383,14 @@ input {
   line-height: 1.55;
   margin: 0.45rem 0 0;
 }
+.settings-form {
+  display: grid;
+  gap: 1.25rem;
+}
 .settings-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.25rem 1.5rem;
-  margin-bottom: 1.25rem;
 }
 .settings-form-wide {
   grid-column: 1 / -1;
@@ -437,6 +440,12 @@ input {
 }
 .payment-method-list {
   display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--surface);
 }
 .company-row {
   display: flex;
@@ -468,22 +477,32 @@ input {
 }
 .payment-method {
   display: flex;
-  align-items: start;
+  align-items: center;
   justify-content: space-between;
-  gap: 1.25rem;
-  padding: 1.2rem 0;
+  gap: 1rem;
+  padding: 0.75rem 0;
+}
+.payment-method + .payment-method {
   border-top: 1px solid var(--color-border);
+}
+.payment-method > .button {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  flex-shrink: 0;
+  color: var(--primary);
 }
 .payment-method-copy {
   min-width: 0;
 }
 .payment-method h3 {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.2rem;
   overflow-wrap: anywhere;
 }
 .payment-method p {
+  font-size: 0.875rem;
   color: var(--muted-foreground);
   line-height: 1.55;
   margin: 0;
@@ -667,13 +686,6 @@ input {
   }
   .settings-form-wide {
     grid-column: auto;
-  }
-  .payment-method {
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .payment-method > .button {
-    align-self: start;
   }
 }
 .button-primary svg {
