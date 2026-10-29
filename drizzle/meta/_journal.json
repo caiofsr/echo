@@ -8,6 +8,20 @@
       "when": 1792756922995,
       "tag": "0000_initial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1793240041619,
+      "tag": "0001_gifted_shinobi_shaw",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1793242251726,
+      "tag": "0002_deep_union_jack",
+      "breakpoints": true
     }
   ]
 }

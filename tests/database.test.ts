@@ -56,14 +56,22 @@ test("migration inicial pode ser reaplicada sem perder credencial ou sessão", a
       await database.db.all<{ count: number }>(
         sql`select count(*) as count from __drizzle_migrations`,
       ),
-    ).toEqual([{ count: 1 }]);
+    ).toEqual([{ count: 3 }]);
     expect(
       (
         await database.db.all<{ name: string }>(
           sql`select name from sqlite_master where type = 'table' and name not like 'sqlite_%' and name != '__drizzle_migrations' order by name`,
         )
       ).map((table) => table.name),
-    ).toEqual(["account", "rate_limit", "session", "user", "verification"]);
+    ).toEqual([
+      "account",
+      "company_settings",
+      "payment_method",
+      "rate_limit",
+      "session",
+      "user",
+      "verification",
+    ]);
   } finally {
     database.close();
     await rm(dir, { recursive: true, force: true });

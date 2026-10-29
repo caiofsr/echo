@@ -2,7 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -56,6 +56,42 @@
   --surface: #fdfdf8;
   --focus: #426b48;
   --error: #9e3636;
+  --primary-hover: #27482f;
+  --brand-accent: #69815e;
+  --nav-hover: #edf0e7;
+  --empty-background: #eceedf80;
+  --selection-background: #d8e6cf;
+  --selection-foreground: #203b28;
+}
+.dark {
+  color-scheme: dark;
+  --background: #151515;
+  --foreground: #ededeb;
+  --card: #222222;
+  --card-foreground: #ededeb;
+  --popover: #222222;
+  --popover-foreground: #ededeb;
+  --primary: #a9d5a6;
+  --primary-foreground: #17301d;
+  --secondary: #303630;
+  --secondary-foreground: #d0e9cc;
+  --muted: #303030;
+  --muted-foreground: #bdbfba;
+  --accent: #303630;
+  --accent-foreground: #d0e9cc;
+  --destructive: #ffaaa4;
+  --border: #454545;
+  --input: #858985;
+  --ring: #a9d5a6;
+  --surface: #222222;
+  --focus: #a9d5a6;
+  --error: #ffaaa4;
+  --primary-hover: #c1e4bc;
+  --brand-accent: #a9d5a6;
+  --nav-hover: #303030;
+  --empty-background: #222222;
+  --selection-background: #43654b;
+  --selection-foreground: #f2f8ef;
 }
 * {
   box-sizing: border-box;
@@ -85,8 +121,8 @@ button:disabled {
   cursor: wait;
 }
 ::selection {
-  background: #d8e6cf;
-  color: #203b28;
+  background: var(--selection-background);
+  color: var(--selection-foreground);
 }
 :focus-visible {
   outline: 2px solid var(--focus);
@@ -115,18 +151,18 @@ input {
 }
 .button-primary {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--primary-foreground);
 }
 .button-primary:hover {
-  background: #27482f;
+  background: var(--primary-hover);
 }
 .button-outline {
-  background: white;
+  background: var(--surface);
   border-color: var(--color-border);
 }
 .button-outline:hover,
 .button-ghost:hover {
-  background: #e6eddf;
+  background: var(--secondary);
 }
 .button-ghost {
   background: transparent;
@@ -140,12 +176,12 @@ input {
   line-height: 1;
 }
 .brand span {
-  color: #69815e;
+  color: var(--brand-accent);
 }
 .input {
-  background: #fff;
+  background: var(--surface);
   color: var(--color-foreground);
-  border: 1px solid #9aa797;
+  border: 1px solid var(--input);
   border-radius: 8px;
   padding: 0.8rem;
   min-height: 3rem;
@@ -162,6 +198,12 @@ input {
 .field label {
   font-size: 0.9rem;
   font-weight: 550;
+}
+.field-hint {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 .password-field {
   position: relative;
@@ -249,11 +291,11 @@ input {
   font-size: 0.9rem;
 }
 .nav-link:hover {
-  background: #edf0e7;
+  background: var(--nav-hover);
 }
 .nav-link.selected {
-  background: #e6eddf;
-  color: #284b30;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
   font-weight: 600;
 }
 .header-actions {
@@ -270,8 +312,8 @@ input {
   display: flex;
   align-items: center;
   gap: 1rem;
-  background: #fff;
-  border: 1px solid #d7dfd0;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1.1rem 1.4rem;
   color: var(--muted-foreground);
@@ -290,7 +332,7 @@ input {
   font-variant-numeric: tabular-nums;
   font-family: ui-monospace, monospace;
   font-size: 1.5rem;
-  color: #6c756d;
+  color: var(--muted-foreground);
   white-space: nowrap;
 }
 .page-content h1 {
@@ -298,6 +340,188 @@ input {
   font-weight: 650;
   letter-spacing: -0.035em;
   margin: 2.1rem 0 1.5rem;
+}
+.settings-page {
+  width: min(100%, 58rem);
+  margin-inline: auto;
+}
+.settings-page > h1 {
+  margin-bottom: 0.5rem;
+}
+.settings-intro,
+.settings-section-description {
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  margin: 0 0 1.5rem;
+}
+.settings-section {
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--color-border);
+}
+.settings-section h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+}
+.settings-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.settings-section-heading p {
+  color: var(--muted-foreground);
+  line-height: 1.55;
+  margin: 0.45rem 0 0;
+}
+.settings-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.settings-form-wide {
+  grid-column: 1 / -1;
+}
+.settings-textarea {
+  min-height: 6.5rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+.required-mark {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+.field-error,
+.settings-error {
+  color: var(--error);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  margin: 0.2rem 0 0;
+}
+.settings-error {
+  margin: 0 0 1rem;
+}
+.settings-success {
+  color: var(--secondary-foreground);
+  font-size: 0.9rem;
+  margin: 0 0 0.85rem;
+}
+.settings-success:empty {
+  margin: 0;
+}
+.settings-empty {
+  padding: 1.25rem 0;
+  color: var(--muted-foreground);
+}
+.settings-empty h3 {
+  color: var(--color-foreground);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+.settings-empty p {
+  max-width: 58ch;
+  line-height: 1.6;
+  margin: 0;
+}
+.payment-method-list {
+  display: grid;
+}
+.company-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--color-border);
+}
+.company-row-copy {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.company-row h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.company-row p {
+  margin: 0.25rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+}
+.company-row-edit {
+  flex-shrink: 0;
+  min-width: 2.75rem;
+  padding-inline: 0.75rem;
+  color: var(--primary);
+}
+.payment-method {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.2rem 0;
+  border-top: 1px solid var(--color-border);
+}
+.payment-method-copy {
+  min-width: 0;
+}
+.payment-method h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.4rem;
+  overflow-wrap: anywhere;
+}
+.payment-method p {
+  color: var(--muted-foreground);
+  line-height: 1.55;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.settings-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgb(0 0 0 / 0.5);
+}
+.settings-dialog {
+  position: fixed;
+  z-index: 51;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(48rem, calc(100% - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: var(--surface);
+  color: var(--foreground);
+}
+.settings-dialog [data-slot="dialog-title"] {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 620;
+}
+.settings-dialog [data-slot="dialog-description"] {
+  margin: 0.5rem 0 1.5rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+.settings-dialog-form {
+  display: grid;
+  gap: 1.1rem;
+}
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 .empty-state {
   min-height: 340px;
@@ -307,7 +531,7 @@ input {
   justify-content: center;
   text-align: center;
   padding: 3rem 1.5rem;
-  background: #eceedf80;
+  background: var(--empty-background);
   border-radius: 12px;
   color: var(--muted-foreground);
 }
@@ -333,7 +557,7 @@ input {
   left: 1rem;
   transform: translateY(-200%);
   z-index: 10;
-  background: #fff;
+  background: var(--surface);
   padding: 1rem;
 }
 .skip-link:focus {
@@ -350,7 +574,7 @@ input {
 .connection-error {
   padding: 1rem 2rem;
   color: var(--error);
-  background: #fff;
+  background: var(--surface);
 }
 .spin {
   animation: spin 1s linear infinite;
@@ -418,13 +642,30 @@ input {
   .page-content h1 {
     margin-top: 1.75rem;
   }
+  .settings-section-heading {
+    flex-direction: column;
+  }
+  .settings-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.1rem;
+  }
+  .settings-form-wide {
+    grid-column: auto;
+  }
+  .payment-method {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .payment-method > .button {
+    align-self: start;
+  }
 }
 .button-primary svg {
   stroke: currentColor;
 }
 .header-actions a[aria-current="page"] {
-  background: #e6eddf;
-  color: #284b30;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
 }
 
 /* Keep Echo sizing and keyboard focus when styling the shadcn primitives. */

@@ -84,6 +84,21 @@ export const rateLimit = sqliteTable("rate_limit", {
   lastRequest: integer("last_request").notNull(),
 });
 
+export const companySettings = sqliteTable("company_settings", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  taxId: text("tax_id"),
+  address: text("address"),
+  phone: text("phone"),
+});
+
+export const paymentMethod = sqliteTable("payment_method", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  label: text("label").notNull(),
+  instructions: text("instructions").notNull(),
+  archived: integer("archived", { mode: "boolean" }).notNull().default(false),
+});
+
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
