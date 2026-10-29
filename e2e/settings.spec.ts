@@ -57,6 +57,21 @@ test("configura empresa e vários conjuntos de pagamento com dados persistidos",
 
   await page.getByRole("button", { name: "Adicionar empresa" }).click();
   const companyForm = page.locator("form.settings-form");
+  await expect(
+    page.getByRole("dialog", { name: "Adicionar empresa" }),
+  ).toBeVisible();
+  await companyForm.getByLabel("Nome ou razão social").fill("Rascunho");
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await companyForm.getByRole("button", { name: "Cancelar" }).click();
+  await expect(companyForm.getByLabel("Nome ou razão social")).toHaveValue(
+    "Rascunho",
+  );
+  page.once("dialog", (dialog) => dialog.accept());
+  await companyForm.getByRole("button", { name: "Cancelar" }).click();
+  await expect(
+    page.getByRole("button", { name: "Adicionar empresa" }),
+  ).toBeFocused();
+  await page.getByRole("button", { name: "Adicionar empresa" }).click();
   await companyForm.getByLabel("Nome ou razão social").fill("   ");
   await companyForm.getByRole("button", { name: "Salvar empresa" }).click();
   await expect(
@@ -113,6 +128,11 @@ test("configura empresa e vários conjuntos de pagamento com dados persistidos",
   const transferForm = page.getByRole("form", {
     name: "Nova forma de recebimento",
   });
+  await expect(
+    page.getByRole("dialog", { name: "Adicionar forma de recebimento" }),
+  ).toBeVisible();
+  if (process.env.ECHO_CAPTURE_SETTINGS)
+    await page.screenshot({ path: testInfo.outputPath("new-payment.png") });
   await expect(transferForm.getByLabel("Rótulo")).toBeFocused();
   await transferForm.getByRole("button", { name: "Cancelar" }).click();
   await expect(
@@ -121,6 +141,10 @@ test("configura empresa e vários conjuntos de pagamento com dados persistidos",
   await page
     .getByRole("button", { name: "Adicionar forma de recebimento" })
     .click();
+  await transferForm.getByLabel("Rótulo").fill("Rascunho");
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await page.keyboard.press("Escape");
+  await expect(transferForm.getByLabel("Rótulo")).toHaveValue("Rascunho");
   await transferForm.getByLabel("Rótulo").fill("   ");
   await transferForm.getByLabel("Instruções de recebimento").fill("   ");
   await transferForm
@@ -139,7 +163,9 @@ test("configura empresa e vários conjuntos de pagamento com dados persistidos",
   ).toBeVisible();
   await expect(
     transferForm.getByLabel("Instruções de recebimento"),
-  ).toHaveAccessibleDescription("Informe as instruções de recebimento.");
+  ).toHaveAccessibleDescription(
+    "Informe os dados de recebimento que devem aparecer na fatura. Ex.: chave PIX ou dados bancários. Informe as instruções de recebimento.",
+  );
   await transferForm.getByLabel("Rótulo").fill("Transferência");
   await transferForm
     .getByLabel("Instruções de recebimento")
@@ -151,7 +177,7 @@ test("configura empresa e vários conjuntos de pagamento com dados persistidos",
     page.getByRole("heading", { name: "Transferência" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Editar Transferência" }),
+    page.locator('button[aria-label="Editar Transferência"]'),
   ).toBeFocused();
   await expect(
     page
@@ -166,10 +192,10 @@ test("configura empresa e vários conjuntos de pagamento com dados persistidos",
     name: "Nova forma de recebimento",
   });
   await expect(
-    page.getByRole("button", { name: "Editar Transferência" }),
+    page.locator('button[aria-label="Editar Transferência"]'),
   ).toBeDisabled();
   await expect(
-    page.getByRole("button", { name: "Arquivar Transferência" }),
+    page.locator('button[aria-label="Arquivar Transferência"]'),
   ).toBeDisabled();
   await pixForm.getByLabel("Rótulo").fill("PIX");
   await pixForm
@@ -229,6 +255,16 @@ test("configura empresa e vários conjuntos de pagamento com dados persistidos",
   await page.getByRole("button", { name: "Arquivar PIX" }).click();
   await expect(page.getByText("Arquivadas (1)")).toBeFocused();
   await expect(page.getByRole("button", { name: "Editar PIX" })).toHaveCount(0);
+  await expect(
+    page
+      .getByRole("status")
+      .filter({ hasText: "Ela não estará disponível para futuras faturas" }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Desfazer arquivamento de PIX" })
+    .click();
+  await expect(page.getByRole("button", { name: "Editar PIX" })).toBeFocused();
+  await page.getByRole("button", { name: "Arquivar PIX" }).click();
   await page.reload();
   await page.getByText("Arquivadas (1)").click();
   await expect(page.getByText("Chave atualizada")).toBeVisible();

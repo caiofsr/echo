@@ -56,6 +56,9 @@ export function SettingsPage() {
     number | null
   >(null);
   const [paymentStatus, setPaymentStatus] = useState("");
+  const [lastArchived, setLastArchived] = useState<SavedPaymentMethod | null>(
+    null,
+  );
   const focusTarget = useRef<number | "add" | "archived" | null>(null);
   const activeMethods = data.paymentMethods.filter(
     (method) => !method.archived,
@@ -67,6 +70,7 @@ export function SettingsPage() {
     mutationFn: (data: { id: number; archived: boolean }) =>
       setPaymentMethodArchived({ data }),
     onSuccess: (saved) => {
+      setLastArchived(saved.archived ? saved : null);
       focusTarget.current = saved.archived ? "archived" : saved.id;
       queryClient.setQueryData(
         settingsQueryOptions.queryKey,
@@ -80,7 +84,7 @@ export function SettingsPage() {
       );
       setPaymentStatus(
         saved.archived
-          ? "Forma de recebimento arquivada."
+          ? "Forma de recebimento arquivada. Ela não estará disponível para futuras faturas."
           : "Forma de recebimento restaurada.",
       );
     },
@@ -133,6 +137,22 @@ export function SettingsPage() {
         <p role="status" className="settings-success">
           {paymentStatus}
         </p>
+        {lastArchived && (
+          <Button
+            type="button"
+            variant="ghost"
+            disabled={
+              addingPaymentMethod ||
+              editingPaymentMethod !== null ||
+              archiveMutation.isPending
+            }
+            onClick={() =>
+              archiveMutation.mutate({ id: lastArchived.id, archived: false })
+            }
+          >
+            Desfazer arquivamento de {lastArchived.label}
+          </Button>
+        )}
         {(addingPaymentMethod || editingPaymentMethod !== null) && (
           <p className="settings-section-description">
             Salve ou cancele antes de alterar outra forma de recebimento.
@@ -405,17 +425,12 @@ function CompanyForm({
 
   function requestClose() {
     if (save.isPending) return;
-    if (
-      company &&
-      dirty &&
-      !window.confirm("Descartar as alterações não salvas?")
-    )
-      return;
+    if (dirty && !window.confirm("Descartar as alterações não salvas?")) return;
     onCancel();
   }
 
   const content = (
-    <div className={company ? undefined : "payment-method-editor"}>
+    <div>
       <form
         className="settings-form"
         aria-label={company ? `Editar empresa ${company.name}` : "Nova empresa"}
@@ -536,16 +551,18 @@ function CompanyForm({
       </form>
     </div>
   );
-  return company ? (
+  return (
     <EditDialog
-      title="Editar empresa"
-      description="Atualize os dados da empresa para futuras faturas."
+      title={company ? "Editar empresa" : "Adicionar empresa"}
+      description={
+        company
+          ? "Atualize os dados da empresa para futuras faturas."
+          : "Cadastre os dados da empresa para futuras faturas."
+      }
       onClose={requestClose}
     >
       {content}
     </EditDialog>
-  ) : (
-    content
   );
 }
 
@@ -600,20 +617,13 @@ function PaymentMethodForm({
 
   function requestClose() {
     if (mutation.isPending) return;
-    if (
-      paymentMethod &&
-      dirty &&
-      !window.confirm("Descartar as alterações não salvas?")
-    )
-      return;
+    if (dirty && !window.confirm("Descartar as alterações não salvas?")) return;
     onCancel();
   }
 
   const content = (
     <form
-      className={
-        paymentMethod ? "settings-dialog-form" : "payment-method-editor"
-      }
+      className="settings-dialog-form"
       ref={draftRef}
       aria-label={
         paymentMethod
@@ -674,17 +684,17 @@ function PaymentMethodForm({
               required
               rows={4}
               aria-invalid={field.state.meta.errors.length > 0}
-              aria-describedby={
-                field.state.meta.errors.length
-                  ? `${formId}-instructions-error`
-                  : undefined
-              }
+              aria-describedby={`${formId}-instructions-hint${field.state.meta.errors.length ? ` ${formId}-instructions-error` : ""}`}
               className="input settings-textarea"
-              placeholder="Informe os dados que devem aparecer na fatura."
+              placeholder="Ex.: Chave PIX: contato@exemplo.com"
               value={field.state.value}
               onChange={(event) => field.handleChange(event.target.value)}
               onBlur={field.handleBlur}
             />
+            <p id={`${formId}-instructions-hint`} className="field-hint">
+              Informe os dados de recebimento que devem aparecer na fatura. Ex.:
+              chave PIX ou dados bancários.
+            </p>
           </Field>
         )}
       </form.Field>
@@ -716,16 +726,22 @@ function PaymentMethodForm({
       </div>
     </form>
   );
-  return paymentMethod ? (
+  return (
     <EditDialog
-      title="Editar forma de recebimento"
-      description="Atualize as instruções usadas em futuras faturas."
+      title={
+        paymentMethod
+          ? "Editar forma de recebimento"
+          : "Adicionar forma de recebimento"
+      }
+      description={
+        paymentMethod
+          ? "Atualize as instruções usadas em futuras faturas."
+          : "Cadastre as instruções para futuras faturas."
+      }
       onClose={requestClose}
     >
       {content}
     </EditDialog>
-  ) : (
-    content
   );
 }
 
