@@ -73,7 +73,7 @@ A organização visual segue o protótipo aprovado, variante B, com navegação 
 61. Como usuário pessoal, quero desfazer uma marcação de pagamento, para corrigir um engano.
 62. Como usuário pessoal, quero cancelar uma fatura após confirmação, para liberar as horas sem apagar o documento ou reutilizar seu número.
 63. Como usuário pessoal, quero desfazer o pagamento antes de cancelar uma fatura paga, para manter o estado coerente.
-64. Como usuário pessoal, quero cadastrar minha empresa e vários conjuntos de dados de pagamento, para escolher as informações apresentadas na fatura.
+64. Como usuário pessoal, quero cadastrar minhas empresas e formas de recebimento compartilhadas, para escolher as informações apresentadas em cada fatura.
 
 ## Implementation Decisions
 
@@ -118,7 +118,7 @@ Organizar responsabilidades em acesso e sessão; cadastros e preferências; quad
 
 - Cliente exige nome de exibição. Nome legal do destinatário, identificação fiscal e endereço são opcionais.
 - Projeto exige nome, Cliente, valor de hora não negativo com centavos e moeda BRL ou USD.
-- Empresa exige nome ou razão social. Identificação fiscal, endereço e telefone são opcionais.
+- Cada empresa exige nome ou razão social. Identificação fiscal, endereço e telefone são opcionais. A pessoa escolhe a empresa em cada fatura; as formas de recebimento são compartilhadas entre empresas.
 - Cada conjunto de Dados de pagamento exige rótulo e instruções de recebimento; a pessoa escolhe um conjunto ao emitir.
 - Preferências incluem valor de hora padrão, moeda correspondente e fuso configurável com America/Recife como padrão.
 - Timesheet detalha cada período selecionado, inclusive sem Projeto. Filtros por período, Cliente e Projetos. CSV e PDF incluem início, fim, Cliente, Projeto e horas trabalhadas; Tarefa é uma opção do usuário. Não incluir descrição ou valores monetários.

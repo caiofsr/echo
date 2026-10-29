@@ -96,6 +96,7 @@ export const paymentMethod = sqliteTable("payment_method", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   label: text("label").notNull(),
   instructions: text("instructions").notNull(),
+  archived: integer("archived", { mode: "boolean" }).notNull().default(false),
 });
 
 export const userRelations = relations(user, ({ many }) => ({

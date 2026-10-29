@@ -1,0 +1,1 @@
+ALTER TABLE `payment_method` ADD `archived` integer DEFAULT false NOT NULL;

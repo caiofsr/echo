@@ -1,39 +1,54 @@
-import type { CompanyInput, PaymentMethodInput } from "./settings-types";
+import * as v from "valibot";
 
-function record(value: unknown): Record<string, unknown> {
-  if (typeof value !== "object" || value === null || Array.isArray(value))
-    throw new Error("Dados inválidos.");
-  return value as Record<string, unknown>;
-}
+const invalid = "Dados inválidos.";
 
-function requiredString(data: Record<string, unknown>, key: string) {
-  const value = data[key];
-  if (typeof value !== "string") throw new Error("Dados inválidos.");
-  return value;
-}
+export const companyNameSchema = v.pipe(
+  v.string(invalid),
+  v.trim(),
+  v.minLength(1, "Informe o nome ou a razão social."),
+);
+export const paymentLabelSchema = v.pipe(
+  v.string(invalid),
+  v.trim(),
+  v.minLength(1, "Informe um rótulo."),
+);
+export const paymentInstructionsSchema = v.pipe(
+  v.string(invalid),
+  v.trim(),
+  v.minLength(1, "Informe as instruções de recebimento."),
+);
 
-export function parseCompanyInput(value: unknown): CompanyInput {
-  const data = record(value);
-  return {
-    name: requiredString(data, "name"),
-    taxId: requiredString(data, "taxId"),
-    address: requiredString(data, "address"),
-    phone: requiredString(data, "phone"),
-  };
-}
+const companyFields = {
+  name: companyNameSchema,
+  taxId: v.string(invalid),
+  address: v.string(invalid),
+  phone: v.string(invalid),
+};
+const paymentFields = {
+  label: paymentLabelSchema,
+  instructions: paymentInstructionsSchema,
+};
+const companyId = v.pipe(
+  v.string(invalid),
+  v.check((id) => id.trim().length > 0, invalid),
+);
+const paymentId = v.pipe(
+  v.number(invalid),
+  v.safeInteger(invalid),
+  v.minValue(1, invalid),
+);
 
-export function parsePaymentMethodInput(value: unknown): PaymentMethodInput {
-  const data = record(value);
-  return {
-    label: requiredString(data, "label"),
-    instructions: requiredString(data, "instructions"),
-  };
-}
-
-export function parsePaymentMethodUpdate(value: unknown) {
-  const data = record(value);
-  const id = data.id;
-  if (typeof id !== "number" || !Number.isSafeInteger(id) || id < 1)
-    throw new Error("Dados inválidos.");
-  return { id, ...parsePaymentMethodInput(data) };
-}
+export const companyInputSchema = v.object(companyFields, invalid);
+export const companyUpdateSchema = v.object(
+  { id: companyId, ...companyFields },
+  invalid,
+);
+export const paymentMethodInputSchema = v.object(paymentFields, invalid);
+export const paymentMethodUpdateSchema = v.object(
+  { id: paymentId, ...paymentFields },
+  invalid,
+);
+export const paymentMethodArchiveSchema = v.object(
+  { id: paymentId, archived: v.boolean(invalid) },
+  invalid,
+);

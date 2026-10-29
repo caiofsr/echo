@@ -56,7 +56,7 @@ Reunir organização do trabalho, registro do tempo efetivo e faturamento sem re
 - A emissão preserva dados e valores, atribui número sequencial por cliente e bloqueia os registros incluídos. Alterações posteriores nos cadastros não mudam a fatura.
 - Cancelar preserva o documento e seu número e libera as horas. Números não são reutilizados. Baixar novamente não gera outra cobrança.
 - Pagamento é integral e registrado manualmente com data. Para cancelar uma fatura paga, é necessário desfazer a marcação de pagamento.
-- Empresa e conjuntos de dados de pagamento são cadastráveis. A pessoa escolhe os dados de pagamento usados na emissão.
+- Várias empresas e formas de recebimento são cadastráveis. A pessoa escolhe a empresa e a forma de recebimento em cada fatura; as formas são compartilhadas entre empresas.
 
 ### Limites da primeira versão
 

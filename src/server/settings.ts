@@ -1,12 +1,20 @@
 import { asc, eq } from "drizzle-orm";
+import * as v from "valibot";
 import type { Database } from "../db/connection";
 import { companySettings, paymentMethod } from "../db/schema";
+import {
+  companyInputSchema,
+  paymentMethodInputSchema,
+} from "../lib/settings-input";
 import type {
   Company,
   CompanyInput,
+  SavedCompany,
+} from "../types/settings/company";
+import type {
   PaymentMethodInput,
   SavedPaymentMethod,
-} from "../lib/settings-types";
+} from "../types/settings/payment-method";
 
 function normalize(value: string) {
   const trimmed = value.trim();
@@ -14,51 +22,60 @@ function normalize(value: string) {
 }
 
 function normalizeCompany(input: CompanyInput): Company {
-  const name = input.name.trim();
-  if (!name) throw new Error("Informe o nome ou a razão social.");
+  const data = v.parse(companyInputSchema, input);
   return {
-    name,
-    taxId: normalize(input.taxId),
-    address: normalize(input.address),
-    phone: normalize(input.phone),
+    name: data.name,
+    taxId: normalize(data.taxId),
+    address: normalize(data.address),
+    phone: normalize(data.phone),
   };
 }
 
 function normalizePaymentMethod(input: PaymentMethodInput): PaymentMethodInput {
-  const label = input.label.trim();
-  const instructions = input.instructions.trim();
-  if (!label) throw new Error("Informe um rótulo.");
-  if (!instructions) throw new Error("Informe as instruções de recebimento.");
-  return { label, instructions };
+  return v.parse(paymentMethodInputSchema, input);
 }
 
 export function createSettingsStore(db: Database) {
   return {
-    async getCompany(): Promise<Company | null> {
-      const [company] = await db
-        .select({
-          name: companySettings.name,
-          taxId: companySettings.taxId,
-          address: companySettings.address,
-          phone: companySettings.phone,
-        })
+    listCompanies(): Promise<SavedCompany[]> {
+      return db
+        .select()
         .from(companySettings)
-        .where(eq(companySettings.id, "owner"))
-        .limit(1);
-      return company ?? null;
+        .orderBy(asc(companySettings.name), asc(companySettings.id));
     },
 
-    async saveCompany(input: CompanyInput): Promise<Company> {
+    async createCompany(input: CompanyInput): Promise<SavedCompany> {
       const company = normalizeCompany(input);
-      await db
+      const [created] = await db
         .insert(companySettings)
-        .values({ id: "owner", ...company })
-        .onConflictDoUpdate({ target: companySettings.id, set: company });
-      return company;
+        .values({ id: crypto.randomUUID(), ...company })
+        .returning();
+      return created;
+    },
+
+    async updateCompany(
+      id: string,
+      input: CompanyInput,
+    ): Promise<SavedCompany> {
+      const [updated] = await db
+        .update(companySettings)
+        .set(normalizeCompany(input))
+        .where(eq(companySettings.id, id))
+        .returning();
+      if (!updated) throw new Error("Empresa não encontrada.");
+      return updated;
     },
 
     listPaymentMethods(): Promise<SavedPaymentMethod[]> {
       return db.select().from(paymentMethod).orderBy(asc(paymentMethod.id));
+    },
+
+    listActivePaymentMethods(): Promise<SavedPaymentMethod[]> {
+      return db
+        .select()
+        .from(paymentMethod)
+        .where(eq(paymentMethod.archived, false))
+        .orderBy(asc(paymentMethod.id));
     },
 
     async createPaymentMethod(
@@ -82,8 +99,20 @@ export function createSettingsStore(db: Database) {
         .set(values)
         .where(eq(paymentMethod.id, id))
         .returning();
-      if (!updated)
-        throw new Error("Conjunto de dados de pagamento não encontrado.");
+      if (!updated) throw new Error("Forma de recebimento não encontrada.");
+      return updated;
+    },
+
+    async setPaymentMethodArchived(
+      id: number,
+      archived: boolean,
+    ): Promise<SavedPaymentMethod> {
+      const [updated] = await db
+        .update(paymentMethod)
+        .set({ archived })
+        .where(eq(paymentMethod.id, id))
+        .returning();
+      if (!updated) throw new Error("Dados de recebimento não encontrados.");
       return updated;
     },
   };

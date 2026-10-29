@@ -72,10 +72,10 @@ test("navegação responsiva sem dados fictícios e sem redirecionamento externo
     );
     if (title === "Configurações") {
       await expect(
-        page.getByRole("heading", { name: "Empresa", level: 2 }),
+        page.getByRole("heading", { name: "Empresas", level: 2 }),
       ).toBeVisible();
       await expect(
-        page.getByRole("heading", { name: "Dados de pagamento", level: 2 }),
+        page.getByRole("heading", { name: "Formas de recebimento", level: 2 }),
       ).toBeVisible();
     } else {
       await expect(

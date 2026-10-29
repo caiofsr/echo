@@ -1,53 +1,62 @@
 import { createServerFn } from "@tanstack/react-start";
 import {
-  getRequestHeaders,
-  setResponseHeader,
-} from "@tanstack/react-start/server";
-import { auth } from "../../lib/auth";
-import {
-  parseCompanyInput,
-  parsePaymentMethodInput,
-  parsePaymentMethodUpdate,
+  companyInputSchema,
+  companyUpdateSchema,
+  paymentMethodInputSchema,
+  paymentMethodUpdateSchema,
+  paymentMethodArchiveSchema,
 } from "../../lib/settings-input";
 import { db } from "../../db";
 import { createSettingsStore } from "../settings";
+import { requireSessionMiddleware } from "../middleware/auth";
 
-async function requireSession() {
-  setResponseHeader("Cache-Control", "no-store");
-  const session = await auth.api.getSession({ headers: getRequestHeaders() });
-  if (!session) throw new Error("Sessão inválida.");
-}
-
-export const getSettings = createServerFn({ method: "GET" }).handler(
-  async () => {
-    await requireSession();
+export const getSettings = createServerFn({ method: "GET" })
+  .middleware([requireSessionMiddleware])
+  .handler(async () => {
     const store = createSettingsStore(db);
-    const [company, paymentMethods] = await Promise.all([
-      store.getCompany(),
+    const [companies, paymentMethods] = await Promise.all([
+      store.listCompanies(),
       store.listPaymentMethods(),
     ]);
-    return { company, paymentMethods };
-  },
-);
+    return { companies, paymentMethods };
+  });
 
-export const saveCompanySettings = createServerFn({ method: "POST" })
-  .validator(parseCompanyInput)
+export const createCompany = createServerFn({ method: "POST" })
+  .middleware([requireSessionMiddleware])
+  .validator(companyInputSchema)
   .handler(async ({ data }) => {
-    await requireSession();
-    return createSettingsStore(db).saveCompany(data);
+    return createSettingsStore(db).createCompany(data);
+  });
+
+export const updateCompany = createServerFn({ method: "POST" })
+  .middleware([requireSessionMiddleware])
+  .validator(companyUpdateSchema)
+  .handler(async ({ data }) => {
+    const { id, ...input } = data;
+    return createSettingsStore(db).updateCompany(id, input);
   });
 
 export const createPaymentMethod = createServerFn({ method: "POST" })
-  .validator(parsePaymentMethodInput)
+  .middleware([requireSessionMiddleware])
+  .validator(paymentMethodInputSchema)
   .handler(async ({ data }) => {
-    await requireSession();
     return createSettingsStore(db).createPaymentMethod(data);
   });
 
 export const updatePaymentMethod = createServerFn({ method: "POST" })
-  .validator(parsePaymentMethodUpdate)
+  .middleware([requireSessionMiddleware])
+  .validator(paymentMethodUpdateSchema)
   .handler(async ({ data }) => {
-    await requireSession();
     const { id, ...input } = data;
     return createSettingsStore(db).updatePaymentMethod(id, input);
+  });
+
+export const setPaymentMethodArchived = createServerFn({ method: "POST" })
+  .middleware([requireSessionMiddleware])
+  .validator(paymentMethodArchiveSchema)
+  .handler(async ({ data }) => {
+    return createSettingsStore(db).setPaymentMethodArchived(
+      data.id,
+      data.archived,
+    );
   });

@@ -56,7 +56,7 @@ test("migration inicial pode ser reaplicada sem perder credencial ou sessão", a
       await database.db.all<{ count: number }>(
         sql`select count(*) as count from __drizzle_migrations`,
       ),
-    ).toEqual([{ count: 2 }]);
+    ).toEqual([{ count: 3 }]);
     expect(
       (
         await database.db.all<{ name: string }>(

@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { migrateDatabase, openDatabase } from "../src/db/connection";
 import { createSettingsStore } from "../src/server/settings";
+import { companySettings } from "../src/db/schema";
 
 const databases: Array<{
   close: () => void;
@@ -39,19 +40,19 @@ async function createStore() {
 test("empresa começa vazia e salva dados opcionais sem padrões fictícios", async () => {
   const { store } = await createStore();
 
-  expect(await store.getCompany()).toBeNull();
+  expect(await store.listCompanies()).toEqual([]);
   await expect(
-    store.saveCompany({ name: "   ", taxId: "", address: "", phone: "" }),
+    store.createCompany({ name: "   ", taxId: "", address: "", phone: "" }),
   ).rejects.toThrow("Informe o nome ou a razão social.");
 
-  expect(
-    await store.saveCompany({
-      name: "  Echo Studio  ",
-      taxId: "",
-      address: " Rua das Flores, 10 ",
-      phone: "",
-    }),
-  ).toEqual({
+  const created = await store.createCompany({
+    name: "  Echo Studio  ",
+    taxId: "",
+    address: " Rua das Flores, 10 ",
+    phone: "",
+  });
+  expect(created).toEqual({
+    id: expect.any(String),
     name: "Echo Studio",
     taxId: null,
     address: "Rua das Flores, 10",
@@ -59,9 +60,50 @@ test("empresa começa vazia e salva dados opcionais sem padrões fictícios", as
   });
 });
 
+test("empresa existente é preservada ao criar e editar outras empresas", async () => {
+  const { db, store } = await createStore();
+  await db.insert(companySettings).values({
+    id: "owner",
+    name: "Empresa anterior",
+    taxId: null,
+    address: null,
+    phone: null,
+  });
+  const other = await store.createCompany({
+    name: "Outra empresa",
+    taxId: "",
+    address: "",
+    phone: "",
+  });
+  await store.updateCompany("owner", {
+    name: "Empresa atualizada",
+    taxId: "",
+    address: "",
+    phone: "",
+  });
+  expect(await store.listCompanies()).toEqual([
+    {
+      id: "owner",
+      name: "Empresa atualizada",
+      taxId: null,
+      address: null,
+      phone: null,
+    },
+    other,
+  ]);
+  await expect(
+    store.updateCompany("missing", {
+      name: "Inexistente",
+      taxId: "",
+      address: "",
+      phone: "",
+    }),
+  ).rejects.toThrow("Empresa não encontrada.");
+});
+
 test("empresa e conjuntos de pagamento permanecem após reabrir o SQLite", async () => {
   const { dir, url, store, close } = await createStore();
-  await store.saveCompany({
+  await store.createCompany({
     name: "Echo Studio",
     taxId: "12.345.678/0001-90",
     address: "Rua das Flores, 10",
@@ -80,12 +122,15 @@ test("empresa e conjuntos de pagamento permanecem após reabrir o SQLite", async
   const reopened = await openDatabase(url);
   try {
     const persisted = createSettingsStore(reopened.db);
-    expect(await persisted.getCompany()).toEqual({
-      name: "Echo Studio",
-      taxId: "12.345.678/0001-90",
-      address: "Rua das Flores, 10",
-      phone: "+55 81 99999-0000",
-    });
+    expect(await persisted.listCompanies()).toEqual([
+      {
+        id: expect.any(String),
+        name: "Echo Studio",
+        taxId: "12.345.678/0001-90",
+        address: "Rua das Flores, 10",
+        phone: "+55 81 99999-0000",
+      },
+    ]);
     expect(await persisted.listPaymentMethods()).toEqual([first, second]);
   } finally {
     reopened.close();
@@ -113,6 +158,7 @@ test("conjuntos de pagamento exigem rótulo e instruções e podem ser editados"
     }),
   ).toEqual({
     id: paymentMethod.id,
+    archived: false,
     label: "PIX comercial",
     instructions: "Chave: 00000000-0000",
   });
@@ -121,5 +167,21 @@ test("conjuntos de pagamento exigem rótulo e instruções e podem ser editados"
       label: "PIX",
       instructions: "Chave aleatória",
     }),
-  ).rejects.toThrow("Conjunto de dados de pagamento não encontrado.");
+  ).rejects.toThrow("Forma de recebimento não encontrada.");
+});
+
+test("formas arquivadas são preservadas, excluídas das opções ativas e podem ser restauradas", async () => {
+  const { store } = await createStore();
+  const pix = await store.createPaymentMethod({
+    label: "PIX",
+    instructions: "Chave",
+  });
+  const archived = await store.setPaymentMethodArchived(pix.id, true);
+  expect(archived.archived).toBe(true);
+  expect(await store.listActivePaymentMethods()).toEqual([]);
+  expect(await store.listPaymentMethods()).toEqual([archived]);
+  expect((await store.setPaymentMethodArchived(pix.id, false)).archived).toBe(
+    false,
+  );
+  expect(await store.listActivePaymentMethods()).toEqual([pix]);
 });
