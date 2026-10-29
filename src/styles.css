@@ -322,6 +322,9 @@ input {
   padding: 1.1rem 1.4rem;
   color: var(--muted-foreground);
 }
+.timer-placeholder > svg {
+  flex-shrink: 0;
+}
 .timer-placeholder strong {
   font-size: 0.9rem;
   color: var(--color-foreground);
@@ -633,8 +636,17 @@ input {
   .timer-digits {
     font-size: 1.15rem;
   }
+  .timer-placeholder {
+    display: grid;
+    grid-template-columns: 32px minmax(0, 1fr);
+  }
   .timer-placeholder > svg {
-    display: none;
+    grid-row: 1 / 3;
+    align-self: start;
+  }
+  .timer-digits {
+    grid-column: 2;
+    margin-left: 0;
   }
   .empty-state {
     min-height: 320px;

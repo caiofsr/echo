@@ -1,1 +1,64 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="settings-side" x1="25" y1="30" x2="100" y2="108" gradientUnits="userSpaceOnUse"><stop stop-color="#91af8f"/><stop offset="1" stop-color="#3f634d"/></linearGradient><radialGradient id="settings-face" cx=".3" cy=".18" r=".9"><stop stop-color="#f0f5e9"/><stop offset=".5" stop-color="#bed1b4"/><stop offset="1" stop-color="#6e9474"/></radialGradient><linearGradient id="settings-rim" x1="30" y1="25" x2="92" y2="104" gradientUnits="userSpaceOnUse"><stop stop-color="#dfebd7"/><stop offset=".4" stop-color="#a8c3a4"/><stop offset="1" stop-color="#54765b"/></linearGradient></defs><path d="M97.69 47.32L108.79 49.51L108.79 70.49L97.69 72.68L96.79 74.86L103.09 84.25L88.25 99.09L78.86 92.79L76.68 93.69L74.49 104.79L53.51 104.79L51.32 93.69L49.14 92.79L39.75 99.09L24.91 84.25L31.21 74.86L30.31 72.68L19.21 70.49L19.21 49.51L30.31 47.32L31.21 45.14L24.91 35.75L39.75 20.91L49.14 27.21L51.32 26.31L53.51 15.21L74.49 15.21L76.68 26.31L78.86 27.21L88.25 20.91L103.09 35.75L96.79 45.14Z" transform="translate(0 7)" fill="url(#settings-side)" stroke="url(#settings-side)" stroke-width="5" stroke-linejoin="round"/><path d="M97.69 47.32L108.79 49.51L108.79 70.49L97.69 72.68L96.79 74.86L103.09 84.25L88.25 99.09L78.86 92.79L76.68 93.69L74.49 104.79L53.51 104.79L51.32 93.69L49.14 92.79L39.75 99.09L24.91 84.25L31.21 74.86L30.31 72.68L19.21 70.49L19.21 49.51L30.31 47.32L31.21 45.14L24.91 35.75L39.75 20.91L49.14 27.21L51.32 26.31L53.51 15.21L74.49 15.21L76.68 26.31L78.86 27.21L88.25 20.91L103.09 35.75L96.79 45.14Z" fill="url(#settings-face)" stroke="url(#settings-face)" stroke-width="5" stroke-linejoin="round"/><circle cx="64" cy="60" r="22" fill="url(#settings-side)"/><circle cx="64" cy="63" r="15" fill="#365b3e"/><path d="M49 63A15 15 0 0 1 79 63" fill="none" stroke="#54765b" stroke-width="3"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="settings-title">
+  <title id="settings-title">Engrenagens duplas de precisão com dentes chanfrados e cubo rebaixado</title>
+  <defs>
+    <filter id="settings-shadow" x="12" y="86" width="104" height="38" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="3.2"/>
+    </filter>
+    <linearGradient id="set-main-face" x1="26" y1="42" x2="84" y2="102" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#b6d7b8"/>
+      <stop offset="0.35" stop-color="#8bb08e"/>
+      <stop offset="0.75" stop-color="#608663"/>
+      <stop offset="1" stop-color="#3f6343"/>
+    </linearGradient>
+    <linearGradient id="set-main-bevel" x1="24" y1="38" x2="86" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#edf6ec"/>
+      <stop offset="0.4" stop-color="#bad6bc"/>
+      <stop offset="1" stop-color="#466d49"/>
+    </linearGradient>
+    <linearGradient id="set-sec-face" x1="72" y1="20" x2="110" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d4ead2"/>
+      <stop offset="0.5" stop-color="#95bb98"/>
+      <stop offset="1" stop-color="#557a58"/>
+    </linearGradient>
+    <linearGradient id="set-hub-recess" x1="42" y1="58" x2="68" y2="86" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2a452e"/>
+      <stop offset="0.6" stop-color="#466d4a"/>
+      <stop offset="1" stop-color="#729a75"/>
+    </linearGradient>
+  </defs>
+
+  <g id="settings-ground">
+    <ellipse cx="56" cy="108" rx="36" ry="6" fill="#1b2e1f" opacity="0.16" filter="url(#settings-shadow)"/>
+    <ellipse cx="90" cy="68" rx="18" ry="4" fill="#1b2e1f" opacity="0.12" filter="url(#settings-shadow)"/>
+  </g>
+
+  <g id="settings-body">
+    <!-- Secondary Gear (Upper-Right) -->
+    <!-- 6 teeth + body for secondary gear centered at (90, 42) r=22 -->
+    <path d="M86 20 L94 20 L96 26 L102 29 L107 24 L112 29 L109 35 L112 40 L118 42 L118 50 L112 52 L109 57 L112 63 L107 68 L102 63 L96 66 L94 72 L86 72 L84 66 L78 63 L73 68 L68 63 L71 57 L68 52 L62 50 L62 42 L68 40 L71 35 L68 29 L73 24 L78 29 L84 26 Z" fill="url(#set-sec-face)"/>
+    <circle cx="90" cy="46" r="8" fill="#325036"/>
+    <circle cx="90" cy="46" r="4.5" fill="#f4f8f2"/>
+
+    <!-- Main Primary Gear Flank Thickness -->
+    <!-- Centered at (55, 72) -->
+    <path d="M50 36 L60 36 L62 44 L70 47 L77 41 L84 48 L80 56 L86 63 L94 65 L94 77 L86 79 L80 86 L84 94 L77 101 L70 95 L62 98 L60 106 L50 106 L48 98 L40 95 L33 101 L26 94 L30 86 L24 79 L16 77 L16 65 L24 63 L30 56 L26 48 L33 41 L40 47 L48 44 Z" fill="#243c27" transform="translate(2, 4)"/>
+
+    <!-- Main Gear Face with 8 sculpted teeth -->
+    <path d="M50 36 L60 36 L62 44 L70 47 L77 41 L84 48 L80 56 L86 63 L94 65 L94 77 L86 79 L80 86 L84 94 L77 101 L70 95 L62 98 L60 106 L50 106 L48 98 L40 95 L33 101 L26 94 L30 86 L24 79 L16 77 L16 65 L24 63 L30 56 L26 48 L33 41 L40 47 L48 44 Z" fill="url(#set-main-face)"/>
+
+    <!-- Bevel perimeter highlight line -->
+    <path d="M50 36 L60 36 L62 44 L70 47 L77 41 L84 48 M86 63 L94 65 M50 36 L48 44 L40 47 L33 41 L26 48" stroke="#edf6ec" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.75"/>
+
+    <!-- Main Gear Recessed Hub Depression -->
+    <circle cx="55" cy="71" r="19" fill="url(#set-hub-recess)"/>
+    <circle cx="55" cy="71" r="19" fill="none" stroke="#243c27" stroke-width="1.5" opacity="0.6"/>
+
+    <!-- Raised center axle collar -->
+    <circle cx="55" cy="71" r="12" fill="url(#set-main-bevel)"/>
+    <!-- Center axle bore hole -->
+    <circle cx="55" cy="71" r="6.5" fill="#1b2f1e"/>
+    <circle cx="55" cy="72" r="5.5" fill="#122014"/>
+    <!-- Inner bore bottom-right highlight -->
+    <path d="M51 74 A5.5 5.5 0 0 0 59 74" stroke="#a4c7a6" stroke-width="1.2" fill="none"/>
+  </g>
+</svg>

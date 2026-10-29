@@ -1,1 +1,70 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="logout-side" x1="25" y1="30" x2="100" y2="108" gradientUnits="userSpaceOnUse"><stop stop-color="#91af8f"/><stop offset="1" stop-color="#3f634d"/></linearGradient><radialGradient id="logout-face" cx=".3" cy=".18" r=".9"><stop stop-color="#f0f5e9"/><stop offset=".5" stop-color="#bed1b4"/><stop offset="1" stop-color="#6e9474"/></radialGradient><linearGradient id="logout-rim" x1="30" y1="25" x2="92" y2="104" gradientUnits="userSpaceOnUse"><stop stop-color="#dfebd7"/><stop offset=".4" stop-color="#a8c3a4"/><stop offset="1" stop-color="#54765b"/></linearGradient></defs><rect x="23" y="22" width="49" height="88" rx="8" fill="url(#logout-side)"/><rect x="19" y="17" width="49" height="88" rx="8" fill="url(#logout-rim)"/><path d="M30 29Q30 26 34 27L56 32V94L34 98Q30 99 30 95Z" fill="#365b3e"/><path d="M53 60H88L77 49Q73 45 77 41Q81 37 85 41L106 62Q110 66 106 70L85 91Q81 95 77 91Q73 87 77 83L88 72H53Q47 72 47 66Q47 60 53 60Z" transform="translate(0 4)" fill="url(#logout-side)"/><path d="M53 56H88L77 45Q73 41 77 37Q81 33 85 37L106 58Q110 62 106 66L85 87Q81 91 77 87Q73 83 77 79L88 68H53Q47 68 47 62Q47 56 53 56Z" fill="url(#logout-face)"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="logout-title">
+  <title id="logout-title">Portal de saída tridimensional com porta entreaberta e seta volumétrica</title>
+  <defs>
+    <filter id="logout-shadow" x="12" y="98" width="104" height="28" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="3.2"/>
+    </filter>
+    <linearGradient id="log-frame-top" x1="22" y1="18" x2="82" y2="30" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e8f4e6"/>
+      <stop offset="0.5" stop-color="#bad8bc"/>
+      <stop offset="1" stop-color="#739c76"/>
+    </linearGradient>
+    <linearGradient id="log-frame-left" x1="22" y1="24" x2="36" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9fc2a2"/>
+      <stop offset="0.5" stop-color="#608864"/>
+      <stop offset="1" stop-color="#3c5f40"/>
+    </linearGradient>
+    <linearGradient id="log-frame-inner" x1="32" y1="28" x2="72" y2="98" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1b2f1f"/>
+      <stop offset="0.7" stop-color="#2a452e"/>
+      <stop offset="1" stop-color="#3c5e40"/>
+    </linearGradient>
+    <linearGradient id="log-door" x1="32" y1="28" x2="58" y2="100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#bad6bc"/>
+      <stop offset="0.4" stop-color="#78a17c"/>
+      <stop offset="1" stop-color="#466d49"/>
+    </linearGradient>
+    <linearGradient id="log-arrow" x1="48" y1="52" x2="108" y2="76" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f8fcf7"/>
+      <stop offset="0.3" stop-color="#cde5cf"/>
+      <stop offset="0.7" stop-color="#8cb58f"/>
+      <stop offset="1" stop-color="#4c7350"/>
+    </linearGradient>
+  </defs>
+
+  <g id="logout-ground">
+    <ellipse cx="64" cy="110" rx="42" ry="7" fill="#1b2e1f" opacity="0.16" filter="url(#logout-shadow)"/>
+  </g>
+
+  <g id="logout-body">
+    <!-- Portal Frame Outer & Inner Opening -->
+    <!-- Outer wall frame -->
+    <path d="M22 24 Q22 18 28 18 L76 18 Q82 18 82 24 L82 104 L22 104 Z" fill="url(#log-frame-left)"/>
+    <!-- Top lintel bevel -->
+    <path d="M22 24 Q22 18 28 18 L76 18 Q82 18 82 24 L74 30 L30 30 Z" fill="url(#log-frame-top)"/>
+    <!-- Deep interior chamber behind door -->
+    <rect x="32" y="30" width="42" height="74" rx="2" fill="url(#log-frame-inner)"/>
+    <!-- Bottom threshold step -->
+    <path d="M20 102 L84 102 L86 106 L18 106 Z" fill="#bad8bc"/>
+    <path d="M18 106 L86 106 L84 108 L20 108 Z" fill="#36583a"/>
+
+    <!-- Open Door Leaf (Swung inward at perspective angle) -->
+    <path d="M32 30 L56 38 L56 102 L32 104 Z" fill="url(#log-door)"/>
+    <path d="M32 30 L56 38 L58 40 L34 32 Z" fill="#e8f4e6" opacity="0.8"/>
+    <!-- Recessed panels on open door -->
+    <path d="M36 42 L52 47 L52 64 L36 61 Z" fill="#38583c" opacity="0.4"/>
+    <path d="M36 68 L52 71 L52 94 L36 96 Z" fill="#38583c" opacity="0.4"/>
+    <!-- Door Handle -->
+    <ellipse cx="52" cy="70" rx="1.8" ry="3" fill="#edf5ec"/>
+
+    <!-- 3D Volumetric Outgoing Arrow -->
+    <!-- Arrow contact shadow -->
+    <path d="M50 67 L78 67 L78 57 L104 73 L78 89 L78 79 L50 79 Z" fill="#182c1c" opacity="0.25" transform="translate(0, 3)"/>
+    <!-- Arrow under/side thickness -->
+    <path d="M50 67 L78 67 L78 57 L104 73 L78 89 L78 79 L50 79 Z" fill="#2d4930" transform="translate(1, 2)"/>
+    <!-- Arrow front face -->
+    <path d="M50 65 L78 65 L78 55 L104 71 L78 87 L78 77 L50 77 Z" fill="url(#log-arrow)"/>
+    <!-- Arrow top highlight edge -->
+    <path d="M50 65 L78 65 L78 55 L104 71" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.85"/>
+  </g>
+</svg>

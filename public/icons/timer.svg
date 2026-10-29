@@ -1,12 +1,95 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-<defs>
- <linearGradient id="timer-side" x1="25" y1="36" x2="103" y2="105" gradientUnits="userSpaceOnUse"><stop stop-color="#a8c3a4"/><stop offset="1" stop-color="#3f634d"/></linearGradient>
- <radialGradient id="timer-face" cx=".34" cy=".23" r=".78"><stop stop-color="#fffdf6"/><stop offset=".58" stop-color="#e7eee2"/><stop offset="1" stop-color="#a8bda7"/></radialGradient>
- <linearGradient id="timer-rim" x1="30" y1="22" x2="98" y2="101" gradientUnits="userSpaceOnUse"><stop stop-color="#dfebd7"/><stop offset=".5" stop-color="#91af8f"/><stop offset="1" stop-color="#54765b"/></linearGradient>
-</defs><path d="M53 10H74M63 10V20" stroke="#54765b" stroke-width="9" stroke-linecap="round"/>
-<path d="M19 62C19 36 38 17 63 17c25 0 45 19 45 45v9c0 25-20 43-45 43S19 96 19 71Z" fill="url(#timer-side)"/>
-<circle cx="63" cy="61" r="44" fill="url(#timer-rim)"/>
-<circle cx="63" cy="61" r="36" fill="url(#timer-face)"/>
-<path d="M63 35v27l18 10" fill="none" stroke="#365b3e" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-<circle cx="63" cy="62" r="5" fill="#365b3e"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="timer-title">
+  <title id="timer-title">Cronômetro mecânico de precisão com botão de disparo, aro chanfrado e mostrador</title>
+  <defs>
+    <filter id="timer-shadow" x="14" y="98" width="100" height="28" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="3.2"/>
+    </filter>
+    <linearGradient id="tim-casing" x1="24" y1="28" x2="104" y2="108" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e0f0dd"/>
+      <stop offset="0.25" stop-color="#bad6bd"/>
+      <stop offset="0.65" stop-color="#739a76"/>
+      <stop offset="1" stop-color="#38583c"/>
+    </linearGradient>
+    <linearGradient id="tim-casing-flank" x1="88" y1="48" x2="108" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#466b49"/>
+      <stop offset="0.7" stop-color="#2a442e"/>
+      <stop offset="1" stop-color="#1c3020"/>
+    </linearGradient>
+    <linearGradient id="tim-dial" x1="36" y1="38" x2="92" y2="94" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#f4f8f2"/>
+      <stop offset="1" stop-color="#dce8da"/>
+    </linearGradient>
+    <linearGradient id="tim-loop" x1="46" y1="8" x2="82" y2="24" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#eaf4e8"/>
+      <stop offset="0.5" stop-color="#9fc2a1"/>
+      <stop offset="1" stop-color="#4c7350"/>
+    </linearGradient>
+  </defs>
+
+  <g id="timer-ground">
+    <ellipse cx="64" cy="112" rx="40" ry="7" fill="#1b2e1f" opacity="0.16" filter="url(#timer-shadow)"/>
+  </g>
+
+  <g id="timer-body">
+    <!-- Top Plunger Button and Ring Loop -->
+    <!-- Wire ring loop -->
+    <path d="M48 20 C48 10 80 10 80 20" fill="none" stroke="url(#tim-loop)" stroke-width="4.5" stroke-linecap="round"/>
+    <!-- Top crown neck & button -->
+    <rect x="58" y="16" width="12" height="12" rx="2.5" fill="#2d4931" transform="translate(0, 1.5)"/>
+    <rect x="58" y="16" width="12" height="12" rx="2.5" fill="#bad8bc"/>
+    <rect x="56" y="14" width="16" height="5" rx="2.5" fill="#e8f4e6"/>
+
+    <!-- Side Lap Pusher (at 2 o'clock, 45 deg) -->
+    <rect x="88" y="28" width="8" height="8" rx="2" fill="#587e5b" transform="rotate(35, 92, 32)"/>
+    <rect x="91" y="27" width="8" height="4" rx="2" fill="#d8ecd6" transform="rotate(35, 92, 32)"/>
+
+    <!-- Cylindrical Depth Flank on bottom-right -->
+    <circle cx="67" cy="71" r="39" fill="url(#tim-casing-flank)"/>
+
+    <!-- Main Outer Bezel Casing -->
+    <circle cx="64" cy="68" r="39" fill="url(#tim-casing)"/>
+
+    <!-- Inner Bezel Wall (Drop into dial) -->
+    <circle cx="64" cy="68" r="32" fill="#27402a"/>
+
+    <!-- Dial Face -->
+    <circle cx="64" cy="68" r="29.5" fill="url(#tim-dial)"/>
+
+    <!-- Inner top-left shadow ring inside dial for sunken depth -->
+    <path d="M38 52 A29.5 29.5 0 0 1 80 42" stroke="#2a452e" stroke-width="3" fill="none" opacity="0.25"/>
+
+    <!-- Tick Marks (12, 3, 6, 9 and 5-min intermediate) -->
+    <!-- 12 o'clock -->
+    <rect x="62.75" y="41" width="2.5" height="5.5" rx="1.25" fill="#365b3e"/>
+    <!-- 3 o'clock -->
+    <rect x="87" y="66.75" width="5.5" height="2.5" rx="1.25" fill="#365b3e"/>
+    <!-- 6 o'clock -->
+    <rect x="62.75" y="87" width="2.5" height="5.5" rx="1.25" fill="#365b3e"/>
+    <!-- 9 o'clock -->
+    <rect x="41" y="66.75" width="5.5" height="2.5" rx="1.25" fill="#365b3e"/>
+
+    <!-- Small intermediate ticks -->
+    <circle cx="78" cy="46" r="1.5" fill="#69916c"/>
+    <circle cx="86" cy="54" r="1.5" fill="#69916c"/>
+    <circle cx="86" cy="82" r="1.5" fill="#69916c"/>
+    <circle cx="78" cy="90" r="1.5" fill="#69916c"/>
+    <circle cx="50" cy="90" r="1.5" fill="#69916c"/>
+    <circle cx="42" cy="82" r="1.5" fill="#69916c"/>
+    <circle cx="42" cy="54" r="1.5" fill="#69916c"/>
+    <circle cx="50" cy="46" r="1.5" fill="#69916c"/>
+
+    <!-- Needle Hand pointing to 10 seconds (~58 degrees) -->
+    <!-- Hand cast shadow -->
+    <path d="M64 68 L81 50 L79 48 L62 66 Z" fill="#243d27" opacity="0.28" transform="translate(1, 1.5)"/>
+    <!-- Hand needle -->
+    <path d="M64 68 L81 50 L79 48 L62 66 Z" fill="#315537"/>
+    <!-- Hand tail / counterweight -->
+    <path d="M64 68 L57 74 L55 72 L62 66 Z" fill="#466d4a"/>
+
+    <!-- Center Pivot Cap Button -->
+    <circle cx="64" cy="68" r="4.5" fill="#223a26"/>
+    <circle cx="64" cy="67.5" r="3.5" fill="#dcefd9"/>
+    <circle cx="63.5" cy="67" r="1.5" fill="#ffffff"/>
+  </g>
 </svg>

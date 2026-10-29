@@ -1,1 +1,77 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="invoices-side" x1="25" y1="36" x2="103" y2="105" gradientUnits="userSpaceOnUse"><stop stop-color="#a8c3a4"/><stop offset="1" stop-color="#3f634d"/></linearGradient><radialGradient id="invoices-face" cx=".34" cy=".23" r=".78"><stop stop-color="#fffdf6"/><stop offset=".45" stop-color="#cfddc8"/><stop offset="1" stop-color="#739579"/></radialGradient><linearGradient id="invoices-rim" x1="30" y1="22" x2="98" y2="101" gradientUnits="userSpaceOnUse"><stop stop-color="#dfebd7"/><stop offset=".5" stop-color="#91af8f"/><stop offset="1" stop-color="#54765b"/></linearGradient></defs><path d="M33 17H79L98 36V108L85 101L73 108L61 101L49 108L33 101Z" transform="translate(2 7)" fill="url(#invoices-side)"/><path d="M33 17H79L98 36V108L85 101L73 108L61 101L49 108L33 101Z" fill="url(#invoices-face)"/><path d="M48 48H81M48 65H81M48 82H70" stroke="#54765b" stroke-width="6" stroke-linecap="round"/><path d="M79 17V36H98Z" fill="#91af8f"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="invoices-title">
+  <title id="invoices-title">Fatura dimensional com dobra 3D, selo de autenticidade e linhas de cobrança</title>
+  <defs>
+    <filter id="invoices-shadow" x="16" y="98" width="98" height="28" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="3.2"/>
+    </filter>
+    <linearGradient id="inv-side" x1="90" y1="24" x2="102" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4a7350"/>
+      <stop offset="0.6" stop-color="#345439"/>
+      <stop offset="1" stop-color="#243c29"/>
+    </linearGradient>
+    <linearGradient id="inv-bottom" x1="32" y1="98" x2="100" y2="106" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#345439"/>
+      <stop offset="1" stop-color="#213825"/>
+    </linearGradient>
+    <linearGradient id="inv-sheet" x1="32" y1="18" x2="92" y2="102" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset="0.4" stop-color="#f6faf4"/>
+      <stop offset="0.8" stop-color="#e8f2e6"/>
+      <stop offset="1" stop-color="#d4e4d2"/>
+    </linearGradient>
+    <linearGradient id="inv-fold-face" x1="72" y1="18" x2="94" y2="40" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#c4e2c4"/>
+      <stop offset="0.5" stop-color="#8eb890"/>
+      <stop offset="1" stop-color="#5b8660"/>
+    </linearGradient>
+    <linearGradient id="inv-seal" x1="40" y1="32" x2="56" y2="48" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#608d66"/>
+      <stop offset="1" stop-color="#345939"/>
+    </linearGradient>
+  </defs>
+
+  <g id="invoices-ground">
+    <ellipse cx="65" cy="110" rx="40" ry="7" fill="#1b2e1f" opacity="0.16" filter="url(#invoices-shadow)"/>
+  </g>
+
+  <g id="invoices-body">
+    <!-- Right side thickness -->
+    <path d="M92 40 L97 44 Q98 45 98 47 L98 100 Q98 103 95 103 L92 99 Z" fill="url(#inv-side)"/>
+    <!-- Bottom thickness -->
+    <path d="M33 99 L38 103 Q40 104 42 104 L95 104 L92 99 Z" fill="url(#inv-bottom)"/>
+
+    <!-- Main Sheet with cut top-right corner -->
+    <path d="M33 18 L72 18 L92 38 L92 99 Q92 101 90 101 L33 101 Q31 101 31 99 L31 20 Q31 18 33 18 Z" fill="url(#inv-sheet)"/>
+
+    <!-- Cast shadow beneath the corner fold -->
+    <path d="M72 18 L92 38 L72 38 Z" fill="#26402b" opacity="0.22" transform="translate(1.5, 2.5)"/>
+
+    <!-- Folded corner flap (3D inverted triangle) -->
+    <path d="M72 18 L92 38 L72 38 Z" fill="url(#inv-fold-face)"/>
+    <path d="M72 38 L92 38 L94 40 L72 40 Z" fill="#3e6344"/>
+
+    <!-- Embossed Seal / Stamp in upper left -->
+    <ellipse cx="48" cy="38" rx="9" ry="9" fill="#243f29" opacity="0.2" transform="translate(0, 1.5)"/>
+    <ellipse cx="48" cy="38" rx="9" ry="9" fill="url(#inv-seal)"/>
+    <circle cx="48" cy="38" r="6" fill="#8cb390" stroke="#f6faf4" stroke-width="1.2"/>
+    <!-- Currency / Check symbol in seal -->
+    <path d="M45.5 38.5 L47.5 40.5 L51.5 35.5" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+
+    <!-- Invoice item rows (tactile grooved bars) -->
+    <rect x="38" y="54" width="34" height="4" rx="2" fill="#759978"/>
+    <rect x="76" y="54" width="12" height="4" rx="2" fill="#466d4a"/>
+
+    <rect x="38" y="64" width="28" height="3.5" rx="1.75" fill="#9dbda0"/>
+    <rect x="76" y="64" width="12" height="3.5" rx="1.75" fill="#58805c"/>
+
+    <rect x="38" y="73" width="32" height="3.5" rx="1.75" fill="#9dbda0"/>
+    <rect x="76" y="73" width="12" height="3.5" rx="1.75" fill="#58805c"/>
+
+    <!-- Divider rule -->
+    <line x1="38" y1="83" x2="88" y2="83" stroke="#b2ceb4" stroke-width="1.5" stroke-linecap="round"/>
+
+    <!-- Total Highlight Row -->
+    <rect x="38" y="88" width="20" height="4.5" rx="2" fill="#58805c"/>
+    <rect x="68" y="87" width="20" height="6.5" rx="2.5" fill="#365b3e"/>
+  </g>
+</svg>

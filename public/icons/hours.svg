@@ -1,12 +1,88 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
-<defs>
- <linearGradient id="hours-side" x1="25" y1="36" x2="103" y2="105" gradientUnits="userSpaceOnUse"><stop stop-color="#a8c3a4"/><stop offset="1" stop-color="#3f634d"/></linearGradient>
- <radialGradient id="hours-face" cx=".34" cy=".23" r=".78"><stop stop-color="#fffdf6"/><stop offset=".58" stop-color="#e7eee2"/><stop offset="1" stop-color="#a8bda7"/></radialGradient>
- <linearGradient id="hours-rim" x1="30" y1="22" x2="98" y2="101" gradientUnits="userSpaceOnUse"><stop stop-color="#dfebd7"/><stop offset=".5" stop-color="#91af8f"/><stop offset="1" stop-color="#54765b"/></linearGradient>
-</defs>
-<path d="M19 62C19 36 38 17 63 17c25 0 45 19 45 45v9c0 25-20 43-45 43S19 96 19 71Z" fill="url(#hours-side)"/>
-<circle cx="63" cy="61" r="44" fill="url(#hours-rim)"/>
-<circle cx="63" cy="61" r="36" fill="url(#hours-face)"/>
-<path d="M63 35v27l18 10" fill="none" stroke="#365b3e" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
-<circle cx="63" cy="62" r="5" fill="#365b3e"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="hours-title">
+  <title id="hours-title">Ampulheta esculpida com areia verde e pilares volumétricos</title>
+  <defs>
+    <filter id="hours-shadow" x="14" y="98" width="100" height="28" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="3"/>
+    </filter>
+    <linearGradient id="hours-cap-top" x1="36" y1="16" x2="92" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#e8f3e6"/>
+      <stop offset="0.45" stop-color="#badaba"/>
+      <stop offset="1" stop-color="#7ea683"/>
+    </linearGradient>
+    <linearGradient id="hours-cap-rim" x1="32" y1="24" x2="96" y2="34" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#557c59"/>
+      <stop offset="0.7" stop-color="#36583d"/>
+      <stop offset="1" stop-color="#223a27"/>
+    </linearGradient>
+    <linearGradient id="hours-base-top" x1="36" y1="96" x2="92" y2="106" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9fc2a2"/>
+      <stop offset="0.5" stop-color="#739a76"/>
+      <stop offset="1" stop-color="#4d7251"/>
+    </linearGradient>
+    <linearGradient id="hours-base-rim" x1="32" y1="102" x2="96" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#446949"/>
+      <stop offset="0.7" stop-color="#2a472f"/>
+      <stop offset="1" stop-color="#1b3020"/>
+    </linearGradient>
+    <linearGradient id="hours-pillar-left" x1="34" y1="28" x2="42" y2="98" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d4e8d3"/>
+      <stop offset="0.3" stop-color="#88ad8a"/>
+      <stop offset="1" stop-color="#426647"/>
+    </linearGradient>
+    <linearGradient id="hours-pillar-right" x1="86" y1="28" x2="94" y2="98" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#a8c8aa"/>
+      <stop offset="0.5" stop-color="#557a59"/>
+      <stop offset="1" stop-color="#2f4e34"/>
+    </linearGradient>
+    <linearGradient id="hours-glass" x1="42" y1="34" x2="86" y2="94" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" stop-opacity="0.7"/>
+      <stop offset="0.3" stop-color="#d9eed8" stop-opacity="0.4"/>
+      <stop offset="0.7" stop-color="#a4cca3" stop-opacity="0.3"/>
+      <stop offset="1" stop-color="#548256" stop-opacity="0.5"/>
+    </linearGradient>
+    <linearGradient id="hours-sand" x1="48" y1="68" x2="80" y2="96" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#608d65"/>
+      <stop offset="0.6" stop-color="#426b47"/>
+      <stop offset="1" stop-color="#28482d"/>
+    </linearGradient>
+  </defs>
+
+  <g id="hours-ground">
+    <ellipse cx="64" cy="110" rx="38" ry="7" fill="#1b2e1f" opacity="0.16" filter="url(#hours-shadow)"/>
+  </g>
+
+  <g id="hours-body">
+    <!-- Bottom Base Plate -->
+    <path d="M34 102 C34 97 47 94 64 94 C81 94 94 97 94 102 L94 106 C94 111 81 114 64 114 C47 114 34 111 34 106 Z" fill="url(#hours-base-rim)"/>
+    <ellipse cx="64" cy="102" rx="30" ry="8" fill="url(#hours-base-top)"/>
+
+    <!-- Glass Vessel Body -->
+    <path d="M44 32 C44 48 57 56 61 64 C57 72 44 80 44 96 C44 98 48 100 64 100 C80 100 84 98 84 96 C84 80 71 72 67 64 C71 56 84 48 84 32 C84 30 80 28 64 28 C48 28 44 30 44 32 Z" fill="url(#hours-glass)"/>
+
+    <!-- Sand inside bulbs -->
+    <!-- Top bulb draining sand -->
+    <path d="M48 36 C52 46 60 52 64 56 C68 52 76 46 80 36 C74 38 54 38 48 36 Z" fill="#69946e" opacity="0.85"/>
+    <!-- Trickling stream -->
+    <path d="M63 56 L65 56 L64.5 76 L63.5 76 Z" fill="#3d6342"/>
+    <!-- Bottom bulb accumulated sand mound -->
+    <path d="M47 96 C48 86 56 76 64 76 C72 76 80 86 81 96 C74 98 54 98 47 96 Z" fill="url(#hours-sand)"/>
+
+    <!-- Glass specular highlight curve -->
+    <path d="M47 36 C47 48 56 55 59 62 C57 55 49 48 49 36 Z" fill="#ffffff" opacity="0.6"/>
+    <path d="M47 92 C47 84 55 77 59 70 C57 76 49 83 49 92 Z" fill="#ffffff" opacity="0.5"/>
+
+    <!-- Pillars -->
+    <!-- Left Pillar -->
+    <rect x="35" y="26" width="6.5" height="78" rx="3.25" fill="url(#hours-pillar-left)"/>
+    <!-- Right Pillar -->
+    <rect x="86.5" y="26" width="6.5" height="78" rx="3.25" fill="url(#hours-pillar-right)"/>
+
+    <!-- Top Cap Plate -->
+    <path d="M34 24 C34 29 47 32 64 32 C81 32 94 29 94 24 L94 20 C94 15 81 12 64 12 C47 12 34 15 34 20 Z" fill="url(#hours-cap-rim)"/>
+    <ellipse cx="64" cy="20" rx="30" ry="8" fill="url(#hours-cap-top)"/>
+
+    <!-- Top decorative finial button -->
+    <ellipse cx="64" cy="18" rx="7" ry="2.5" fill="#badaba"/>
+    <circle cx="64" cy="16" r="3" fill="#e8f3e6"/>
+  </g>
 </svg>

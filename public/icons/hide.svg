@@ -1,1 +1,71 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="hide-side" x1="25" y1="36" x2="103" y2="105" gradientUnits="userSpaceOnUse"><stop stop-color="#a8c3a4"/><stop offset="1" stop-color="#3f634d"/></linearGradient><radialGradient id="hide-face" cx=".34" cy=".23" r=".78"><stop stop-color="#fffdf6"/><stop offset=".45" stop-color="#cfddc8"/><stop offset="1" stop-color="#739579"/></radialGradient><linearGradient id="hide-rim" x1="30" y1="22" x2="98" y2="101" gradientUnits="userSpaceOnUse"><stop stop-color="#dfebd7"/><stop offset=".5" stop-color="#91af8f"/><stop offset="1" stop-color="#54765b"/></linearGradient></defs><path d="M13 64Q61 1 111 64Q62 123 13 64Z" transform="translate(2 7)" fill="url(#hide-side)"/><path d="M13 64Q61 1 111 64Q62 123 13 64Z" fill="url(#hide-face)"/><circle cx="62" cy="63" r="19" fill="#54765b"/><path d="M25 23L100 103" stroke="#365b3e" stroke-width="11" stroke-linecap="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="hide-title">
+  <title id="hide-title">Olho oculto com barra diagonal volumétrica e sombra de corte</title>
+  <defs>
+    <filter id="hide-shadow" x="12" y="86" width="104" height="32" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="3.2"/>
+    </filter>
+    <filter id="hide-bar-shadow" x="18" y="18" width="92" height="92" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="2.5"/>
+    </filter>
+    <linearGradient id="hide-upper-lid" x1="20" y1="26" x2="108" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ebf5e9"/>
+      <stop offset="0.3" stop-color="#bad6bc"/>
+      <stop offset="0.7" stop-color="#739d76"/>
+      <stop offset="1" stop-color="#466d49"/>
+    </linearGradient>
+    <linearGradient id="hide-lower-lid" x1="20" y1="64" x2="108" y2="100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#739d76"/>
+      <stop offset="0.6" stop-color="#4d7350"/>
+      <stop offset="1" stop-color="#2d4930"/>
+    </linearGradient>
+    <linearGradient id="hide-sclera" x1="30" y1="44" x2="98" y2="84" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f8fcf7"/>
+      <stop offset="0.5" stop-color="#eaf1e8"/>
+      <stop offset="1" stop-color="#c2d5c0"/>
+    </linearGradient>
+    <radialGradient id="hide-iris" cx="0.4" cy="0.35" r="0.65">
+      <stop stop-color="#78a67c"/>
+      <stop offset="0.45" stop-color="#49704d"/>
+      <stop offset="0.85" stop-color="#27442a"/>
+      <stop offset="1" stop-color="#162919"/>
+    </radialGradient>
+    <linearGradient id="hide-bar-face" x1="26" y1="24" x2="102" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#eef6ec"/>
+      <stop offset="0.25" stop-color="#bad8bc"/>
+      <stop offset="0.6" stop-color="#7aa37d"/>
+      <stop offset="1" stop-color="#3c6140"/>
+    </linearGradient>
+    <linearGradient id="hide-bar-side" x1="30" y1="28" x2="106" y2="106" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#446b47"/>
+      <stop offset="1" stop-color="#1e3421"/>
+    </linearGradient>
+  </defs>
+
+  <g id="hide-ground">
+    <ellipse cx="64" cy="104" rx="42" ry="6" fill="#1b2e1f" opacity="0.14" filter="url(#hide-shadow)"/>
+  </g>
+
+  <!-- Eye Body (identical to show, slightly muted) -->
+  <g id="hide-body" opacity="0.88">
+    <path d="M14 64 Q64 104 114 64 Q64 112 14 64 Z" fill="url(#hide-lower-lid)"/>
+    <path d="M16 64 Q64 24 112 64 Q64 104 16 64 Z" fill="url(#hide-sclera)"/>
+    <path d="M16 64 Q64 24 112 64 Q64 42 16 64 Z" fill="#243f28" opacity="0.28"/>
+    <circle cx="64" cy="64" r="22" fill="url(#hide-iris)"/>
+    <circle cx="64" cy="64" r="10.5" fill="#101e12"/>
+    <ellipse cx="56" cy="55" rx="5.5" ry="4" fill="#ffffff" opacity="0.8"/>
+    <path d="M14 64 Q64 16 114 64 Q64 28 14 64 Z" fill="url(#hide-upper-lid)"/>
+    <path d="M22 62 Q64 20 106 62" stroke="#ffffff" stroke-width="1.8" stroke-linecap="round" fill="none" opacity="0.8"/>
+  </g>
+
+  <!-- Tactile 3D Diagonal Slash Bar hovering over the eye -->
+  <g id="hide-slash-bar">
+    <!-- Bar cast contact shadow on eye -->
+    <path d="M26 24 L102 100" stroke="#16291a" stroke-width="13" stroke-linecap="round" opacity="0.38" filter="url(#hide-bar-shadow)"/>
+    <!-- Bar under/side shaded flank -->
+    <path d="M27 26 L103 102" stroke="url(#hide-bar-side)" stroke-width="11" stroke-linecap="round"/>
+    <!-- Bar front face -->
+    <path d="M25 24 L101 100" stroke="url(#hide-bar-face)" stroke-width="10.5" stroke-linecap="round"/>
+    <!-- Bar top highlight ridge -->
+    <path d="M24 23 L99 98" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
+  </g>
+</svg>

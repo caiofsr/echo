@@ -1,1 +1,71 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><defs><linearGradient id="directory-side" x1="25" y1="30" x2="100" y2="108" gradientUnits="userSpaceOnUse"><stop stop-color="#91af8f"/><stop offset="1" stop-color="#3f634d"/></linearGradient><radialGradient id="directory-face" cx=".3" cy=".18" r=".9"><stop stop-color="#f0f5e9"/><stop offset=".5" stop-color="#bed1b4"/><stop offset="1" stop-color="#6e9474"/></radialGradient><linearGradient id="directory-rim" x1="30" y1="25" x2="92" y2="104" gradientUnits="userSpaceOnUse"><stop stop-color="#dfebd7"/><stop offset=".4" stop-color="#a8c3a4"/><stop offset="1" stop-color="#54765b"/></linearGradient></defs><path d="M18 36Q18 27 27 27H47Q51 27 54 32L60 39H98Q107 39 107 48V94Q107 103 98 103H27Q18 103 18 94Z" fill="url(#directory-side)"/><path d="M20 35Q20 29 27 29H46Q49 29 52 33L59 42H98Q104 42 104 48V89H20Z" fill="url(#directory-rim)"/><path d="M29 48H95V87H29Z" fill="#e7eee2"/><path d="M24 55H105Q113 55 111 63L101 99Q99 107 91 107H25Q17 107 18 99L19 63Q19 55 24 55Z" fill="url(#directory-side)"/><path d="M24 53H104Q110 53 108 60L98 96Q97 102 90 102H26Q21 102 21 96L22 60Q22 53 24 53Z" fill="url(#directory-face)"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="directory-title">
+  <title id="directory-title">Fichário organizador com abas escalonadas de clientes, projetos e empresas</title>
+  <defs>
+    <filter id="directory-shadow" x="12" y="96" width="104" height="30" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="3.2"/>
+    </filter>
+    <linearGradient id="dir-box-front" x1="22" y1="56" x2="106" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#739a77"/>
+      <stop offset="0.6" stop-color="#557a58"/>
+      <stop offset="1" stop-color="#3b5e3f"/>
+    </linearGradient>
+    <linearGradient id="dir-box-side" x1="104" y1="56" x2="114" y2="106" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3c5f40"/>
+      <stop offset="1" stop-color="#243d27"/>
+    </linearGradient>
+    <linearGradient id="dir-box-rim" x1="22" y1="54" x2="106" y2="60" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#d4ead3"/>
+      <stop offset="0.5" stop-color="#9fc2a2"/>
+      <stop offset="1" stop-color="#608663"/>
+    </linearGradient>
+    <linearGradient id="dir-card-1" x1="28" y1="22" x2="100" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dbe8d8"/>
+    </linearGradient>
+    <linearGradient id="dir-card-2" x1="28" y1="30" x2="100" y2="64" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#eaf3e8"/>
+    </linearGradient>
+    <linearGradient id="dir-label-plate" x1="48" y1="72" x2="80" y2="88" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#eef6ec"/>
+      <stop offset="0.6" stop-color="#c5dec4"/>
+      <stop offset="1" stop-color="#84aa86"/>
+    </linearGradient>
+  </defs>
+
+  <g id="directory-ground">
+    <ellipse cx="64" cy="110" rx="44" ry="7" fill="#1b2e1f" opacity="0.16" filter="url(#directory-shadow)"/>
+  </g>
+
+  <g id="directory-body">
+    <!-- Back interior of tray -->
+    <rect x="24" y="44" width="80" height="40" rx="5" fill="#2d4931"/>
+
+    <!-- Index Card 1 (Rear, Left Tab) -->
+    <path d="M28 28 Q28 24 32 24 L52 24 Q56 24 58 28 L60 32 L98 32 Q100 32 100 34 L100 64 L28 64 Z" fill="url(#dir-card-1)"/>
+    <rect x="32" y="27" width="16" height="3" rx="1.5" fill="#58805c"/>
+
+    <!-- Index Card 2 (Middle, Center Tab) -->
+    <path d="M28 36 L52 36 L54 32 Q56 30 60 30 L76 30 Q80 30 82 34 L84 36 L98 36 Q100 36 100 38 L100 68 L28 68 Z" fill="url(#dir-card-2)"/>
+    <rect x="60" y="33" width="14" height="3" rx="1.5" fill="#446b48"/>
+
+    <!-- Index Card 3 (Front, Right Tab) -->
+    <path d="M28 42 L74 42 L76 38 Q78 36 82 36 L96 36 Q100 36 100 40 L100 74 L28 74 Z" fill="#f8fcf7"/>
+    <rect x="80" y="39" width="14" height="3" rx="1.5" fill="#365b3e"/>
+
+    <!-- Box Right Flank -->
+    <path d="M104 56 L111 60 Q112 61 112 63 L112 99 Q112 102 109 102 L104 98 Z" fill="url(#dir-box-side)"/>
+
+    <!-- Box Front Face -->
+    <rect x="20" y="56" width="84" height="44" rx="6" fill="url(#dir-box-front)"/>
+    <!-- Top Rim Highlight -->
+    <rect x="20" y="55" width="84" height="3.5" rx="1.75" fill="url(#dir-box-rim)"/>
+
+    <!-- Metal Label Pull / Nameplate on front -->
+    <rect x="44" y="70" width="36" height="18" rx="4" fill="#263e2a" opacity="0.3" transform="translate(0, 1.5)"/>
+    <rect x="44" y="70" width="36" height="18" rx="4" fill="url(#dir-label-plate)"/>
+    <!-- Inner label paper -->
+    <rect x="48" y="73" width="28" height="12" rx="2.5" fill="#ffffff"/>
+    <line x1="52" y1="79" x2="72" y2="79" stroke="#4a7350" stroke-width="2" stroke-linecap="round"/>
+  </g>
+</svg>
