@@ -17,19 +17,13 @@ import {
   updatePaymentMethod,
 } from "../../server/functions/settings";
 import type {
+  Company,
   CompanyInput,
   PaymentMethodInput,
   SavedPaymentMethod,
 } from "../../lib/settings-types";
 
-function companyValues(
-  company: {
-    name: string;
-    taxId: string | null;
-    address: string | null;
-    phone: string | null;
-  } | null,
-): CompanyInput {
+function companyValues(company: Company | null): CompanyInput {
   return {
     name: company?.name ?? "",
     taxId: company?.taxId ?? "",
@@ -123,20 +117,14 @@ export function SettingsPage() {
   );
 }
 
-function CompanyForm({
-  company,
-}: {
-  company: {
-    name: string;
-    taxId: string | null;
-    address: string | null;
-    phone: string | null;
-  } | null;
-}) {
+function CompanyForm({ company }: { company: Company | null }) {
   const queryClient = useQueryClient();
   const save = useMutation({
     mutationFn: (data: CompanyInput) => saveCompanySettings({ data }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["settings"] }),
+    onSuccess: (company) =>
+      queryClient.setQueryData(settingsQueryOptions.queryKey, (current) =>
+        current ? { ...current, company } : current,
+      ),
   });
   const form = useForm({
     defaultValues: companyValues(company),
@@ -287,8 +275,18 @@ function PaymentMethodForm({
       paymentMethod
         ? updatePaymentMethod({ data: { id: paymentMethod.id, ...data } })
         : createPaymentMethod({ data }),
-    onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["settings"] });
+    onSuccess: (saved) => {
+      queryClient.setQueryData(settingsQueryOptions.queryKey, (current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          paymentMethods: paymentMethod
+            ? current.paymentMethods.map((item) =>
+                item.id === saved.id ? saved : item,
+              )
+            : [...current.paymentMethods, saved],
+        };
+      });
       onSaved();
     },
   });

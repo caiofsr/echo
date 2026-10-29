@@ -364,7 +364,7 @@ input {
   margin: 0 0 1rem;
 }
 .settings-success {
-  color: #284b30;
+  color: var(--secondary-foreground);
   font-size: 0.9rem;
   margin: 0 0 0.85rem;
 }
@@ -414,7 +414,7 @@ input {
   gap: 1.1rem;
   padding: 1.25rem;
   margin-bottom: 1rem;
-  background: #fdfdf8;
+  background: var(--surface);
   border: 1px solid var(--color-border);
   border-radius: 12px;
 }

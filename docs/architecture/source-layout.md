@@ -1,21 +1,21 @@
 # Organização do código
 
-| Pasta                   | Responsabilidade                                                                                                                                  |
-| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `src/lib`               | Instâncias e clientes de bibliotecas, além de tipos e validadores compartilhados e seguros para o cliente.                                          |
-| `src/config`            | Opções declarativas de Better Auth e React Query e validação do ambiente do servidor.                                                             |
-| `src/db`                | Conexão da aplicação, abertura/migração do SQLite e schema de autenticação e dados da aplicação.                                                  |
-| `src/server`            | Operações de dados e validações de domínio executadas somente no servidor.                                                                         |
-| `src/server/functions`  | RPCs definidas com `createServerFn`, incluindo sessão e operações protegidas de configurações. O TanStack Start as expõe ao cliente.              |
-| `src/queries`           | `queryOptions` do React Query, com chave, função de consulta e política de cache.                                                                 |
-| `src/hooks`             | Reautenticação, saída e registro de alterações não salvas.                                                                                        |
-| `src/contexts`          | Contexto de proteção de rascunhos, sem cópia da sessão autenticada.                                                                               |
-| `src/components/auth`   | Formulário de login e interface de reautenticação.                                                                                                |
-| `src/components/layout` | Estrutura e navegação da aplicação.                                                                                                               |
-| `src/components/ui`     | Componentes visuais reutilizáveis e SVGs da interface.                                                                                            |
-| `src/routes`            | Rotas do TanStack, guards de navegação e handlers HTTP.                                                                                           |
-| `scripts`               | Comandos administrativos, incluindo migração e definição da senha.                                                                                |
-| `tests/helpers`         | Instâncias de bibliotecas e bancos isolados para os testes.                                                                                       |
+| Pasta                   | Responsabilidade                                                                                                                     |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `src/lib`               | Instâncias e clientes de bibliotecas, além de tipos e validadores compartilhados e seguros para o cliente.                           |
+| `src/config`            | Opções declarativas de Better Auth e React Query e validação do ambiente do servidor.                                                |
+| `src/db`                | Conexão da aplicação, abertura/migração do SQLite e schema de autenticação e dados da aplicação.                                     |
+| `src/server`            | Operações de dados e validações de domínio executadas somente no servidor.                                                           |
+| `src/server/functions`  | RPCs definidas com `createServerFn`, incluindo sessão e operações protegidas de configurações. O TanStack Start as expõe ao cliente. |
+| `src/queries`           | `queryOptions` do React Query, com chave, função de consulta e política de cache.                                                    |
+| `src/hooks`             | Reautenticação, saída e registro de alterações não salvas.                                                                           |
+| `src/contexts`          | Contexto de proteção de rascunhos, sem cópia da sessão autenticada.                                                                  |
+| `src/components/auth`   | Formulário de login e interface de reautenticação.                                                                                   |
+| `src/components/layout` | Estrutura e navegação da aplicação.                                                                                                  |
+| `src/components/ui`     | Componentes visuais reutilizáveis e SVGs da interface.                                                                               |
+| `src/routes`            | Rotas do TanStack, guards de navegação e handlers HTTP.                                                                              |
+| `scripts`               | Comandos administrativos, incluindo migração e definição da senha.                                                                   |
+| `tests/helpers`         | Instâncias de bibliotecas e bancos isolados para os testes.                                                                          |
 
 O `src/router.tsx` permanece no lugar esperado pelo TanStack Start. Ele cria um QueryClient por roteador usando as opções de `src/config/react-query.ts`; a integração oficial fornece provider, hidratação e streaming.
 
