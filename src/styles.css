@@ -299,6 +299,131 @@ input {
   letter-spacing: -0.035em;
   margin: 2.1rem 0 1.5rem;
 }
+.settings-page {
+  width: min(100%, 58rem);
+  margin-inline: auto;
+}
+.settings-page > h1 {
+  margin-bottom: 0.5rem;
+}
+.settings-intro,
+.settings-section-description {
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  margin: 0 0 1.5rem;
+}
+.settings-section {
+  padding: 1.5rem 0;
+  border-top: 1px solid var(--color-border);
+}
+.settings-section h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 620;
+  letter-spacing: -0.02em;
+}
+.settings-section-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.settings-section-heading p {
+  color: var(--muted-foreground);
+  line-height: 1.55;
+  margin: 0.45rem 0 0;
+}
+.settings-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.settings-form-wide {
+  grid-column: 1 / -1;
+}
+.settings-textarea {
+  min-height: 6.5rem;
+  resize: vertical;
+  line-height: 1.5;
+}
+.required-mark {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+.field-error,
+.settings-error {
+  color: var(--error);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  margin: 0.2rem 0 0;
+}
+.settings-error {
+  margin: 0 0 1rem;
+}
+.settings-success {
+  color: #284b30;
+  font-size: 0.9rem;
+  margin: 0 0 0.85rem;
+}
+.settings-empty {
+  padding: 1.25rem 0;
+  color: var(--muted-foreground);
+}
+.settings-empty h3 {
+  color: var(--color-foreground);
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+.settings-empty p {
+  max-width: 58ch;
+  line-height: 1.6;
+  margin: 0;
+}
+.payment-method-list {
+  display: grid;
+}
+.payment-method {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.2rem 0;
+  border-top: 1px solid var(--color-border);
+}
+.payment-method-copy {
+  min-width: 0;
+}
+.payment-method h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.4rem;
+}
+.payment-method p {
+  color: var(--muted-foreground);
+  line-height: 1.55;
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.payment-method-editor {
+  display: grid;
+  gap: 1.1rem;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  background: #fdfdf8;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+}
+.form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
 .empty-state {
   min-height: 340px;
   display: flex;
@@ -417,6 +542,23 @@ input {
   }
   .page-content h1 {
     margin-top: 1.75rem;
+  }
+  .settings-section-heading {
+    flex-direction: column;
+  }
+  .settings-form-grid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.1rem;
+  }
+  .settings-form-wide {
+    grid-column: auto;
+  }
+  .payment-method {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .payment-method > .button {
+    align-self: start;
   }
 }
 .button-primary svg {

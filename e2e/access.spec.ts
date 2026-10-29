@@ -70,9 +70,18 @@ test("navegação responsiva sem dados fictícios e sem redirecionamento externo
     await expect(page.locator("nav .selected")).toHaveCount(
       title === "Configurações" ? 0 : 1,
     );
-    await expect(
-      page.getByText("Este espaço está sendo preparado"),
-    ).toBeVisible();
+    if (title === "Configurações") {
+      await expect(
+        page.getByRole("heading", { name: "Empresa", level: 2 }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Dados de pagamento", level: 2 }),
+      ).toBeVisible();
+    } else {
+      await expect(
+        page.getByText("Este espaço está sendo preparado"),
+      ).toBeVisible();
+    }
   }
   await page.goto("/hours?filter=test");
   await expect(

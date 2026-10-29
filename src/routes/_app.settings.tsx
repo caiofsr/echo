@@ -1,12 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Unavailable } from "../components/ui/unavailable";
+import { SettingsPage } from "../components/settings/settings-page";
+import { settingsQueryOptions } from "../queries/settings";
 
 export const Route = createFileRoute("/_app/settings")({
-  component: () => (
-    <Unavailable
-      title="Configurações"
-      description="Aqui você vai ajustar suas preferências, empresa e dados de pagamento."
-      icon="settings"
-    />
-  ),
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(settingsQueryOptions),
+  component: SettingsPage,
 });
