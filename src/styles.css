@@ -290,6 +290,10 @@ input {
   color: var(--muted-foreground);
   font-size: 0.9rem;
 }
+.app-header svg {
+  transform: scale(1.35);
+  transform-origin: center;
+}
 .nav-link:hover {
   background: var(--nav-hover);
 }

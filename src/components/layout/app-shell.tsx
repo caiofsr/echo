@@ -61,7 +61,7 @@ export function AppShell() {
       </header>
       <main id="content" className="workspace" tabIndex={-1}>
         <div className="timer-placeholder">
-          <EchoIcon name="timer" size={21} />
+          <EchoIcon name="timer" size={32} />
           <div>
             <strong>Cronômetro global</strong>
             <p>Disponível em uma próxima entrega.</p>
