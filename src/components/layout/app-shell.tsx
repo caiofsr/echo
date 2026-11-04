@@ -7,7 +7,7 @@ const links = [
   { to: "/", label: "Quadro", icon: "board" },
   { to: "/hours", label: "Horas", icon: "hours" },
   { to: "/invoices", label: "Faturas", icon: "invoices" },
-  { to: "/directory", label: "Cadastros", icon: "directory" },
+  { to: "/clients", label: "Clientes", icon: "clients" },
 ] as const;
 export function AppShell() {
   const { signOut, error } = useSignOut();

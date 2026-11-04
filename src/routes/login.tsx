@@ -3,7 +3,14 @@ import { useQueryClient } from "@tanstack/react-query";
 import { accessQueryOptions } from "../queries/access";
 import { LoginForm } from "../components/auth/login-form";
 
-const destinations = ["/", "/hours", "/invoices", "/directory", "/settings"];
+const destinations = [
+  "/",
+  "/hours",
+  "/invoices",
+  "/directory",
+  "/clients",
+  "/settings",
+];
 function safeDestination(value: unknown) {
   if (
     typeof value !== "string" ||

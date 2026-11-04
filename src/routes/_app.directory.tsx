@@ -1,9 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { DirectoryPage } from "../components/directory/directory-page";
-import { directoryQueryOptions } from "../queries/directory";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_app/directory")({
-  loader: ({ context }) =>
-    context.queryClient.ensureQueryData(directoryQueryOptions),
-  component: DirectoryPage,
+  beforeLoad: () => {
+    throw redirect({ to: "/clients", replace: true });
+  },
 });

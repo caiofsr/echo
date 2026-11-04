@@ -21,7 +21,7 @@ export function DirectoryPage() {
   }
   return (
     <section className="page-content settings-page directory-page">
-      <h1>Cadastros</h1>
+      <h1>Clientes</h1>
       <p className="settings-intro">
         Organize seus clientes e os projetos de cada um.
       </p>

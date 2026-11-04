@@ -1,10 +1,12 @@
 import { useId, type SVGProps } from "react";
+import { ClientsIconArtwork } from "./clients-icon-artwork";
 
 const names = [
   "board",
   "hours",
   "invoices",
   "directory",
+  "clients",
   "settings",
   "logout",
   "timer",
@@ -45,7 +47,7 @@ export function EchoIcon({
       focusable="false"
     >
       {title ? <title id={titleId}>{title}</title> : null}
-      {name === "board" ? (
+      {name === "clients" ? <ClientsIconArtwork id={id} /> : name === "board" ? (
         <>
 <defs>
     <filter id={`${id}-board-shadow`} x="10" y="96" width="108" height="30" filterUnits="userSpaceOnUse">

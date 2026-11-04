@@ -23,7 +23,7 @@ Reunir organização do trabalho, registro do tempo efetivo e faturamento sem re
 ## Operating Context
 
 - A interface é em português. O fuso é configurável, com America/Recife como padrão.
-- O Quadro é a entrada padrão. A navegação inclui Quadro, Horas, Faturas, Cadastros e Configurações.
+- O Quadro é a entrada padrão. A navegação inclui Quadro, Horas, Faturas, Clientes e Configurações. Clientes tem acesso próprio pela navbar; Configurações reúne Empresa e Dados de pagamento.
 - Cliente tem projetos; cada projeto pertence a um cliente. Tarefas podem ter projeto ou ficar sem projeto.
 - O cronômetro global fica disponível em todas as telas. Permite início livre, início por tarefa, parada e retomada do último trabalho em um novo período.
 - Horas reúne consulta, filtros, lançamentos manuais, edição de registros, exportação de timesheet e entrada para a prévia de fatura.

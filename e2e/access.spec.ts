@@ -46,7 +46,7 @@ test("acesso protegido, destino interno, sessão após recarga e saída em todas
     "data-test-document",
     "secondary",
   );
-  await page.goto("/directory");
+  await page.goto("/clients");
   await expect(page).toHaveURL(/\/login/);
 });
 test("navegação responsiva sem dados fictícios e sem redirecionamento externo", async ({
@@ -59,7 +59,7 @@ test("navegação responsiva sem dados fictícios e sem redirecionamento externo
   for (const title of [
     "Horas",
     "Faturas",
-    "Cadastros",
+    "Clientes",
     "Configurações",
     "Quadro",
   ]) {
@@ -77,7 +77,7 @@ test("navegação responsiva sem dados fictícios e sem redirecionamento externo
       await expect(
         page.getByRole("heading", { name: "Dados de pagamento", level: 2 }),
       ).toBeVisible();
-    } else if (title === "Cadastros") {
+    } else if (title === "Clientes") {
       await expect(
         page.getByRole("heading", { name: "Clientes", level: 2 }),
       ).toBeVisible();
@@ -361,15 +361,15 @@ test("beforeLoad usa a sessão atual no SSR e na navegação após revogação",
   await expect(page).toHaveURL("/invoices");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Faturas");
   await request.post("http://127.0.0.1:4319/reset-password");
-  await page.getByRole("link", { name: "Cadastros", exact: true }).click();
-  await expect(page).toHaveURL(/\/login\?destination=%2Fdirectory/);
+  await page.getByRole("link", { name: "Clientes", exact: true }).click();
+  await expect(page).toHaveURL(/\/login\?destination=%2Fclients/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
     "Seu trabalho, no seu ritmo.",
   );
   await page.getByLabel("Senha pessoal").fill(password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await expect(page).toHaveURL("/directory");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Cadastros");
+  await expect(page).toHaveURL("/clients");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Clientes");
 });
 
 test("login não interrompe consultas de sessão ao abrir o destino", async ({

@@ -11,12 +11,14 @@ test("cadastra e edita Clientes e Projetos com persistência entre sessões", as
     (await request.post("http://127.0.0.1:4319/reset-directory")).status(),
   ).toBe(204);
   await request.post("http://127.0.0.1:4319/reset-rate-limit");
-  await page.goto("/directory");
+  await page.goto("/clients");
   await expect(page).toHaveURL(/\/login/);
   await page.getByLabel("Senha pessoal").fill(password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Cadastros");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Clientes");
   await expect(page.getByText("Nenhum cliente cadastrado")).toBeVisible();
+  await page.goto("/directory");
+  await expect(page).toHaveURL("/clients");
   await expect(
     page.getByRole("button", { name: "Novo projeto", exact: true }),
   ).toBeDisabled();
@@ -125,7 +127,7 @@ test("cadastra e edita Clientes e Projetos com persistência entre sessões", as
   const secondSession = await browser.newContext();
   try {
     const otherPage = await secondSession.newPage();
-    await otherPage.goto("http://localhost:4318/directory");
+    await otherPage.goto("http://localhost:4318/clients");
     await otherPage.getByLabel("Senha pessoal").fill(password);
     await otherPage
       .getByRole("button", { name: "Entrar", exact: true })
@@ -169,6 +171,10 @@ test("cadastra e edita Clientes e Projetos com persistência entre sessões", as
   } finally {
     await secondSession.close();
   }
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement)
+      document.activeElement.blur();
+  });
   await page.screenshot({
     path: testInfo.outputPath("directory.png"),
     fullPage: true,

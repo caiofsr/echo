@@ -7,6 +7,7 @@ const allIcons: IconName[] = [
   "hours",
   "invoices",
   "directory",
+  "clients",
   "settings",
   "logout",
   "timer",
@@ -18,7 +19,7 @@ const allIcons: IconName[] = [
 ];
 
 describe("EchoIcon component", () => {
-  it("renders all 12 icons without throwing", () => {
+  it("renders every registered icon without throwing", () => {
     for (const name of allIcons) {
       const html = renderToString(<EchoIcon name={name} />);
       expect(html).toContain("<svg");
@@ -38,10 +39,14 @@ describe("EchoIcon component", () => {
         <EchoIcon name="board" />
         <EchoIcon name="edit" />
         <EchoIcon name="edit" />
-      </div>
+        <EchoIcon name="clients" />
+        <EchoIcon name="clients" />
+      </div>,
     );
     // Find all IDs in htmlMultiple
-    const idMatches = Array.from(htmlMultiple.matchAll(/id="([^"]+)"/g)).map(m => m[1]);
+    const idMatches = Array.from(htmlMultiple.matchAll(/id="([^"]+)"/g)).map(
+      (m) => m[1],
+    );
     const uniqueIds = new Set(idMatches);
     // There should be no duplicate IDs
     expect(uniqueIds.size).toBe(idMatches.length);
