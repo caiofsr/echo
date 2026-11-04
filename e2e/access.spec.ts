@@ -77,6 +77,13 @@ test("navegação responsiva sem dados fictícios e sem redirecionamento externo
       await expect(
         page.getByRole("heading", { name: "Dados de pagamento", level: 2 }),
       ).toBeVisible();
+    } else if (title === "Cadastros") {
+      await expect(
+        page.getByRole("heading", { name: "Clientes", level: 2 }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("heading", { name: "Projetos", level: 2 }),
+      ).toBeVisible();
     } else {
       await expect(
         page.getByText("Este espaço está sendo preparado"),

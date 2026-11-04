@@ -708,3 +708,68 @@ input {
 .button:active {
   translate: none;
 }
+
+.directory-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.directory-list > li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.directory-list > li:last-child {
+  border-bottom: 0;
+}
+.directory-copy {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.directory-copy h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.directory-copy p {
+  margin: 0.35rem 0 0;
+  color: var(--muted-foreground);
+}
+.directory-rate {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.directory-rate > span {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+.directory-fields {
+  display: grid;
+  gap: 1.1rem;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+@media (max-width: 480px) {
+  .directory-list > li {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .directory-copy {
+    flex-basis: calc(100% - 6rem);
+  }
+  .directory-rate {
+    order: 1;
+    flex-basis: 100%;
+    text-align: left;
+  }
+  .directory-rate > span {
+    display: inline;
+  }
+}

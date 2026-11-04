@@ -1,9 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import {
-  getRequestHeaders,
-  setResponseHeader,
-} from "@tanstack/react-start/server";
-import { auth } from "../../lib/auth";
+import { requireSession } from "../require-session";
 import {
   parseCompanyInput,
   parsePaymentMethodInput,
@@ -11,12 +7,6 @@ import {
 } from "../../lib/settings-input";
 import { db } from "../../db";
 import { createSettingsStore } from "../settings";
-
-async function requireSession() {
-  setResponseHeader("Cache-Control", "no-store");
-  const session = await auth.api.getSession({ headers: getRequestHeaders() });
-  if (!session) throw new Error("Sessão inválida.");
-}
 
 export const getSettings = createServerFn({ method: "GET" }).handler(
   async () => {

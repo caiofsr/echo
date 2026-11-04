@@ -1,12 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Unavailable } from "../components/ui/unavailable";
+import { DirectoryPage } from "../components/directory/directory-page";
+import { directoryQueryOptions } from "../queries/directory";
 
 export const Route = createFileRoute("/_app/directory")({
-  component: () => (
-    <Unavailable
-      title="Cadastros"
-      description="Aqui você vai cadastrar clientes e projetos."
-      icon="directory"
-    />
-  ),
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(directoryQueryOptions),
+  component: DirectoryPage,
 });
