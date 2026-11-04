@@ -82,7 +82,7 @@ function parseIdentity(data: Record<string, unknown>) {
 }
 
 export function hourlyRateInputValue(cents: number) {
-  return `${Math.trunc(cents / 100)}.${String(cents % 100).padStart(2, "0")}`;
+  return `${Math.trunc(cents / 100)},${String(cents % 100).padStart(2, "0")}`;
 }
 
 export function formatHourlyRate(cents: number, currency: "BRL" | "USD") {

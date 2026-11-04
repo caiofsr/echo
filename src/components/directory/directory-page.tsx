@@ -22,9 +22,6 @@ export function DirectoryPage() {
   return (
     <section className="page-content settings-page directory-page">
       <h1>Clientes</h1>
-      <p className="settings-intro">
-        Organize seus clientes e os projetos de cada um.
-      </p>
       <p className="settings-success" role="status">
         {notice}
       </p>
@@ -32,7 +29,6 @@ export function DirectoryPage() {
         <div className="settings-section-heading">
           <div>
             <h2 id="clients-heading">Clientes</h2>
-            <p>Dados do destinatário para suas futuras faturas.</p>
           </div>
           <Button
             onClick={(event) => {
@@ -78,10 +74,6 @@ export function DirectoryPage() {
         <div className="settings-section-heading">
           <div>
             <h2 id="projects-heading">Projetos</h2>
-            <p>
-              Cada projeto pertence a um cliente e tem seu próprio valor de
-              hora.
-            </p>
           </div>
           <Button
             variant="outline"

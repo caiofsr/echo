@@ -773,3 +773,33 @@ input {
     display: inline;
   }
 }
+
+/* Keep the unavailable timer secondary to client management. */
+.timer-placeholder-compact {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.timer-placeholder-compact .timer-digits {
+  display: none;
+}
+.directory-page > h1 {
+  margin-block: 1.25rem 1rem;
+}
+.directory-page .settings-section {
+  padding-block: 1rem;
+}
+.directory-page .settings-section-heading {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.field-hint {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}

@@ -361,10 +361,13 @@ export function ProjectForm({
                 aria-invalid={field.state.meta.errors.length > 0}
                 aria-describedby={
                   field.state.meta.errors.length
-                    ? "project-rate-error"
-                    : undefined
+                    ? "project-rate-hint project-rate-error"
+                    : "project-rate-hint"
                 }
               />
+              <p id="project-rate-hint" className="field-hint">
+                Ex.: 120,35. Você também pode usar ponto decimal.
+              </p>
             </Field>
           )}
         </form.Field>
@@ -446,11 +449,18 @@ function EntityDialog({
         <DialogDescription>{description}</DialogDescription>
         <form
           className="settings-dialog-form"
+          noValidate
           aria-label={title}
           ref={draftRef}
-          onSubmit={(event) => {
+          onSubmit={async (event) => {
             event.preventDefault();
-            void onSubmit();
+            const element = event.currentTarget;
+            await onSubmit();
+            requestAnimationFrame(() => {
+              element
+                .querySelector<HTMLElement>('[aria-invalid="true"]')
+                ?.focus();
+            });
           }}
         >
           <fieldset
@@ -539,7 +549,7 @@ function Field({
       </label>
       {children}
       {error && (
-        <p id={`${id}-error`} className="field-error">
+        <p id={`${id}-error`} className="field-error" role="alert">
           {error}
         </p>
       )}

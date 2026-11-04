@@ -235,7 +235,7 @@ test("valor de hora alto mantém centavos na edição e exibição", async () =>
     currency: "BRL",
   });
   expect(hourlyRateInputValue(project.hourlyRateCents)).toBe(
-    "90071992547409.90",
+    "90071992547409,90",
   );
   expect(formatHourlyRate(project.hourlyRateCents, "BRL")).toBe(
     "R$ 90.071.992.547.409,90",

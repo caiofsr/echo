@@ -26,11 +26,11 @@ test("cadastra e edita Clientes e Projetos com persistência entre sessões", as
   await page.getByRole("button", { name: "Novo cliente", exact: true }).click();
   let dialog = page.getByRole("dialog");
   await expect(dialog.getByLabel("Nome de exibição")).toBeFocused();
-  await dialog.getByLabel("Nome de exibição").fill("   ");
   await dialog.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(
     dialog.getByText("Informe o nome de exibição do cliente."),
   ).toBeVisible();
+  await expect(dialog.getByLabel("Nome de exibição")).toBeFocused();
   await dialog.getByLabel("Nome de exibição").fill("Oficina Exemplo");
   const saveRequest = page.waitForRequest(
     (req) => req.method() === "POST" && req.url().includes("_serverFn"),
@@ -62,6 +62,13 @@ test("cadastra e edita Clientes e Projetos com persistência entre sessões", as
 
   await page.getByRole("button", { name: "Novo projeto", exact: true }).click();
   dialog = page.getByRole("dialog");
+  await dialog.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(dialog.getByText("Informe o nome do projeto.")).toBeVisible();
+  await expect(dialog.getByText("Escolha um cliente.")).toBeVisible();
+  await expect(dialog.getByLabel("Nome do projeto")).toBeFocused();
+  await expect(
+    dialog.getByText("Ex.: 120,35. Você também pode usar ponto decimal."),
+  ).toBeVisible();
   await dialog.getByLabel("Nome do projeto").fill("Site institucional");
   await dialog
     .getByLabel("Cliente", { exact: false })
@@ -73,6 +80,11 @@ test("cadastra e edita Clientes e Projetos com persistência entre sessões", as
       "Informe um valor de hora não negativo com até duas casas decimais.",
     ),
   ).toBeVisible();
+  await expect(dialog.getByLabel("Valor de hora")).toBeFocused();
+  await expect(dialog.getByLabel("Valor de hora")).toHaveAttribute(
+    "aria-describedby",
+    "project-rate-hint project-rate-error",
+  );
   await dialog.getByLabel("Valor de hora").fill("120,35");
   await dialog.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(dialog).not.toBeVisible();
@@ -161,7 +173,7 @@ test("cadastra e edita Clientes e Projetos com persistência entre sessões", as
     await expect(page.getByLabel("Nome do projeto")).toHaveValue(
       "Meu projeto revisado",
     );
-    await expect(page.getByLabel("Valor de hora")).toHaveValue("80.50");
+    await expect(page.getByLabel("Valor de hora")).toHaveValue("80,50");
     await page.getByLabel("Nome do projeto").fill("Aplicativo");
     await page.getByRole("button", { name: "Salvar", exact: true }).click();
     await expect(page.getByRole("dialog")).not.toBeVisible();
@@ -174,7 +186,11 @@ test("cadastra e edita Clientes e Projetos com persistência entre sessões", as
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement)
       document.activeElement.blur();
+    window.scrollTo(0, 0);
   });
+  await expect(
+    page.getByRole("button", { name: "Novo projeto", exact: true }),
+  ).toBeInViewport();
   await page.screenshot({
     path: testInfo.outputPath("directory.png"),
     fullPage: true,
@@ -185,8 +201,12 @@ test("cadastra e edita Clientes e Projetos com persistência entre sessões", as
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  await expect(
+    page.getByRole("button", { name: "Novo projeto", exact: true }),
+  ).toBeInViewport();
   await page.getByRole("button", { name: "Editar projeto Aplicativo" }).click();
   await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(page.getByLabel("Valor de hora")).toHaveValue("80,50");
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
