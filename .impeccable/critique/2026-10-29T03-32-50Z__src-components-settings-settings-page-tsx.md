@@ -10,6 +10,7 @@ target_fingerprint: "sha256:67a141646db643b56b5ddc5d2b9510b262c5ded1a538612270ec
 target_path: /Users/caio/Development/echo/src/components/settings/settings-page.tsx
 timestamp: 2026-10-29T03-32-50Z
 slug: src-components-settings-settings-page-tsx
+closed: true
 ---
 
 # Crítica de Configurações
