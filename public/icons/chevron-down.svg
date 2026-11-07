@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="chevron-down-title">
+  <title id="chevron-down-title">Seta para abrir uma lista</title>
+  <defs>
+    <linearGradient id="chevron-down-face" x1="30" y1="35" x2="92" y2="82" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#dcebd9"/>
+      <stop offset="0.52" stop-color="#9fbe9d"/>
+      <stop offset="1" stop-color="#668b69"/>
+    </linearGradient>
+  </defs>
+  <g id="chevron-down-body" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M29 40 L64 76 L99 40" stroke="#29462e" stroke-width="22" transform="translate(0 5)"/>
+    <path d="M29 40 L64 76 L99 40" stroke="url(#chevron-down-face)" stroke-width="18"/>
+    <path d="M32 38 L64 71 L96 38" stroke="#eef6ec" stroke-width="2.5" opacity="0.72"/>
+  </g>
+</svg>

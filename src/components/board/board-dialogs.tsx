@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { Select } from "../ui/select";
 import {
   Dialog,
   DialogContent,
@@ -173,6 +174,61 @@ export function ColumnCreateForm({
 const connectionFallback =
   "Não foi possível salvar. Confira sua conexão e tente novamente.";
 
+export function TaskDetailsDialog({
+  task,
+  columnName,
+  projectName,
+  onCancel,
+  onEdit,
+  onMove,
+  returnFocus,
+}: {
+  onCancel: () => void;
+  returnFocus: RefObject<HTMLElement | null>;
+  task: Task;
+  columnName: string;
+  projectName: string;
+  onEdit: () => void;
+  onMove: () => void;
+}) {
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onCancel();
+      }}
+    >
+      <DialogContent className="task-details-dialog" finalFocus={returnFocus}>
+        <DialogTitle>{task.title}</DialogTitle>
+        <DialogDescription>Detalhes da tarefa</DialogDescription>
+        <dl className="task-detail-meta">
+          <div>
+            <dt>Coluna</dt>
+            <dd>{columnName}</dd>
+          </div>
+          <div>
+            <dt>Projeto</dt>
+            <dd>{projectName}</dd>
+          </div>
+        </dl>
+        <section className="task-detail-description">
+          <h3>Descrição</h3>
+          <p>{task.description?.trim() || "Sem descrição cadastrada."}</p>
+        </section>
+        <div className="task-details-actions">
+          <Button variant="outline" onClick={onMove}>
+            Mover
+          </Button>
+          <Button onClick={onEdit}>Editar tarefa</Button>
+          <Button variant="ghost" onClick={onCancel}>
+            Fechar
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function TaskForm({
   task,
   columnId,
@@ -329,30 +385,29 @@ export function TaskForm({
               />
             </Field>
             <Field label="Projeto" id="board-task-project">
-              <select
+              <Select
                 id="board-task-project"
                 name="projectId"
-                className="input"
-                value={values.projectId}
-                onChange={(event) =>
+                value={values.projectId || "__sem-projeto"}
+                options={[
+                  { value: "__sem-projeto", label: "Sem projeto" },
+                  ...projects.map((project) => ({
+                    value: String(project.id),
+                    label: project.name,
+                  })),
+                ]}
+                onValueChange={(projectId) =>
                   setValues((current) => ({
                     ...current,
-                    projectId: event.target.value,
+                    projectId: projectId === "__sem-projeto" ? "" : projectId,
                   }))
                 }
-              >
-                <option value="">Sem projeto</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
+              />
             </Field>
             {task && (
               <p className="field-hint" id="board-task-column-note">
-                Coluna: <strong>{targetColumnName}</strong>. Para trocar de
-                coluna, use o botão “Mover” no card.
+                Coluna atual: <strong>{targetColumnName}</strong>. Para mudar a
+                coluna, escolha “Mover” nos detalhes da tarefa.
               </p>
             )}
           </fieldset>
@@ -420,6 +475,13 @@ export function TaskMoveDialog({
   const candidates = tasks.filter(
     (item) => item.columnId === columnId && item.id !== task.id,
   );
+  const positionOptions = [
+    { value: "0", label: "Primeira" },
+    ...candidates.map((candidate, index) => ({
+      value: String(index + 1),
+      label: `Depois de ${candidate.title}`,
+    })),
+  ];
   return (
     <Dialog
       open
@@ -443,36 +505,26 @@ export function TaskMoveDialog({
         >
           <fieldset className="directory-fields" disabled={mutation.isPending}>
             <Field label="Coluna" id="board-move-column">
-              <select
+              <Select
                 id="board-move-column"
-                className="input"
-                value={columnId}
-                onChange={(event) => {
-                  setColumnId(Number(event.target.value));
+                value={String(columnId)}
+                options={columns.map((column) => ({
+                  value: String(column.id),
+                  label: column.name,
+                }))}
+                onValueChange={(value) => {
+                  setColumnId(Number(value));
                   setPosition(0);
                 }}
-              >
-                {columns.map((column) => (
-                  <option key={column.id} value={column.id}>
-                    {column.name}
-                  </option>
-                ))}
-              </select>
+              />
             </Field>
             <Field label="Posição" id="board-move-position">
-              <select
+              <Select
                 id="board-move-position"
-                className="input"
-                value={position}
-                onChange={(event) => setPosition(Number(event.target.value))}
-              >
-                <option value={0}>Primeira</option>
-                {candidates.map((candidate, index) => (
-                  <option key={candidate.id} value={index + 1}>
-                    Depois de {candidate.title}
-                  </option>
-                ))}
-              </select>
+                value={String(position)}
+                options={positionOptions}
+                onValueChange={(value) => setPosition(Number(value))}
+              />
             </Field>
           </fieldset>
           {mutation.error && (
@@ -650,11 +702,10 @@ export function ColumnManagerDialog({
         if (!open) onCancel();
       }}
     >
-      <DialogContent finalFocus={returnFocus}>
+      <DialogContent className="column-manager-dialog" finalFocus={returnFocus}>
         <DialogTitle>Gerenciar colunas</DialogTitle>
         <DialogDescription>
-          Reordene, renomeie ou remova colunas em lista compacta. Coluna com
-          tarefa exige a movimentação das tarefas antes da remoção.
+          Renomeie ou reordene as colunas. Remova somente colunas sem tarefas.
         </DialogDescription>
         <ul className="column-manager-list" aria-label="Colunas do quadro">
           {order.map((column, index) => {
@@ -705,7 +756,10 @@ export function ColumnManagerDialog({
                     void commitRename(column, drafts[column.id] ?? column.name)
                   }
                 />
-                <span className="column-manager-tools">
+                <span className="column-manager-count">
+                  {occupied || "Vazia"}
+                </span>
+                <span className="column-manager-actions">
                   <button
                     type="button"
                     className="column-manager-move"
@@ -713,7 +767,7 @@ export function ColumnManagerDialog({
                     disabled={index === 0 || busy}
                     onClick={() => moveBy(index, -1)}
                   >
-                    ↑
+                    Subir
                   </button>
                   <button
                     type="button"
@@ -722,26 +776,24 @@ export function ColumnManagerDialog({
                     disabled={index === order.length - 1 || busy}
                     onClick={() => moveBy(index, 1)}
                   >
-                    ↓
+                    Descer
+                  </button>
+                  <button
+                    type="button"
+                    className="column-manager-remove"
+                    aria-label={`Remover coluna ${column.name}`}
+                    disabled={Boolean(occupied) || busy}
+                    onClick={() => void removeConfirmed(column)}
+                  >
+                    Remover
                   </button>
                 </span>
-                <span className="column-manager-count">{occupied}</span>
-                <button
-                  type="button"
-                  className="column-manager-remove"
-                  aria-label={`Remover coluna ${column.name}`}
-                  disabled={Boolean(occupied) || busy}
-                  onClick={() => void removeConfirmed(column)}
-                >
-                  Remover
-                </button>
               </li>
             );
           })}
         </ul>
         <p className="field-hint">
-          Arraste pelo índice do quadro ou use as setas para ordenar com o
-          teclado.
+          Arraste uma linha para reordenar ou use Subir e Descer.
         </p>
         {error && (
           <p className="settings-error" role="alert">

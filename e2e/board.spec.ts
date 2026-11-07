@@ -81,9 +81,8 @@ test("organiza tarefas e colunas no quadro com persistência no servidor", async
   await expect(dialog.getByLabel("Título")).toBeFocused();
   await dialog.getByLabel("Título").fill("Revisar proposta");
   await dialog.getByLabel("Descrição").fill("Sumário e valores");
-  await dialog
-    .getByLabel("Projeto", { exact: false })
-    .selectOption({ label: "Site institucional" });
+  await dialog.getByRole("combobox", { name: "Projeto" }).click();
+  await page.getByRole("option", { name: "Site institucional" }).click();
   await dialog.getByRole("button", { name: "Salvar", exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.getByRole("status")).toHaveText("Tarefa salva.");
@@ -92,8 +91,11 @@ test("organiza tarefas e colunas no quadro com persistência no servidor", async
   await expect(firstTask.getByText("Revisar proposta")).toBeVisible();
   await expect(firstTask.getByText("Sumário e valores")).toBeVisible();
   await expect(
-    firstTask.getByRole("button", { name: "Mover tarefa Revisar proposta" }),
+    firstTask.getByRole("button", { name: "Revisar proposta", exact: true }),
   ).toBeVisible();
+  await expect(
+    firstTask.getByRole("button", { name: /Mover tarefa/ }),
+  ).toHaveCount(0);
 
   await page.getByRole("button", { name: "Nova coluna", exact: true }).click();
   dialog = page.getByRole("dialog");
@@ -147,21 +149,41 @@ test("organiza tarefas e colunas no quadro com persistência no servidor", async
     await expect(
       columns.nth(0).getByRole("heading", { name: "Fazendo" }),
     ).toBeVisible();
+    const boardBounds = await page.locator(".board-columns").boundingBox();
+    const firstColumnBounds = await columns.nth(0).boundingBox();
+    const secondColumnBounds = await columns.nth(1).boundingBox();
+    expect(boardBounds).not.toBeNull();
+    expect(firstColumnBounds).not.toBeNull();
+    expect(secondColumnBounds).not.toBeNull();
+    expect(
+      Math.abs(firstColumnBounds!.width - secondColumnBounds!.width),
+    ).toBeLessThan(2);
+    expect(secondColumnBounds!.x + secondColumnBounds!.width).toBeCloseTo(
+      boardBounds!.x + boardBounds!.width,
+      0,
+    );
   }
 
-  // Mover a Tarefa para a outra coluna no diálogo de movimentação.
+  // Abrir os detalhes, sem campos editáveis, e mover a Tarefa por ali.
   if (isMobileProject) {
     await page
       .getByRole("group", { name: "Coluna visível no celular" })
       .getByRole("button", { name: "Primeiro quadro" })
       .click();
   }
-  await firstTask
-    .getByRole("button", { name: "Mover tarefa Revisar proposta" })
-    .click();
+  await firstTask.getByRole("button", { name: "Revisar proposta" }).click();
   dialog = page.getByRole("dialog");
-  await dialog.getByLabel("Coluna").selectOption({ label: "Fazendo" });
-  await dialog.getByLabel("Posição").selectOption({ label: "Primeira" });
+  await expect(
+    dialog.getByRole("heading", { name: "Revisar proposta" }),
+  ).toBeVisible();
+  await expect(dialog.getByText("Sumário e valores")).toBeVisible();
+  await expect(dialog.getByRole("textbox")).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Mover", exact: true }).click();
+  dialog = page.getByRole("dialog");
+  await dialog.getByRole("combobox", { name: "Coluna" }).click();
+  await page.getByRole("option", { name: "Fazendo" }).click();
+  await dialog.getByRole("combobox", { name: "Posição" }).click();
+  await page.getByRole("option", { name: "Primeira" }).click();
   await dialog.getByRole("button", { name: "Mover", exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.getByRole("status")).toHaveText("Tarefa movida.");
@@ -182,6 +204,9 @@ test("organiza tarefas e colunas no quadro com persistência no servidor", async
   await page
     .getByRole("button", { name: "Revisar proposta", exact: true })
     .click();
+  dialog = page.getByRole("dialog");
+  await expect(dialog.getByRole("textbox")).toHaveCount(0);
+  await dialog.getByRole("button", { name: "Editar tarefa" }).click();
   dialog = page.getByRole("dialog");
   await expect(dialog.getByLabel("Título")).toHaveValue("Revisar proposta");
   await expect(dialog.getByLabel("Descrição")).toHaveValue("Sumário e valores");

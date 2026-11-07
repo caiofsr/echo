@@ -15,6 +15,7 @@ import { moveTask } from "../../server/functions/board";
 import {
   ColumnCreateForm,
   ColumnManagerDialog,
+  TaskDetailsDialog,
   TaskForm,
   TaskMoveDialog,
 } from "./board-dialogs";
@@ -23,6 +24,7 @@ type Editor =
   | { kind: "column-create" }
   | { kind: "columns" }
   | { kind: "task-create"; columnId: number }
+  | { kind: "task-details"; task: Task }
   | { kind: "task-edit"; task: Task }
   | { kind: "task-move"; task: Task };
 
@@ -231,41 +233,29 @@ export function BoardPage() {
                           setDropTarget(null);
                         }}
                       >
-                        <div className="board-card">
-                          <button
-                            type="button"
-                            className="board-card-title"
-                            onClick={(event) => {
-                              returnFocus.current = event.currentTarget;
-                              setEditor({ kind: "task-edit", task });
-                            }}
-                          >
-                            {task.title}
-                          </button>
+                        <button
+                          type="button"
+                          className="board-card"
+                          aria-label={task.title}
+                          onClick={(event) => {
+                            returnFocus.current = event.currentTarget;
+                            setEditor({ kind: "task-details", task });
+                          }}
+                        >
+                          <span className="board-card-title">{task.title}</span>
                           {task.description && (
-                            <p className="board-card-description">
+                            <span className="board-card-description">
                               {task.description}
-                            </p>
+                            </span>
                           )}
-                          <div className="board-card-meta">
-                            {task.projectId != null && (
+                          {task.projectId != null && (
+                            <span className="board-card-meta">
                               <span className="board-card-project">
                                 {projectNames.get(task.projectId) ?? ""}
                               </span>
-                            )}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              aria-label={`Mover tarefa ${task.title}`}
-                              onClick={(event) => {
-                                returnFocus.current = event.currentTarget;
-                                setEditor({ kind: "task-move", task });
-                              }}
-                            >
-                              Mover
-                            </Button>
-                          </div>
-                        </div>
+                            </span>
+                          )}
+                        </button>
                       </li>
                     ))}
                   </ul>
@@ -318,6 +308,24 @@ export function BoardPage() {
           columnId={editor.columnId}
           onCancel={() => setEditor(null)}
           onSaved={() => saved("Tarefa salva.")}
+        />
+      )}
+      {editor?.kind === "task-details" && (
+        <TaskDetailsDialog
+          returnFocus={returnFocus}
+          task={editor.task}
+          columnName={
+            columns.find((column) => column.id === editor.task.columnId)
+              ?.name ?? "—"
+          }
+          projectName={
+            editor.task.projectId != null
+              ? (projectNames.get(editor.task.projectId) ?? "Sem projeto")
+              : "Sem projeto"
+          }
+          onCancel={() => setEditor(null)}
+          onEdit={() => setEditor({ kind: "task-edit", task: editor.task })}
+          onMove={() => setEditor({ kind: "task-move", task: editor.task })}
         />
       )}
       {editor?.kind === "task-edit" && (
