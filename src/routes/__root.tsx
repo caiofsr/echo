@@ -13,9 +13,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       meta: [
         { charSet: "utf-8" },
         { name: "viewport", content: "width=device-width, initial-scale=1" },
+        { name: "theme-color", content: "#365b3e" },
         { title: "Echo · Seu trabalho, no seu ritmo" },
       ],
-      links: [{ rel: "stylesheet", href: styles }],
+      links: [
+        { rel: "icon", href: "/favicon.ico", sizes: "any" },
+        { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+        { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+        { rel: "manifest", href: "/site.webmanifest" },
+        { rel: "stylesheet", href: styles },
+      ],
     }),
     component: Root,
     notFoundComponent: () => (
