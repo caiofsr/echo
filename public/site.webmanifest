@@ -1,0 +1,20 @@
+{
+  "name": "Echo",
+  "short_name": "Echo",
+  "description": "Seu trabalho, no seu ritmo",
+  "icons": [
+    {
+      "src": "/favicon-32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],
+  "theme_color": "#365b3e",
+  "background_color": "#f5f5f0",
+  "display": "standalone"
+}

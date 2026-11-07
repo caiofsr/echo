@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <style>
+      .bg { fill: #365b3e; }
+      .letter { fill: #fdfdf8; }
+      .dot { fill: #a9d5a6; }
+      @media (prefers-color-scheme: dark) {
+        .bg { fill: #243f2b; }
+        .dot { fill: #b8e2b5; }
+      }
+    </style>
+  </defs>
+  <!-- Background Squircle / Rounded Container -->
+  <rect class="bg" width="64" height="64" rx="15" ry="15"/>
+  
+  <!-- 'e' Glyph with pure geometry for perfect pixel sharpness -->
+  <path class="letter" d="M 33 20.5 C 24.2 20.5 18 26.6 18 35.5 C 18 44.4 24.2 50.5 33.5 50.5 C 38.9 50.5 43.1 48 45.2 44.2 L 39.8 41.8 C 38.6 44 36.2 45.3 33.3 45.3 C 28.5 45.3 25.1 42.2 24.7 37.5 L 46.5 37.5 C 46.6 36.8 46.7 36 46.7 35.2 C 46.7 26.4 40.8 20.5 33 20.5 Z M 24.8 32.5 C 25.6 28 28.8 25.4 33 25.4 C 37.2 25.4 40 28 40.6 32.5 L 24.8 32.5 Z"/>
+  
+  <!-- Accent Dot (Echo signature dot) -->
+  <circle class="dot" cx="49.5" cy="46.5" r="4"/>
+</svg>
