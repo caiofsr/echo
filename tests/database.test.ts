@@ -43,6 +43,9 @@ test("migration inicial pode ser reaplicada sem perder credencial ou sessão", a
       .join("; ");
     const accounts = await database.db.select().from(schema.account);
     const sessions = await database.db.select().from(schema.session);
+    const appliedMigrations = await database.db.all<{ count: number }>(
+      sql`select count(*) as count from __drizzle_migrations`,
+    );
     await migrateDatabase(database.db);
     expect(await database.db.select().from(schema.account)).toEqual(accounts);
     expect(await database.db.select().from(schema.session)).toEqual(sessions);
@@ -56,7 +59,7 @@ test("migration inicial pode ser reaplicada sem perder credencial ou sessão", a
       await database.db.all<{ count: number }>(
         sql`select count(*) as count from __drizzle_migrations`,
       ),
-    ).toEqual([{ count: 3 }]);
+    ).toEqual(appliedMigrations);
     expect(
       (
         await database.db.all<{ name: string }>(
@@ -65,8 +68,10 @@ test("migration inicial pode ser reaplicada sem perder credencial ou sessão", a
       ).map((table) => table.name),
     ).toEqual([
       "account",
+      "client",
       "company_settings",
       "payment_method",
+      "project",
       "rate_limit",
       "session",
       "user",

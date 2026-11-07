@@ -96,7 +96,6 @@ export const paymentMethod = sqliteTable("payment_method", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   label: text("label").notNull(),
   instructions: text("instructions").notNull(),
-  archived: integer("archived", { mode: "boolean" }).notNull().default(false),
 });
 
 export const userRelations = relations(user, ({ many }) => ({
@@ -117,3 +116,27 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [user.id],
   }),
 }));
+
+export const client = sqliteTable("client", {
+  version: integer("version").notNull().default(1),
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  legalName: text("legal_name"),
+  taxId: text("tax_id"),
+  address: text("address"),
+});
+
+export const project = sqliteTable(
+  "project",
+  {
+    version: integer("version").notNull().default(1),
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    name: text("name").notNull(),
+    clientId: integer("client_id")
+      .notNull()
+      .references(() => client.id),
+    hourlyRateCents: integer("hourly_rate_cents").notNull(),
+    currency: text("currency", { enum: ["BRL", "USD"] }).notNull(),
+  },
+  (table) => [index("project_client_id_idx").on(table.clientId)],
+);

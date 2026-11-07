@@ -1,10 +1,12 @@
 import { useId, type SVGProps } from "react";
+import { ClientsIconArtwork } from "./clients-icon-artwork";
 
 const names = [
   "board",
   "hours",
   "invoices",
   "directory",
+  "clients",
   "settings",
   "logout",
   "timer",
@@ -12,6 +14,7 @@ const names = [
   "hide",
   "login",
   "loading",
+  "edit",
 ] as const;
 
 export type IconName = (typeof names)[number];
@@ -44,7 +47,7 @@ export function EchoIcon({
       focusable="false"
     >
       {title ? <title id={titleId}>{title}</title> : null}
-      {name === "board" ? (
+      {name === "clients" ? <ClientsIconArtwork id={id} /> : name === "board" ? (
         <>
 <defs>
     <filter id={`${id}-board-shadow`} x="10" y="96" width="108" height="30" filterUnits="userSpaceOnUse">
@@ -829,6 +832,303 @@ export function EchoIcon({
     <circle cx="64" cy="24" r="7.5" fill={`url(#${id}-load-head)`}/>
     <circle cx="62" cy="22" r="2.5" fill="#ffffff" opacity="0.9"/>
   </g>
+        </>
+      ) : name === "edit" ? (
+        <>
+          <defs>
+            <filter
+              id={`${id}-edit-shadow`}
+              x="10"
+              y="90"
+              width="108"
+              height="34"
+              filterUnits="userSpaceOnUse"
+            >
+              <feGaussianBlur stdDeviation="3.2" />
+            </filter>
+            <linearGradient
+              id={`${id}-edit-bar-top`}
+              x1="32"
+              y1="36"
+              x2="88"
+              y2="92"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stopColor="#ebf6ea" />
+              <stop offset="0.35" stopColor="#bad8bc" />
+              <stop offset="0.8" stopColor="#8bb08e" />
+              <stop offset="1" stopColor="#678d6b" />
+            </linearGradient>
+            <linearGradient
+              id={`${id}-edit-bar-mid`}
+              x1="42"
+              y1="46"
+              x2="98"
+              y2="102"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stopColor="#7aa37d" />
+              <stop offset="0.45" stopColor="#608663" />
+              <stop offset="1" stopColor="#466d49" />
+            </linearGradient>
+            <linearGradient
+              id={`${id}-edit-bar-bot`}
+              x1="48"
+              y1="52"
+              x2="104"
+              y2="108"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stopColor="#3c5f40" />
+              <stop offset="0.6" stopColor="#2a452e" />
+              <stop offset="1" stopColor="#1b3020" />
+            </linearGradient>
+            <linearGradient
+              id={`${id}-edit-wood-facet-top`}
+              x1="28"
+              y1="74"
+              x2="52"
+              y2="98"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stopColor="#ffffff" />
+              <stop offset="0.45" stopColor="#f2f7f0" />
+              <stop offset="1" stopColor="#d6e8d4" />
+            </linearGradient>
+            <linearGradient
+              id={`${id}-edit-wood-facet-mid`}
+              x1="32"
+              y1="78"
+              x2="56"
+              y2="102"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stopColor="#deecdc" />
+              <stop offset="0.5" stopColor="#bad6bc" />
+              <stop offset="1" stopColor="#9ebf9f" />
+            </linearGradient>
+            <linearGradient
+              id={`${id}-edit-wood-facet-bot`}
+              x1="36"
+              y1="82"
+              x2="60"
+              y2="106"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stopColor="#88ad8a" />
+              <stop offset="0.6" stopColor="#557a58" />
+              <stop offset="1" stopColor="#38563a" />
+            </linearGradient>
+            <linearGradient
+              id={`${id}-edit-lead-facet-top`}
+              x1="24"
+              y1="92"
+              x2="36"
+              y2="104"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stopColor="#4a6e4d" />
+              <stop offset="0.5" stopColor="#324f35" />
+              <stop offset="1" stopColor="#223725" />
+            </linearGradient>
+            <linearGradient
+              id={`${id}-edit-lead-facet-bot`}
+              x1="26"
+              y1="94"
+              x2="38"
+              y2="106"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stopColor="#243927" />
+              <stop offset="0.6" stopColor="#18271a" />
+              <stop offset="1" stopColor="#0f1a11" />
+            </linearGradient>
+            <linearGradient
+              id={`${id}-edit-ferrule-face`}
+              x1="68"
+              y1="36"
+              x2="100"
+              y2="68"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stopColor="#ffffff" />
+              <stop offset="0.2" stopColor="#d4ead3" />
+              <stop offset="0.55" stopColor="#95bb98" />
+              <stop offset="0.85" stopColor="#517754" />
+              <stop offset="1" stopColor="#2b472f" />
+            </linearGradient>
+            <linearGradient
+              id={`${id}-edit-eraser-face`}
+              x1="78"
+              y1="26"
+              x2="108"
+              y2="56"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stopColor="#ebf5ea" />
+              <stop offset="0.3" stopColor="#badaba" />
+              <stop offset="0.7" stopColor="#7ea683" />
+              <stop offset="1" stopColor="#496f4c" />
+            </linearGradient>
+          </defs>
+
+          <g id={`${id}-edit-ground`}>
+            {/* Main soft ambient ground shadow */}
+            <ellipse
+              cx="64"
+              cy="110"
+              rx="44"
+              ry="7"
+              fill="#1b2e1f"
+              opacity="0.16"
+              filter={`url(#${id}-edit-shadow)`}
+            />
+            {/* Tip local contact shadow */}
+            <ellipse
+              cx="28"
+              cy="103"
+              rx="7"
+              ry="2.5"
+              fill="#1b2e1f"
+              opacity="0.28"
+              filter={`url(#${id}-edit-shadow)`}
+            />
+          </g>
+
+          <g id={`${id}-edit-body`} transform="translate(-16 -16) scale(1.25)">
+            {/* 1. Rubber Eraser */}
+            <path
+              d="M78.3 32.7 L83.3 27.8 Q94.9 33.1 100.2 44.7 L95.3 49.7 Z"
+              fill={`url(#${id}-edit-eraser-face)`}
+            />
+            <path
+              d="M83.3 27.8 Q94.9 33.1 100.2 44.7"
+              stroke="#ffffff"
+              strokeWidth="1.4"
+              strokeLinecap="round"
+              fill="none"
+              opacity="0.85"
+            />
+
+            {/* 2. Metal Ferrule Collar */}
+            <path
+              d="M68.4 42.6 L78.3 32.7 L95.3 49.7 L85.4 59.6 Z"
+              fill={`url(#${id}-edit-ferrule-face)`}
+            />
+            <path
+              d="M71.3 39.1 L88.9 56.7"
+              stroke="#233a26"
+              strokeWidth="1.8"
+              opacity="0.45"
+              strokeLinecap="round"
+            />
+            <path
+              d="M71.3 39.1 L88.9 56.7"
+              stroke="#edf6ec"
+              strokeWidth="1"
+              strokeLinecap="round"
+              opacity="0.75"
+              transform="translate(-0.6, -0.6)"
+            />
+            <path
+              d="M74.9 35.6 L92.4 53.1"
+              stroke="#233a26"
+              strokeWidth="1.8"
+              opacity="0.45"
+              strokeLinecap="round"
+            />
+            <path
+              d="M74.9 35.6 L92.4 53.1"
+              stroke="#edf6ec"
+              strokeWidth="1"
+              strokeLinecap="round"
+              opacity="0.75"
+              transform="translate(-0.6, -0.6)"
+            />
+
+            {/* 3. Hexagonal Lacquered Barrel (3 visible facets) */}
+            <path
+              d="M35.9 75.1 Q43.3 73.4 41.6 80.8 L74.1 48.3 L68.4 42.6 Z"
+              fill={`url(#${id}-edit-bar-top)`}
+            />
+            <path
+              d="M41.6 80.8 Q49.0 79.0 47.2 86.4 L79.7 53.9 L74.1 48.3 Z"
+              fill={`url(#${id}-edit-bar-mid)`}
+            />
+            <path
+              d="M47.2 86.4 Q54.6 84.7 52.9 92.1 L85.4 59.6 L79.7 53.9 Z"
+              fill={`url(#${id}-edit-bar-bot)`}
+            />
+
+            {/* 4. Sharpened Wood Section (scalloped facets) */}
+            <path
+              d="M30.8 91.3 L35.9 75.1 Q43.3 73.4 41.6 80.8 L32.8 93.2 Z"
+              fill={`url(#${id}-edit-wood-facet-top)`}
+            />
+            <path
+              d="M32.8 93.2 L41.6 80.8 Q49.0 79.0 47.2 86.4 L34.8 95.2 Z"
+              fill={`url(#${id}-edit-wood-facet-mid)`}
+            />
+            <path
+              d="M34.8 95.2 L47.2 86.4 Q54.6 84.7 52.9 92.1 L36.7 97.2 Z"
+              fill={`url(#${id}-edit-wood-facet-bot)`}
+            />
+
+            {/* 5. Graphite Lead Core Tip */}
+            <path
+              d="M26.0 102.0 L30.8 91.3 L32.8 93.2 Z"
+              fill={`url(#${id}-edit-lead-facet-top)`}
+            />
+            <path
+              d="M26.0 102.0 L32.8 93.2 L34.8 95.2 Z"
+              fill={`url(#${id}-edit-lead-facet-top)`}
+            />
+            <path
+              d="M26.0 102.0 L34.8 95.2 L36.7 97.2 Z"
+              fill={`url(#${id}-edit-lead-facet-bot)`}
+            />
+
+            {/* 6. Bevel and Ridge Highlights */}
+            <path
+              d="M35.9 75.1 L78.3 32.7"
+              stroke="#ffffff"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              fill="none"
+              opacity="0.85"
+            />
+            <path
+              d="M30.8 91.3 L35.9 75.1"
+              stroke="#ffffff"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+              fill="none"
+              opacity="0.6"
+            />
+            <path
+              d="M41.6 80.8 L74.1 48.3"
+              stroke="#edf6ec"
+              strokeWidth="1.1"
+              strokeLinecap="round"
+              fill="none"
+              opacity="0.6"
+            />
+            <path
+              d="M32.8 93.2 L41.6 80.8"
+              stroke="#ffffff"
+              strokeWidth="0.9"
+              strokeLinecap="round"
+              fill="none"
+              opacity="0.5"
+            />
+            <circle
+              cx="27.5"
+              cy="100.5"
+              r="1.2"
+              fill="#ffffff"
+              opacity="0.65"
+            />
+          </g>
         </>
       ) : null}
     </svg>

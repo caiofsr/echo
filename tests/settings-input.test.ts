@@ -2,63 +2,67 @@ import { expect, test } from "bun:test";
 import * as v from "valibot";
 import {
   companyInputSchema,
-  companyUpdateSchema,
   paymentMethodInputSchema,
   paymentMethodUpdateSchema,
-  paymentMethodArchiveSchema,
 } from "../src/lib/settings-input";
 
-test("schemas validam e normalizam os campos obrigatórios", () => {
-  expect(
-    v.parse(companyInputSchema, {
-      name: "  Empresa  ",
-      taxId: "",
-      address: "",
-      phone: "",
-    }).name,
-  ).toBe("Empresa");
-  expect(
-    v.safeParse(companyInputSchema, {
-      name: "  ",
-      taxId: "",
-      address: "",
-      phone: "",
-    }).issues?.[0]?.message,
-  ).toBe("Informe o nome ou a razão social.");
+const company = {
+  name: "  Empresa Exemplo  ",
+  taxId: "",
+  address: " Recife ",
+  phone: "",
+};
+
+test("schemas de Configurações validam e normalizam campos compartilhados", () => {
+  expect(v.parse(companyInputSchema, company)).toEqual({
+    name: "Empresa Exemplo",
+    taxId: "",
+    address: "Recife",
+    phone: "",
+  });
   expect(
     v.parse(paymentMethodInputSchema, {
       label: " PIX ",
-      instructions: " Chave ",
+      instructions: " Chave de recebimento ",
     }),
-  ).toEqual({ label: "PIX", instructions: "Chave" });
+  ).toEqual({ label: "PIX", instructions: "Chave de recebimento" });
   expect(
-    v.safeParse(paymentMethodInputSchema, { label: "PIX", instructions: "  " })
-      .issues?.[0]?.message,
-  ).toBe("Informe as instruções de recebimento.");
+    v.parse(paymentMethodUpdateSchema, {
+      id: 1,
+      label: "PIX",
+      instructions: "Chave",
+    }),
+  ).toEqual({ id: 1, label: "PIX", instructions: "Chave" });
 });
 
-test("schemas rejeitam identificadores e estados inválidos", () => {
-  const company = { name: "Empresa", taxId: "", address: "", phone: "" };
-  expect(
-    v.safeParse(companyUpdateSchema, { ...company, id: " " }).success,
-  ).toBe(false);
-  for (const id of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1, "1"]) {
-    expect(
-      v.safeParse(paymentMethodUpdateSchema, {
+test("schemas de Configurações recusam entradas inválidas com mensagens em português", () => {
+  for (const input of [null, [], {}, { ...company, phone: 123 }])
+    expect(() => v.parse(companyInputSchema, input)).toThrow(
+      "Dados inválidos.",
+    );
+  expect(() => v.parse(companyInputSchema, { ...company, name: " " })).toThrow(
+    "Informe o nome ou a razão social.",
+  );
+  expect(() =>
+    v.parse(paymentMethodInputSchema, { label: " ", instructions: "Chave" }),
+  ).toThrow("Informe um rótulo.");
+  expect(() =>
+    v.parse(paymentMethodInputSchema, { label: "PIX", instructions: " " }),
+  ).toThrow("Informe as instruções de recebimento.");
+  for (const id of [
+    0,
+    -1,
+    1.5,
+    NaN,
+    Infinity,
+    Number.MAX_SAFE_INTEGER + 1,
+    "1",
+  ])
+    expect(() =>
+      v.parse(paymentMethodUpdateSchema, {
         id,
         label: "PIX",
         instructions: "Chave",
-      }).success,
-    ).toBe(false);
-    expect(
-      v.safeParse(paymentMethodArchiveSchema, { id, archived: true }).success,
-    ).toBe(false);
-  }
-  expect(
-    v.safeParse(paymentMethodArchiveSchema, { id: 1, archived: "true" })
-      .success,
-  ).toBe(false);
-  expect(
-    v.safeParse(companyInputSchema, { ...company, phone: 42 }).success,
-  ).toBe(false);
+      }),
+    ).toThrow("Dados inválidos.");
 });

@@ -1,39 +1,29 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSessionMiddleware } from "../middleware/auth";
 import {
   companyInputSchema,
-  companyUpdateSchema,
   paymentMethodInputSchema,
   paymentMethodUpdateSchema,
-  paymentMethodArchiveSchema,
 } from "../../lib/settings-input";
 import { db } from "../../db";
 import { createSettingsStore } from "../settings";
-import { requireSessionMiddleware } from "../middleware/auth";
 
 export const getSettings = createServerFn({ method: "GET" })
   .middleware([requireSessionMiddleware])
   .handler(async () => {
     const store = createSettingsStore(db);
-    const [companies, paymentMethods] = await Promise.all([
-      store.listCompanies(),
+    const [company, paymentMethods] = await Promise.all([
+      store.getCompany(),
       store.listPaymentMethods(),
     ]);
-    return { companies, paymentMethods };
+    return { company, paymentMethods };
   });
 
-export const createCompany = createServerFn({ method: "POST" })
+export const saveCompanySettings = createServerFn({ method: "POST" })
   .middleware([requireSessionMiddleware])
   .validator(companyInputSchema)
   .handler(async ({ data }) => {
-    return createSettingsStore(db).createCompany(data);
-  });
-
-export const updateCompany = createServerFn({ method: "POST" })
-  .middleware([requireSessionMiddleware])
-  .validator(companyUpdateSchema)
-  .handler(async ({ data }) => {
-    const { id, ...input } = data;
-    return createSettingsStore(db).updateCompany(id, input);
+    return createSettingsStore(db).saveCompany(data);
   });
 
 export const createPaymentMethod = createServerFn({ method: "POST" })
@@ -49,14 +39,4 @@ export const updatePaymentMethod = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const { id, ...input } = data;
     return createSettingsStore(db).updatePaymentMethod(id, input);
-  });
-
-export const setPaymentMethodArchived = createServerFn({ method: "POST" })
-  .middleware([requireSessionMiddleware])
-  .validator(paymentMethodArchiveSchema)
-  .handler(async ({ data }) => {
-    return createSettingsStore(db).setPaymentMethodArchived(
-      data.id,
-      data.archived,
-    );
   });

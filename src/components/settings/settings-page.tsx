@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import {
   useMutation,
   useQueryClient,
@@ -9,35 +9,26 @@ import { useSelector } from "@tanstack/react-store";
 import type { ReactNode } from "react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import { EchoIcon } from "../ui/icons";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogTitle,
+  DialogDescription,
 } from "../ui/dialog";
 import { useUnsavedChanges } from "../../hooks/use-unsaved-changes";
 import { settingsQueryOptions } from "../../queries/settings";
 import {
-  companyNameSchema,
-  paymentLabelSchema,
-  paymentInstructionsSchema,
-} from "../../lib/settings-input";
-import {
   createPaymentMethod,
-  createCompany,
-  updateCompany,
-  setPaymentMethodArchived,
+  saveCompanySettings,
   updatePaymentMethod,
 } from "../../server/functions/settings";
 import type {
   Company,
   CompanyInput,
-  SavedCompany,
-} from "../../types/settings/company";
-import type {
   PaymentMethodInput,
   SavedPaymentMethod,
-} from "../../types/settings/payment-method";
+} from "../../lib/settings-types";
 
 function companyValues(company: Company | null): CompanyInput {
   return {
@@ -50,55 +41,14 @@ function companyValues(company: Company | null): CompanyInput {
 
 export function SettingsPage() {
   const { data } = useSuspenseQuery(settingsQueryOptions);
-  const queryClient = useQueryClient();
   const [addingPaymentMethod, setAddingPaymentMethod] = useState(false);
   const [editingPaymentMethod, setEditingPaymentMethod] = useState<
     number | null
   >(null);
-  const [paymentStatus, setPaymentStatus] = useState("");
-  const [lastArchived, setLastArchived] = useState<SavedPaymentMethod | null>(
-    null,
-  );
-  const focusTarget = useRef<number | "add" | "archived" | null>(null);
-  const activeMethods = data.paymentMethods.filter(
-    (method) => !method.archived,
-  );
-  const archivedMethods = data.paymentMethods.filter(
-    (method) => method.archived,
-  );
-  const archiveMutation = useMutation({
-    mutationFn: (data: { id: number; archived: boolean }) =>
-      setPaymentMethodArchived({ data }),
-    onSuccess: (saved) => {
-      setLastArchived(saved.archived ? saved : null);
-      focusTarget.current = saved.archived ? "archived" : saved.id;
-      queryClient.setQueryData(
-        settingsQueryOptions.queryKey,
-        (current) =>
-          current && {
-            ...current,
-            paymentMethods: current.paymentMethods.map((item) =>
-              item.id === saved.id ? saved : item,
-            ),
-          },
-      );
-      setPaymentStatus(
-        saved.archived
-          ? "Forma de recebimento arquivada. Ela não estará disponível para futuras faturas."
-          : "Forma de recebimento restaurada.",
-      );
-    },
-  });
 
-  function restoreFocus(
-    target: number | "add" | "archived",
-    element: HTMLElement | null,
-  ) {
-    if (element && focusTarget.current === target) {
-      focusTarget.current = null;
-      element.focus();
-    }
-  }
+  const selectedPaymentMethod = data.paymentMethods.find(
+    (method) => method.id === editingPaymentMethod,
+  );
 
   return (
     <section className="page-content settings-page">
@@ -106,307 +56,88 @@ export function SettingsPage() {
       <p className="settings-intro">
         Cadastre as informações que poderão aparecer nas suas faturas.
       </p>
-      <CompanySettings companies={data.companies} />
+      <CompanyForm company={data.company} />
       <section className="settings-section" aria-labelledby="payment-heading">
         <div className="settings-section-heading">
           <div>
-            <h2 id="payment-heading">Formas de recebimento</h2>
-            <p>
-              Cadastre instruções de recebimento para escolher ao emitir uma
-              fatura.
-            </p>
+            <h2 id="payment-heading">Dados de pagamento</h2>
+            <p>Crie conjuntos diferentes para escolher ao emitir uma fatura.</p>
           </div>
-          {!addingPaymentMethod && (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={
-                editingPaymentMethod !== null || archiveMutation.isPending
-              }
-              ref={(element) => restoreFocus("add", element)}
-              onClick={() => {
-                setPaymentStatus("");
-                setEditingPaymentMethod(null);
-                setAddingPaymentMethod(true);
-              }}
-            >
-              Adicionar forma de recebimento
-            </Button>
-          )}
-        </div>
-        <p role="status" className="settings-success">
-          {paymentStatus}
-        </p>
-        {lastArchived && (
           <Button
             type="button"
-            variant="ghost"
-            disabled={
-              addingPaymentMethod ||
-              editingPaymentMethod !== null ||
-              archiveMutation.isPending
-            }
-            onClick={() =>
-              archiveMutation.mutate({ id: lastArchived.id, archived: false })
-            }
+            variant="outline"
+            onClick={() => {
+              setEditingPaymentMethod(null);
+              setAddingPaymentMethod(true);
+            }}
           >
-            Desfazer arquivamento de {lastArchived.label}
+            Adicionar conjunto
           </Button>
-        )}
-        {(addingPaymentMethod || editingPaymentMethod !== null) && (
-          <p className="settings-section-description">
-            Salve ou cancele antes de alterar outra forma de recebimento.
-          </p>
-        )}
-        {archiveMutation.isError && (
-          <p role="alert" className="settings-error">
-            Não foi possível atualizar a forma de recebimento. Tente novamente.
-          </p>
-        )}
+        </div>
         {addingPaymentMethod && (
           <PaymentMethodForm
             key="new"
-            onCancel={() => {
-              focusTarget.current = "add";
-              setAddingPaymentMethod(false);
-            }}
-            onSaved={(saved) => {
-              focusTarget.current = saved.id;
-              setPaymentStatus("Forma de recebimento salva.");
-              setAddingPaymentMethod(false);
-            }}
+            onCancel={() => setAddingPaymentMethod(false)}
+            onSaved={() => setAddingPaymentMethod(false)}
           />
         )}
-        {activeMethods.length === 0 && !addingPaymentMethod ? (
+        {selectedPaymentMethod && (
+          <PaymentMethodForm
+            key={selectedPaymentMethod.id}
+            paymentMethod={selectedPaymentMethod}
+            onCancel={() => setEditingPaymentMethod(null)}
+            onSaved={() => setEditingPaymentMethod(null)}
+          />
+        )}
+        {data.paymentMethods.length === 0 && !addingPaymentMethod ? (
           <div className="settings-empty">
-            <h3>Nenhuma forma de recebimento ativa</h3>
+            <h3>Nenhum conjunto cadastrado</h3>
             <p>
-              {archivedMethods.length > 0
-                ? "Adicione uma forma de recebimento ou restaure uma arquivada."
-                : "Adicione instruções de recebimento, como PIX ou transferência."}
+              Adicione instruções de recebimento, como transferência ou PIX.
+              Elas só serão usadas quando você escolher uma para a fatura.
             </p>
           </div>
         ) : (
-          <div className="payment-method-list">
-            {activeMethods.map((method) =>
-              editingPaymentMethod === method.id ? (
-                <PaymentMethodForm
-                  key={method.id}
-                  paymentMethod={method}
-                  onCancel={() => {
-                    focusTarget.current = method.id;
-                    setEditingPaymentMethod(null);
-                  }}
-                  onSaved={(saved) => {
-                    focusTarget.current = saved.id;
-                    setPaymentStatus("Forma de recebimento salva.");
-                    setEditingPaymentMethod(null);
-                  }}
-                />
-              ) : (
-                <article className="payment-method" key={method.id}>
-                  <div className="payment-method-copy">
-                    <h3>{method.label}</h3>
-                    <p>{method.instructions}</p>
-                  </div>
-                  <div className="form-actions">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      aria-label={`Editar ${method.label}`}
-                      disabled={
-                        addingPaymentMethod ||
-                        editingPaymentMethod !== null ||
-                        archiveMutation.isPending
-                      }
-                      ref={(element) => restoreFocus(method.id, element)}
-                      onClick={() => {
-                        setPaymentStatus("");
-                        setAddingPaymentMethod(false);
-                        setEditingPaymentMethod(method.id);
-                      }}
-                    >
-                      Editar
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      aria-label={`Arquivar ${method.label}`}
-                      disabled={
-                        addingPaymentMethod ||
-                        editingPaymentMethod !== null ||
-                        archiveMutation.isPending
-                      }
-                      onClick={() => {
-                        setPaymentStatus("");
-                        archiveMutation.mutate({
-                          id: method.id,
-                          archived: true,
-                        });
-                      }}
-                    >
-                      Arquivar
-                    </Button>
-                  </div>
-                </article>
-              ),
-            )}
-          </div>
-        )}
-        {archivedMethods.length > 0 && (
-          <details>
-            <summary ref={(element) => restoreFocus("archived", element)}>
-              Arquivadas ({archivedMethods.length})
-            </summary>
-            {archivedMethods.map((method) => (
-              <article className="payment-method" key={method.id}>
+          <ul
+            className="payment-method-list"
+            aria-label="Dados de pagamento salvos"
+          >
+            {data.paymentMethods.map((method) => (
+              <li className="payment-method" key={method.id}>
                 <div className="payment-method-copy">
                   <h3>{method.label}</h3>
                   <p>{method.instructions}</p>
                 </div>
                 <Button
                   type="button"
-                  variant="outline"
-                  aria-label={`Restaurar ${method.label}`}
-                  disabled={
-                    addingPaymentMethod ||
-                    editingPaymentMethod !== null ||
-                    archiveMutation.isPending
-                  }
+                  variant="ghost"
+                  size="sm"
+                  className="min-w-11 min-h-11"
+                  aria-label={`Editar ${method.label}`}
+                  title={`Editar ${method.label}`}
                   onClick={() => {
-                    setPaymentStatus("");
-                    archiveMutation.mutate({ id: method.id, archived: false });
+                    setAddingPaymentMethod(false);
+                    setEditingPaymentMethod(method.id);
                   }}
                 >
-                  Restaurar
+                  <EchoIcon name="edit" size={20} className="size-5" />
                 </Button>
-              </article>
+              </li>
             ))}
-          </details>
+          </ul>
         )}
       </section>
     </section>
   );
 }
 
-function CompanySettings({ companies }: { companies: SavedCompany[] }) {
-  const [editing, setEditing] = useState<string | "new" | null>(null);
-  const [status, setStatus] = useState("");
-  const focusTarget = useRef<string | null>(null);
-  function focusWhenReady(id: string, element: HTMLElement | null) {
-    if (element && focusTarget.current === id) {
-      focusTarget.current = null;
-      element.focus();
-    }
-  }
-  const selected = companies.find((company) => company.id === editing);
-  return (
-    <section className="settings-section" aria-labelledby="company-heading">
-      <div className="settings-section-heading">
-        <div>
-          <h2 id="company-heading">Empresas</h2>
-          <p>Cadastre as empresas que podem emitir suas faturas.</p>
-        </div>
-        {editing !== "new" && (
-          <Button
-            type="button"
-            variant="outline"
-            disabled={editing !== null}
-            ref={(element) => focusWhenReady("add", element)}
-            onClick={() => {
-              setStatus("");
-              setEditing("new");
-            }}
-          >
-            Adicionar empresa
-          </Button>
-        )}
-      </div>
-      <p role="status" className="settings-success">
-        {status}
-      </p>
-      {editing !== null && companies.length > 0 && (
-        <p className="settings-section-description">
-          Salve ou cancele antes de alterar outra empresa.
-        </p>
-      )}
-      {editing !== null && (
-        <CompanyForm
-          key={editing}
-          company={selected ?? null}
-          onCancel={() => {
-            focusTarget.current = editing === "new" ? "add" : editing;
-            setEditing(null);
-          }}
-          onSaved={(saved) => {
-            focusTarget.current = saved.id;
-            setStatus("Empresa salva.");
-            setEditing(null);
-          }}
-        />
-      )}
-      {companies.length === 0 && editing === null && (
-        <div className="settings-empty">
-          <h3>Nenhuma empresa cadastrada</h3>
-          <p>Adicione uma empresa para usá-la em futuras faturas.</p>
-        </div>
-      )}
-      {companies.map((company) =>
-        editing === company.id ? null : (
-          <article className="company-row" key={company.id}>
-            <div className="company-row-copy">
-              <h3>{company.name}</h3>
-              {company.taxId && <p>{company.taxId}</p>}
-            </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="company-row-edit"
-              aria-label={`Editar empresa ${company.name}`}
-              disabled={editing !== null}
-              ref={(element) => focusWhenReady(company.id, element)}
-              onClick={() => {
-                setStatus("");
-                setEditing(company.id);
-              }}
-            >
-              Editar
-            </Button>
-          </article>
-        ),
-      )}
-    </section>
-  );
-}
-
-function CompanyForm({
-  company,
-  onCancel,
-  onSaved,
-}: {
-  company: SavedCompany | null;
-  onCancel: () => void;
-  onSaved: (saved: SavedCompany) => void;
-}) {
+function CompanyForm({ company }: { company: Company | null }) {
   const queryClient = useQueryClient();
   const save = useMutation({
-    mutationFn: (data: CompanyInput) =>
-      company
-        ? updateCompany({ data: { id: company.id, ...data } })
-        : createCompany({ data }),
-    onSuccess: (saved) =>
+    mutationFn: (data: CompanyInput) => saveCompanySettings({ data }),
+    onSuccess: (company) =>
       queryClient.setQueryData(settingsQueryOptions.queryKey, (current) =>
-        current
-          ? {
-              ...current,
-              companies: company
-                ? current.companies.map((item) =>
-                    item.id === saved.id ? saved : item,
-                  )
-                : [...current.companies, saved],
-            }
-          : current,
+        current ? { ...current, company } : current,
       ),
   });
   const form = useForm({
@@ -414,7 +145,12 @@ function CompanyForm({
     onSubmit: async ({ value }) => {
       try {
         const saved = await save.mutateAsync(value);
-        onSaved(saved);
+        form.reset({
+          name: saved.name,
+          taxId: saved.taxId ?? "",
+          address: saved.address ?? "",
+          phone: saved.phone ?? "",
+        });
       } catch {
         // The mutation state below gives a visible, recoverable error.
       }
@@ -423,17 +159,14 @@ function CompanyForm({
   const dirty = useSelector(form.store, (state) => state.isDirty);
   const draftRef = useUnsavedChanges(dirty);
 
-  function requestClose() {
-    if (save.isPending) return;
-    if (dirty && !window.confirm("Descartar as alterações não salvas?")) return;
-    onCancel();
-  }
-
-  const content = (
-    <div>
+  return (
+    <section className="settings-section" aria-labelledby="company-heading">
+      <h2 id="company-heading">Empresa</h2>
+      <p className="settings-section-description">
+        Use o nome que deve aparecer como emissor nas faturas.
+      </p>
       <form
         className="settings-form"
-        aria-label={company ? `Editar empresa ${company.name}` : "Nova empresa"}
         ref={draftRef}
         onSubmit={(event) => {
           event.preventDefault();
@@ -441,28 +174,25 @@ function CompanyForm({
         }}
       >
         <div className="settings-form-grid">
-          <form.Field name="name" validators={{ onSubmit: companyNameSchema }}>
+          <form.Field
+            name="name"
+            validators={{
+              onSubmit: ({ value }) =>
+                value.trim() ? undefined : "Informe o nome ou a razão social.",
+            }}
+          >
             {(field) => (
               <Field
                 label="Nome ou razão social"
                 fieldId="company-name"
                 required
-                error={field.state.meta.errors
-                  .map((issue) => issue?.message)
-                  .join(" ")}
+                error={field.state.meta.errors.join(" ")}
               >
                 <Input
                   id="company-name"
                   name={field.name}
-                  autoFocus
                   autoComplete="organization"
                   required
-                  aria-invalid={field.state.meta.errors.length > 0}
-                  aria-describedby={
-                    field.state.meta.errors.length
-                      ? "company-name-error"
-                      : undefined
-                  }
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                   onBlur={field.handleBlur}
@@ -472,15 +202,11 @@ function CompanyForm({
           </form.Field>
           <form.Field name="taxId">
             {(field) => (
-              <Field
-                label="Identificação fiscal (opcional)"
-                fieldId="company-tax-id"
-              >
+              <Field label="Identificação fiscal" fieldId="company-tax-id">
                 <Input
                   id="company-tax-id"
                   name={field.name}
                   autoComplete="off"
-                  placeholder="Ex.: CNPJ"
                   value={field.state.value}
                   onChange={(event) => field.handleChange(event.target.value)}
                   onBlur={field.handleBlur}
@@ -531,38 +257,20 @@ function CompanyForm({
               : "Não foi possível salvar. Confira sua conexão e tente novamente."}
           </p>
         )}
-        <div className="form-actions">
-          <form.Subscribe selector={(state) => state.isSubmitting}>
-            {(submitting) => (
-              <Button type="submit" disabled={submitting || save.isPending}>
-                {submitting || save.isPending ? "Salvando…" : "Salvar empresa"}
-              </Button>
-            )}
-          </form.Subscribe>
-          <Button
-            type="button"
-            variant="ghost"
-            disabled={save.isPending}
-            onClick={requestClose}
-          >
-            Cancelar
-          </Button>
-        </div>
+        {save.isSuccess && !dirty && (
+          <p className="settings-success" role="status">
+            Dados da empresa salvos.
+          </p>
+        )}
+        <form.Subscribe selector={(state) => state.isSubmitting}>
+          {(submitting) => (
+            <Button type="submit" disabled={submitting || save.isPending}>
+              {submitting || save.isPending ? "Salvando…" : "Salvar empresa"}
+            </Button>
+          )}
+        </form.Subscribe>
       </form>
-    </div>
-  );
-  return (
-    <EditDialog
-      title={company ? "Editar empresa" : "Adicionar empresa"}
-      description={
-        company
-          ? "Atualize os dados da empresa para futuras faturas."
-          : "Cadastre os dados da empresa para futuras faturas."
-      }
-      onClose={requestClose}
-    >
-      {content}
-    </EditDialog>
+    </section>
   );
 }
 
@@ -573,7 +281,7 @@ function PaymentMethodForm({
 }: {
   paymentMethod?: SavedPaymentMethod;
   onCancel: () => void;
-  onSaved: (saved: SavedPaymentMethod) => void;
+  onSaved: () => void;
 }) {
   const queryClient = useQueryClient();
   const mutation = useMutation({
@@ -593,7 +301,7 @@ function PaymentMethodForm({
             : [...current.paymentMethods, saved],
         };
       });
-      onSaved(saved);
+      onSaved();
     },
   });
   const form = useForm({
@@ -621,152 +329,128 @@ function PaymentMethodForm({
     onCancel();
   }
 
-  const content = (
-    <form
-      className="settings-dialog-form"
-      ref={draftRef}
-      aria-label={
-        paymentMethod
-          ? `Editar ${paymentMethod.label}`
-          : "Nova forma de recebimento"
-      }
-      onSubmit={(event) => {
-        event.preventDefault();
-        void form.handleSubmit();
-      }}
-    >
-      <form.Field name="label" validators={{ onSubmit: paymentLabelSchema }}>
-        {(field) => (
-          <Field
-            label="Rótulo"
-            fieldId={`${formId}-label`}
-            required
-            error={field.state.meta.errors
-              .map((issue) => issue?.message)
-              .join(" ")}
-          >
-            <Input
-              id={`${formId}-label`}
-              name={field.name}
-              autoFocus
-              required
-              aria-invalid={field.state.meta.errors.length > 0}
-              aria-describedby={
-                field.state.meta.errors.length
-                  ? `${formId}-label-error`
-                  : undefined
-              }
-              autoComplete="off"
-              placeholder="Ex.: Transferência bancária"
-              value={field.state.value}
-              onChange={(event) => field.handleChange(event.target.value)}
-              onBlur={field.handleBlur}
-            />
-          </Field>
-        )}
-      </form.Field>
-      <form.Field
-        name="instructions"
-        validators={{ onSubmit: paymentInstructionsSchema }}
-      >
-        {(field) => (
-          <Field
-            label="Instruções de recebimento"
-            fieldId={`${formId}-instructions`}
-            required
-            error={field.state.meta.errors
-              .map((issue) => issue?.message)
-              .join(" ")}
-          >
-            <textarea
-              id={`${formId}-instructions`}
-              name={field.name}
-              required
-              rows={4}
-              aria-invalid={field.state.meta.errors.length > 0}
-              aria-describedby={`${formId}-instructions-hint${field.state.meta.errors.length ? ` ${formId}-instructions-error` : ""}`}
-              className="input settings-textarea"
-              placeholder="Ex.: Chave PIX: contato@exemplo.com"
-              value={field.state.value}
-              onChange={(event) => field.handleChange(event.target.value)}
-              onBlur={field.handleBlur}
-            />
-            <p id={`${formId}-instructions-hint`} className="field-hint">
-              Informe os dados de recebimento que devem aparecer na fatura. Ex.:
-              chave PIX ou dados bancários.
-            </p>
-          </Field>
-        )}
-      </form.Field>
-      {mutation.isError && (
-        <p className="settings-error" role="alert">
-          {mutation.error instanceof Error
-            ? mutation.error.message
-            : "Não foi possível salvar. Confira sua conexão e tente novamente."}
-        </p>
-      )}
-      <div className="form-actions">
-        <form.Subscribe selector={(state) => state.isSubmitting}>
-          {(submitting) => (
-            <Button type="submit" disabled={submitting || mutation.isPending}>
-              {submitting || mutation.isPending
-                ? "Salvando…"
-                : "Salvar forma de recebimento"}
-            </Button>
-          )}
-        </form.Subscribe>
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={mutation.isPending}
-          onClick={requestClose}
-        >
-          Cancelar
-        </Button>
-      </div>
-    </form>
-  );
-  return (
-    <EditDialog
-      title={
-        paymentMethod
-          ? "Editar forma de recebimento"
-          : "Adicionar forma de recebimento"
-      }
-      description={
-        paymentMethod
-          ? "Atualize as instruções usadas em futuras faturas."
-          : "Cadastre as instruções para futuras faturas."
-      }
-      onClose={requestClose}
-    >
-      {content}
-    </EditDialog>
-  );
-}
-
-function EditDialog({
-  title,
-  description,
-  onClose,
-  children,
-}: {
-  title: string;
-  description: string;
-  onClose: () => void;
-  children: ReactNode;
-}) {
   return (
     <Dialog
       open
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open) requestClose();
       }}
     >
-      <DialogContent finalFocus={false}>
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
-        {children}
+      <DialogContent>
+        <DialogTitle>
+          {paymentMethod
+            ? "Editar dados de pagamento"
+            : "Adicionar dados de pagamento"}
+        </DialogTitle>
+        <DialogDescription>
+          Informe os dados de recebimento que poderão aparecer nas suas faturas.
+        </DialogDescription>
+        <form
+          className="settings-dialog-form"
+          ref={draftRef}
+          aria-label={
+            paymentMethod
+              ? `Editar ${paymentMethod.label}`
+              : "Novo conjunto de dados de pagamento"
+          }
+          onSubmit={(event) => {
+            event.preventDefault();
+            void form.handleSubmit();
+          }}
+        >
+          <form.Field
+            name="label"
+            validators={{
+              onSubmit: ({ value }) =>
+                value.trim() ? undefined : "Informe um rótulo.",
+            }}
+          >
+            {(field) => (
+              <Field
+                label="Rótulo"
+                fieldId={`${formId}-label`}
+                required
+                error={field.state.meta.errors.join(" ")}
+              >
+                <Input
+                  id={`${formId}-label`}
+                  name={field.name}
+                  autoFocus
+                  required
+                  autoComplete="off"
+                  placeholder="Ex.: Transferência bancária"
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  onBlur={field.handleBlur}
+                />
+              </Field>
+            )}
+          </form.Field>
+          <form.Field
+            name="instructions"
+            validators={{
+              onSubmit: ({ value }) =>
+                value.trim()
+                  ? undefined
+                  : "Informe as instruções de recebimento.",
+            }}
+          >
+            {(field) => (
+              <Field
+                label="Instruções de recebimento"
+                fieldId={`${formId}-instructions`}
+                required
+                error={field.state.meta.errors.join(" ")}
+              >
+                <textarea
+                  id={`${formId}-instructions`}
+                  name={field.name}
+                  required
+                  rows={4}
+                  className="input settings-textarea"
+                  placeholder="Informe os dados que devem aparecer na fatura."
+                  value={field.state.value}
+                  onChange={(event) => field.handleChange(event.target.value)}
+                  onBlur={field.handleBlur}
+                />
+              </Field>
+            )}
+          </form.Field>
+          {mutation.isError && (
+            <p className="settings-error" role="alert">
+              {mutation.error instanceof Error
+                ? mutation.error.message
+                : "Não foi possível salvar. Confira sua conexão e tente novamente."}
+            </p>
+          )}
+          {mutation.isSuccess && (
+            <p className="settings-success" role="status">
+              Dados de pagamento salvos.
+            </p>
+          )}
+          <div className="form-actions">
+            <form.Subscribe selector={(state) => state.isSubmitting}>
+              {(submitting) => (
+                <Button
+                  type="submit"
+                  disabled={submitting || mutation.isPending}
+                >
+                  {submitting || mutation.isPending
+                    ? "Salvando…"
+                    : "Salvar conjunto"}
+                </Button>
+              )}
+            </form.Subscribe>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={mutation.isPending}
+              onClick={requestClose}
+            >
+              Cancelar
+            </Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
@@ -794,11 +478,7 @@ function Field({
         {required && <span className="required-mark"> (obrigatório)</span>}
       </label>
       {children}
-      {error && (
-        <p id={`${fieldId}-error`} role="alert" className="field-error">
-          {error}
-        </p>
-      )}
+      {error && <p className="field-error">{error}</p>}
     </div>
   );
 }

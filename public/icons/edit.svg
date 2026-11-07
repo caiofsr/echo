@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="edit-title">
+  <title id="edit-title">Lápis de edição volumétrico com corpo sextavado, virola metálica e ponta apontada</title>
+  <defs>
+    <filter id="edit-shadow" x="10" y="90" width="108" height="34" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="3.2"/>
+    </filter>
+    <linearGradient id="edit-bar-top" x1="32" y1="36" x2="88" y2="92" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ebf6ea"/>
+      <stop offset="0.35" stop-color="#bad8bc"/>
+      <stop offset="0.8" stop-color="#8bb08e"/>
+      <stop offset="1" stop-color="#678d6b"/>
+    </linearGradient>
+    <linearGradient id="edit-bar-mid" x1="42" y1="46" x2="98" y2="102" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7aa37d"/>
+      <stop offset="0.45" stop-color="#608663"/>
+      <stop offset="1" stop-color="#466d49"/>
+    </linearGradient>
+    <linearGradient id="edit-bar-bot" x1="48" y1="52" x2="104" y2="108" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3c5f40"/>
+      <stop offset="0.6" stop-color="#2a452e"/>
+      <stop offset="1" stop-color="#1b3020"/>
+    </linearGradient>
+    <linearGradient id="edit-wood-facet-top" x1="28" y1="74" x2="52" y2="98" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset="0.45" stop-color="#f2f7f0"/>
+      <stop offset="1" stop-color="#d6e8d4"/>
+    </linearGradient>
+    <linearGradient id="edit-wood-facet-mid" x1="32" y1="78" x2="56" y2="102" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#deecdc"/>
+      <stop offset="0.5" stop-color="#bad6bc"/>
+      <stop offset="1" stop-color="#9ebf9f"/>
+    </linearGradient>
+    <linearGradient id="edit-wood-facet-bot" x1="36" y1="82" x2="60" y2="106" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#88ad8a"/>
+      <stop offset="0.6" stop-color="#557a58"/>
+      <stop offset="1" stop-color="#38563a"/>
+    </linearGradient>
+    <linearGradient id="edit-lead-facet-top" x1="24" y1="92" x2="36" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4a6e4d"/>
+      <stop offset="0.5" stop-color="#324f35"/>
+      <stop offset="1" stop-color="#223725"/>
+    </linearGradient>
+    <linearGradient id="edit-lead-facet-bot" x1="26" y1="94" x2="38" y2="106" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#243927"/>
+      <stop offset="0.6" stop-color="#18271a"/>
+      <stop offset="1" stop-color="#0f1a11"/>
+    </linearGradient>
+    <linearGradient id="edit-ferrule-face" x1="68" y1="36" x2="100" y2="68" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff"/>
+      <stop offset="0.2" stop-color="#d4ead3"/>
+      <stop offset="0.55" stop-color="#95bb98"/>
+      <stop offset="0.85" stop-color="#517754"/>
+      <stop offset="1" stop-color="#2b472f"/>
+    </linearGradient>
+    <linearGradient id="edit-eraser-face" x1="78" y1="26" x2="108" y2="56" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ebf5ea"/>
+      <stop offset="0.3" stop-color="#badaba"/>
+      <stop offset="0.7" stop-color="#7ea683"/>
+      <stop offset="1" stop-color="#496f4c"/>
+    </linearGradient>
+  </defs>
+
+  <g id="edit-ground">
+    <!-- Main soft ambient ground shadow -->
+    <ellipse cx="64" cy="110" rx="44" ry="7" fill="#1b2e1f" opacity="0.16" filter="url(#edit-shadow)"/>
+    <!-- Tip local contact shadow -->
+    <ellipse cx="28" cy="103" rx="7" ry="2.5" fill="#1b2e1f" opacity="0.28" filter="url(#edit-shadow)"/>
+  </g>
+
+  <g id="edit-body" transform="translate(-16 -16) scale(1.25)">
+    <!-- 1. Rubber Eraser -->
+    <path d="M78.3 32.7 L83.3 27.8 Q94.9 33.1 100.2 44.7 L95.3 49.7 Z" fill="url(#edit-eraser-face)"/>
+    <!-- Eraser top curve highlight -->
+    <path d="M83.3 27.8 Q94.9 33.1 100.2 44.7" stroke="#ffffff" stroke-width="1.4" stroke-linecap="round" fill="none" opacity="0.85"/>
+
+    <!-- 2. Metal Ferrule Collar -->
+    <path d="M68.4 42.6 L78.3 32.7 L95.3 49.7 L85.4 59.6 Z" fill="url(#edit-ferrule-face)"/>
+    <!-- Ferrule Crimp Ring 1 -->
+    <path d="M71.3 39.1 L88.9 56.7" stroke="#233a26" stroke-width="1.8" opacity="0.45" stroke-linecap="round"/>
+    <path d="M71.3 39.1 L88.9 56.7" stroke="#edf6ec" stroke-width="1" stroke-linecap="round" opacity="0.75" transform="translate(-0.6, -0.6)"/>
+    <!-- Ferrule Crimp Ring 2 -->
+    <path d="M74.9 35.6 L92.4 53.1" stroke="#233a26" stroke-width="1.8" opacity="0.45" stroke-linecap="round"/>
+    <path d="M74.9 35.6 L92.4 53.1" stroke="#edf6ec" stroke-width="1" stroke-linecap="round" opacity="0.75" transform="translate(-0.6, -0.6)"/>
+
+    <!-- 3. Hexagonal Lacquered Barrel (3 visible facets) -->
+    <!-- Top illuminated facet -->
+    <path d="M35.9 75.1 Q43.3 73.4 41.6 80.8 L74.1 48.3 L68.4 42.6 Z" fill="url(#edit-bar-top)"/>
+    <!-- Middle front facet -->
+    <path d="M41.6 80.8 Q49.0 79.0 47.2 86.4 L79.7 53.9 L74.1 48.3 Z" fill="url(#edit-bar-mid)"/>
+    <!-- Bottom shaded flank facet -->
+    <path d="M47.2 86.4 Q54.6 84.7 52.9 92.1 L85.4 59.6 L79.7 53.9 Z" fill="url(#edit-bar-bot)"/>
+
+    <!-- 4. Sharpened Wood Section (scalloped facets) -->
+    <!-- Wood top facet -->
+    <path d="M30.8 91.3 L35.9 75.1 Q43.3 73.4 41.6 80.8 L32.8 93.2 Z" fill="url(#edit-wood-facet-top)"/>
+    <!-- Wood mid facet -->
+    <path d="M32.8 93.2 L41.6 80.8 Q49.0 79.0 47.2 86.4 L34.8 95.2 Z" fill="url(#edit-wood-facet-mid)"/>
+    <!-- Wood bot facet -->
+    <path d="M34.8 95.2 L47.2 86.4 Q54.6 84.7 52.9 92.1 L36.7 97.2 Z" fill="url(#edit-wood-facet-bot)"/>
+
+    <!-- 5. Graphite Lead Core Tip -->
+    <!-- Top-lit lead face -->
+    <path d="M26.0 102.0 L30.8 91.3 L32.8 93.2 Z" fill="url(#edit-lead-facet-top)"/>
+    <!-- Center lead face -->
+    <path d="M26.0 102.0 L32.8 93.2 L34.8 95.2 Z" fill="url(#edit-lead-facet-top)"/>
+    <!-- Bottom shaded lead face -->
+    <path d="M26.0 102.0 L34.8 95.2 L36.7 97.2 Z" fill="url(#edit-lead-facet-bot)"/>
+
+    <!-- 6. Bevel and Ridge Highlights -->
+    <!-- Top-left long edge highlight (Light-facing edge) -->
+    <path d="M35.9 75.1 L78.3 32.7" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0.85"/>
+    <!-- Wood top-left edge highlight -->
+    <path d="M30.8 91.3 L35.9 75.1" stroke="#ffffff" stroke-width="1.2" stroke-linecap="round" fill="none" opacity="0.6"/>
+    <!-- Internal facet ridge 1 highlight (between top and mid facets) -->
+    <path d="M41.6 80.8 L74.1 48.3" stroke="#edf6ec" stroke-width="1.1" stroke-linecap="round" fill="none" opacity="0.6"/>
+    <!-- Wood ridge 1 highlight -->
+    <path d="M32.8 93.2 L41.6 80.8" stroke="#ffffff" stroke-width="0.9" stroke-linecap="round" fill="none" opacity="0.5"/>
+    <!-- Lead tip specular gleam -->
+    <circle cx="27.5" cy="100.5" r="1.2" fill="#ffffff" opacity="0.65"/>
+  </g>
+</svg>

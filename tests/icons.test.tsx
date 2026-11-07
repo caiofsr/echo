@@ -7,6 +7,7 @@ const allIcons: IconName[] = [
   "hours",
   "invoices",
   "directory",
+  "clients",
   "settings",
   "logout",
   "timer",
@@ -14,10 +15,11 @@ const allIcons: IconName[] = [
   "hide",
   "login",
   "loading",
+  "edit",
 ];
 
 describe("EchoIcon component", () => {
-  it("renders all 11 icons without throwing", () => {
+  it("renders every registered icon without throwing", () => {
     for (const name of allIcons) {
       const html = renderToString(<EchoIcon name={name} />);
       expect(html).toContain("<svg");
@@ -35,10 +37,16 @@ describe("EchoIcon component", () => {
       <div>
         <EchoIcon name="board" />
         <EchoIcon name="board" />
-      </div>
+        <EchoIcon name="edit" />
+        <EchoIcon name="edit" />
+        <EchoIcon name="clients" />
+        <EchoIcon name="clients" />
+      </div>,
     );
     // Find all IDs in htmlMultiple
-    const idMatches = Array.from(htmlMultiple.matchAll(/id="([^"]+)"/g)).map(m => m[1]);
+    const idMatches = Array.from(htmlMultiple.matchAll(/id="([^"]+)"/g)).map(
+      (m) => m[1],
+    );
     const uniqueIds = new Set(idMatches);
     // There should be no duplicate IDs
     expect(uniqueIds.size).toBe(idMatches.length);
@@ -57,6 +65,10 @@ describe("EchoIcon component", () => {
     const html17 = renderToString(<EchoIcon name="board" size={17} />);
     expect(html17).toContain('width="17"');
     expect(html17).toContain('height="17"');
+
+    const html18 = renderToString(<EchoIcon name="edit" size={18} />);
+    expect(html18).toContain('width="18"');
+    expect(html18).toContain('height="18"');
 
     const html32 = renderToString(<EchoIcon name="timer" size={32} />);
     expect(html32).toContain('width="32"');

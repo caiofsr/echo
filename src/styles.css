@@ -383,11 +383,14 @@ input {
   line-height: 1.55;
   margin: 0.45rem 0 0;
 }
+.settings-form {
+  display: grid;
+  gap: 1.25rem;
+}
 .settings-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.25rem 1.5rem;
-  margin-bottom: 1.25rem;
 }
 .settings-form-wide {
   grid-column: 1 / -1;
@@ -437,6 +440,12 @@ input {
 }
 .payment-method-list {
   display: grid;
+  list-style: none;
+  margin: 0;
+  padding: 0 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  background: var(--surface);
 }
 .company-row {
   display: flex;
@@ -468,22 +477,32 @@ input {
 }
 .payment-method {
   display: flex;
-  align-items: start;
+  align-items: center;
   justify-content: space-between;
-  gap: 1.25rem;
-  padding: 1.2rem 0;
+  gap: 1rem;
+  padding: 0.75rem 0;
+}
+.payment-method + .payment-method {
   border-top: 1px solid var(--color-border);
+}
+.payment-method > .button {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  flex-shrink: 0;
+  color: var(--primary);
 }
 .payment-method-copy {
   min-width: 0;
 }
 .payment-method h3 {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  margin: 0 0 0.4rem;
+  margin: 0 0 0.2rem;
   overflow-wrap: anywhere;
 }
 .payment-method p {
+  font-size: 0.875rem;
   color: var(--muted-foreground);
   line-height: 1.55;
   margin: 0;
@@ -668,13 +687,6 @@ input {
   .settings-form-wide {
     grid-column: auto;
   }
-  .payment-method {
-    align-items: stretch;
-    flex-direction: column;
-  }
-  .payment-method > .button {
-    align-self: start;
-  }
 }
 .button-primary svg {
   stroke: currentColor;
@@ -695,4 +707,99 @@ input {
 }
 .button:active {
   translate: none;
+}
+
+.directory-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.directory-list > li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+.directory-list > li:last-child {
+  border-bottom: 0;
+}
+.directory-copy {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.directory-copy h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+.directory-copy p {
+  margin: 0.35rem 0 0;
+  color: var(--muted-foreground);
+}
+.directory-rate {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.directory-rate > span {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
+}
+.directory-fields {
+  display: grid;
+  gap: 1.1rem;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+@media (max-width: 480px) {
+  .directory-list > li {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .directory-copy {
+    flex-basis: calc(100% - 6rem);
+  }
+  .directory-rate {
+    order: 1;
+    flex-basis: 100%;
+    text-align: left;
+  }
+  .directory-rate > span {
+    display: inline;
+  }
+}
+
+/* Keep the unavailable timer secondary to client management. */
+.timer-placeholder-compact {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.timer-placeholder-compact .timer-digits {
+  display: none;
+}
+.directory-page > h1 {
+  margin-block: 1.25rem 1rem;
+}
+.directory-page .settings-section {
+  padding-block: 1rem;
+}
+.directory-page .settings-section-heading {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.field-hint {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1.5;
 }

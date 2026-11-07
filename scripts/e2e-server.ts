@@ -3,7 +3,13 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { openDatabase, migrateDatabase } from "../src/db/connection";
 import { createAccess } from "../tests/helpers/create-access";
-import { companySettings, paymentMethod, rateLimit } from "../src/db/schema";
+import {
+  client,
+  project,
+  companySettings,
+  paymentMethod,
+  rateLimit,
+} from "../src/db/schema";
 
 const dir = await mkdtemp(join(tmpdir(), "echo-browser-"));
 process.env.DATABASE_URL = `file:${join(dir, "browser.db")}`;
@@ -23,6 +29,11 @@ const control = process.env.ECHO_TEST_CONTROL_PORT
         const path = new URL(request.url).pathname;
         if (path === "/reset-rate-limit") {
           await database.db.delete(rateLimit).run();
+          return new Response(null, { status: 204 });
+        }
+        if (path === "/reset-directory") {
+          await database.db.delete(project).run();
+          await database.db.delete(client).run();
           return new Response(null, { status: 204 });
         }
         if (path === "/reset-settings") {
