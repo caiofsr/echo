@@ -9,6 +9,8 @@ import {
   companySettings,
   paymentMethod,
   rateLimit,
+  boardColumn,
+  boardTask,
 } from "../src/db/schema";
 
 const dir = await mkdtemp(join(tmpdir(), "echo-browser-"));
@@ -34,6 +36,11 @@ const control = process.env.ECHO_TEST_CONTROL_PORT
         if (path === "/reset-directory") {
           await database.db.delete(project).run();
           await database.db.delete(client).run();
+          return new Response(null, { status: 204 });
+        }
+        if (path === "/reset-board") {
+          await database.db.delete(boardTask).run();
+          await database.db.delete(boardColumn).run();
           return new Response(null, { status: 204 });
         }
         if (path === "/reset-settings") {

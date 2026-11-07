@@ -1,12 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Unavailable } from "../components/ui/unavailable";
+import { BoardPage } from "../components/board/board-page";
+import { boardQueryOptions } from "../queries/board";
 
 export const Route = createFileRoute("/_app/")({
-  component: () => (
-    <Unavailable
-      title="Quadro"
-      description="Aqui você vai organizar suas tarefas e acompanhar o trabalho em andamento."
-      icon="board"
-    />
-  ),
+  loader: ({ context }) =>
+    context.queryClient.ensureQueryData(boardQueryOptions),
+  component: BoardPage,
 });
