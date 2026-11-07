@@ -1035,90 +1035,76 @@ input {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
-  max-height: min(55vh, 35rem);
+  max-height: min(60vh, 32rem);
   overflow-y: auto;
 }
 .column-manager-dialog {
-  width: min(58rem, calc(100% - 2rem));
-  padding: 1.75rem;
+  width: min(44rem, calc(100% - 2rem));
+  padding: 1.5rem;
 }
 .column-manager-dialog [data-slot="dialog-description"] {
-  margin-bottom: 1.25rem;
+  margin-bottom: 0.75rem;
 }
 .column-manager-row {
   display: grid;
-  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
-  grid-template-areas:
-    "grip name count"
-    "grip actions actions";
+  grid-template-columns: minmax(0, 1fr) auto auto;
   align-items: center;
-  gap: 0.5rem 0.8rem;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
-  padding: 0.85rem 1rem;
+  gap: 0.75rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--border);
   cursor: grab;
 }
 .column-manager-row:active {
   cursor: grabbing;
 }
-.column-manager-grip {
-  grid-area: grip;
-  justify-self: center;
-  color: var(--muted-foreground);
-  letter-spacing: -0.15rem;
-  user-select: none;
+.column-manager-row:last-child {
+  border-bottom: 0;
 }
 .column-manager-name {
-  grid-area: name;
   min-width: 0;
+  min-height: 2.6rem;
+  padding: 0.4rem;
+  border-color: transparent;
+  background: transparent;
+}
+.column-manager-name:focus-visible {
+  border-color: var(--focus);
+  outline: 0;
 }
 .column-manager-actions {
-  grid-area: actions;
   display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: 0.15rem;
 }
-.column-manager-move {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 2.6rem;
-  border: 1px solid var(--border);
+.column-manager-action {
+  min-height: 2.5rem;
+  border: 0;
   border-radius: var(--radius);
-  background: var(--surface);
-  color: var(--foreground);
-  padding: 0.5rem 0.8rem;
+  background: transparent;
+  color: var(--muted-foreground);
+  padding: 0.3rem 0.45rem;
   font: inherit;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
+  cursor: pointer;
 }
-.column-manager-move:hover:not(:disabled) {
+.column-manager-action:hover:not(:disabled) {
   background: var(--secondary);
+  color: var(--foreground);
+}
+.column-manager-action:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 .column-manager-count {
-  grid-area: count;
-  justify-self: end;
   font-size: 0.8rem;
-  color: var(--secondary-foreground);
-  background: var(--secondary);
-  border-radius: var(--radius);
-  padding: 0.25rem 0.65rem;
+  color: var(--muted-foreground);
   white-space: nowrap;
 }
-.column-manager-remove {
-  min-height: 2.6rem;
-  border: 1px solid color-mix(in srgb, var(--error) 35%, transparent);
-  border-radius: var(--radius);
-  background: var(--surface);
+.column-manager-action-danger:hover:not(:disabled) {
   color: var(--error);
-  font: inherit;
-  font-size: 0.875rem;
-  padding: 0.5rem 0.8rem;
 }
-.column-manager-remove:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--error) 8%, var(--surface));
+.column-manager-footer {
+  justify-content: flex-end;
+  margin-top: 0.5rem;
 }
 .select-trigger {
   display: flex;
@@ -1222,18 +1208,12 @@ input {
     padding: 1rem;
   }
   .column-manager-row {
-    grid-template-columns: 1.75rem minmax(0, 1fr);
-    grid-template-areas:
-      "grip name"
-      "grip count"
-      "grip actions";
-    gap: 0.6rem 0.65rem;
-    padding: 0.75rem;
-  }
-  .column-manager-count {
-    justify-self: start;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.15rem 0.75rem;
+    padding: 0.5rem 0;
   }
   .column-manager-actions {
-    justify-content: flex-start;
+    grid-column: 1 / -1;
+    justify-content: flex-end;
   }
 }

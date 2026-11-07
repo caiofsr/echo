@@ -705,7 +705,7 @@ export function ColumnManagerDialog({
       <DialogContent className="column-manager-dialog" finalFocus={returnFocus}>
         <DialogTitle>Gerenciar colunas</DialogTitle>
         <DialogDescription>
-          Renomeie ou reordene as colunas. Remova somente colunas sem tarefas.
+          Renomeie, reordene ou remova colunas vazias.
         </DialogDescription>
         <ul className="column-manager-list" aria-label="Colunas do quadro">
           {order.map((column, index) => {
@@ -738,9 +738,6 @@ export function ColumnManagerDialog({
                   }
                 }}
               >
-                <span className="column-manager-grip" aria-hidden="true">
-                  ⋮⋮
-                </span>
                 <Input
                   className="column-manager-name"
                   aria-label={`Nome da coluna ${column.name}`}
@@ -762,7 +759,7 @@ export function ColumnManagerDialog({
                 <span className="column-manager-actions">
                   <button
                     type="button"
-                    className="column-manager-move"
+                    className="column-manager-action"
                     aria-label={`Mover coluna ${column.name} para cima`}
                     disabled={index === 0 || busy}
                     onClick={() => moveBy(index, -1)}
@@ -771,7 +768,7 @@ export function ColumnManagerDialog({
                   </button>
                   <button
                     type="button"
-                    className="column-manager-move"
+                    className="column-manager-action"
                     aria-label={`Mover coluna ${column.name} para baixo`}
                     disabled={index === order.length - 1 || busy}
                     onClick={() => moveBy(index, 1)}
@@ -780,7 +777,7 @@ export function ColumnManagerDialog({
                   </button>
                   <button
                     type="button"
-                    className="column-manager-remove"
+                    className="column-manager-action column-manager-action-danger"
                     aria-label={`Remover coluna ${column.name}`}
                     disabled={Boolean(occupied) || busy}
                     onClick={() => void removeConfirmed(column)}
@@ -792,15 +789,13 @@ export function ColumnManagerDialog({
             );
           })}
         </ul>
-        <p className="field-hint">
-          Arraste uma linha para reordenar ou use Subir e Descer.
-        </p>
+        <p className="field-hint">Arraste uma linha para reordenar.</p>
         {error && (
           <p className="settings-error" role="alert">
             {error}
           </p>
         )}
-        <div className="form-actions">
+        <div className="form-actions column-manager-footer">
           <Button variant="ghost" disabled={busy} onClick={onCancel}>
             Fechar
           </Button>
