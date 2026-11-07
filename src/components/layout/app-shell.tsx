@@ -1,4 +1,4 @@
-import { Link, Outlet, useMatch } from "@tanstack/react-router";
+import { Link, Outlet } from "@tanstack/react-router";
 import { EchoIcon } from "../ui/icons";
 import { Button, buttonVariants } from "../ui/button";
 import { useSignOut } from "../../hooks/use-sign-out";
@@ -11,11 +11,6 @@ const links = [
 ] as const;
 export function AppShell() {
   const { signOut, error } = useSignOut();
-  const compactTimer = useMatch({
-    from: "/_app/clients",
-    shouldThrow: false,
-    select: () => true,
-  });
   return (
     <>
       {error && (
@@ -65,13 +60,7 @@ export function AppShell() {
         </div>
       </header>
       <main id="content" className="workspace" tabIndex={-1}>
-        <div
-          className={
-            compactTimer
-              ? "timer-placeholder timer-placeholder-compact"
-              : "timer-placeholder"
-          }
-        >
+        <div className="timer-placeholder">
           <EchoIcon name="timer" size={32} />
           <div>
             <strong>Cronômetro global</strong>
