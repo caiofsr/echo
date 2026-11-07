@@ -1,6 +1,11 @@
+import * as v from "valibot";
 import { asc, eq } from "drizzle-orm";
 import type { Database } from "../db/connection";
 import { companySettings, paymentMethod } from "../db/schema";
+import {
+  companyInputSchema,
+  paymentMethodInputSchema,
+} from "../lib/settings-input";
 import type {
   Company,
   CompanyInput,
@@ -8,28 +13,14 @@ import type {
   SavedPaymentMethod,
 } from "../lib/settings-types";
 
-function normalize(value: string) {
-  const trimmed = value.trim();
-  return trimmed || null;
-}
-
 function normalizeCompany(input: CompanyInput): Company {
-  const name = input.name.trim();
-  if (!name) throw new Error("Informe o nome ou a razão social.");
+  const parsed = v.parse(companyInputSchema, input);
   return {
-    name,
-    taxId: normalize(input.taxId),
-    address: normalize(input.address),
-    phone: normalize(input.phone),
+    name: parsed.name,
+    taxId: parsed.taxId || null,
+    address: parsed.address || null,
+    phone: parsed.phone || null,
   };
-}
-
-function normalizePaymentMethod(input: PaymentMethodInput): PaymentMethodInput {
-  const label = input.label.trim();
-  const instructions = input.instructions.trim();
-  if (!label) throw new Error("Informe um rótulo.");
-  if (!instructions) throw new Error("Informe as instruções de recebimento.");
-  return { label, instructions };
 }
 
 export function createSettingsStore(db: Database) {
@@ -64,7 +55,7 @@ export function createSettingsStore(db: Database) {
     async createPaymentMethod(
       input: PaymentMethodInput,
     ): Promise<SavedPaymentMethod> {
-      const values = normalizePaymentMethod(input);
+      const values = v.parse(paymentMethodInputSchema, input);
       const [created] = await db
         .insert(paymentMethod)
         .values(values)
@@ -76,7 +67,7 @@ export function createSettingsStore(db: Database) {
       id: number,
       input: PaymentMethodInput,
     ): Promise<SavedPaymentMethod> {
-      const values = normalizePaymentMethod(input);
+      const values = v.parse(paymentMethodInputSchema, input);
       const [updated] = await db
         .update(paymentMethod)
         .set(values)

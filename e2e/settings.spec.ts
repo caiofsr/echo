@@ -34,7 +34,19 @@ test("configura empresa e vários conjuntos de pagamento com dados persistidos",
     .getByLabel("Endereço")
     .fill("Rua das Flores, 10\nRecife - PE");
   await companyForm.getByLabel("Telefone").fill("+55 81 99999-0000");
+  const saveRequest = page.waitForRequest(
+    (request) =>
+      request.method() === "POST" && request.url().includes("_serverFn"),
+  );
   await companyForm.getByRole("button", { name: "Salvar empresa" }).click();
+  const rpc = await saveRequest;
+  const headers = { ...rpc.headers() };
+  delete headers.cookie;
+  const denied = await request.post(rpc.url(), {
+    headers,
+    data: rpc.postDataBuffer()!,
+  });
+  expect(await denied.text()).toContain("Sessão inválida");
   await expect(page.getByRole("status")).toHaveText("Dados da empresa salvos.");
 
   await page.getByRole("button", { name: "Adicionar conjunto" }).click();

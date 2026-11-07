@@ -13,7 +13,6 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppClientsRouteImport } from './routes/_app.clients'
-import { Route as AppDirectoryRouteImport } from './routes/_app.directory'
 import { Route as AppHoursRouteImport } from './routes/_app.hours'
 import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
@@ -36,11 +35,6 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const AppClientsRoute = AppClientsRouteImport.update({
   id: '/clients',
   path: '/clients',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppDirectoryRoute = AppDirectoryRouteImport.update({
-  id: '/directory',
-  path: '/directory',
   getParentRoute: () => AppRoute,
 } as any)
 const AppHoursRoute = AppHoursRouteImport.update({
@@ -68,7 +62,6 @@ export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
   '/login': typeof LoginRoute
   '/clients': typeof AppClientsRoute
-  '/directory': typeof AppDirectoryRoute
   '/hours': typeof AppHoursRoute
   '/invoices': typeof AppInvoicesRoute
   '/settings': typeof AppSettingsRoute
@@ -77,7 +70,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/clients': typeof AppClientsRoute
-  '/directory': typeof AppDirectoryRoute
   '/hours': typeof AppHoursRoute
   '/invoices': typeof AppInvoicesRoute
   '/settings': typeof AppSettingsRoute
@@ -89,7 +81,6 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/clients': typeof AppClientsRoute
-  '/_app/directory': typeof AppDirectoryRoute
   '/_app/hours': typeof AppHoursRoute
   '/_app/invoices': typeof AppInvoicesRoute
   '/_app/settings': typeof AppSettingsRoute
@@ -102,7 +93,6 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/clients'
-    | '/directory'
     | '/hours'
     | '/invoices'
     | '/settings'
@@ -111,7 +101,6 @@ export interface FileRouteTypes {
   to:
     | '/login'
     | '/clients'
-    | '/directory'
     | '/hours'
     | '/invoices'
     | '/settings'
@@ -122,7 +111,6 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/_app/clients'
-    | '/_app/directory'
     | '/_app/hours'
     | '/_app/invoices'
     | '/_app/settings'
@@ -166,13 +154,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppClientsRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/directory': {
-      id: '/_app/directory'
-      path: '/directory'
-      fullPath: '/directory'
-      preLoaderRoute: typeof AppDirectoryRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/hours': {
       id: '/_app/hours'
       path: '/hours'
@@ -206,7 +187,6 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppClientsRoute: typeof AppClientsRoute
-  AppDirectoryRoute: typeof AppDirectoryRoute
   AppHoursRoute: typeof AppHoursRoute
   AppInvoicesRoute: typeof AppInvoicesRoute
   AppSettingsRoute: typeof AppSettingsRoute
@@ -215,7 +195,6 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppClientsRoute: AppClientsRoute,
-  AppDirectoryRoute: AppDirectoryRoute,
   AppHoursRoute: AppHoursRoute,
   AppInvoicesRoute: AppInvoicesRoute,
   AppSettingsRoute: AppSettingsRoute,

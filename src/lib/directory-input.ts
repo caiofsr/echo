@@ -1,84 +1,82 @@
-function record(value: unknown) {
-  if (typeof value !== "object" || value === null || Array.isArray(value))
-    throw new Error("Dados inválidos.");
-  return value as Record<string, unknown>;
+import * as v from "valibot";
+
+const invalid = "Dados inválidos.";
+const invalidId = "Identificador inválido.";
+const text = v.pipe(v.string(invalid), v.trim());
+const directoryId = v.pipe(
+  v.number(invalidId),
+  v.safeInteger(invalidId),
+  v.minValue(1, invalidId),
+);
+const identityFields = {
+  id: v.optional(directoryId),
+  version: v.optional(directoryId),
+};
+
+function centsFromHourlyRate(rate: string) {
+  const [whole, fraction = ""] = rate.replace(",", ".").split(".");
+  return Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
 }
-function text(data: Record<string, unknown>, key: string) {
-  if (typeof data[key] !== "string") throw new Error("Dados inválidos.");
-  return data[key].trim();
-}
-export function parseDirectoryId(value: unknown): number {
-  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1)
-    throw new Error("Identificador inválido.");
-  return value;
-}
+
+export const hourlyRateSchema = v.pipe(
+  text,
+  v.regex(
+    /^\d+(?:[.,]\d{1,2})?$/,
+    "Informe um valor de hora não negativo com até duas casas decimais.",
+  ),
+  v.check(
+    (rate) => Number.isSafeInteger(centsFromHourlyRate(rate)),
+    "O valor de hora é muito alto.",
+  ),
+);
+
+export const clientInputSchema = v.pipe(
+  v.object(
+    {
+      ...identityFields,
+      name: v.pipe(
+        text,
+        v.minLength(1, "Informe o nome de exibição do cliente."),
+      ),
+      legalName: text,
+      taxId: text,
+      address: text,
+    },
+    invalid,
+  ),
+  v.check(
+    (input) => input.id === undefined || input.version !== undefined,
+    invalidId,
+  ),
+);
+export type ClientInput = v.InferInput<typeof clientInputSchema>;
+
+export const projectInputSchema = v.pipe(
+  v.object(
+    {
+      ...identityFields,
+      name: v.pipe(text, v.minLength(1, "Informe o nome do projeto.")),
+      clientId: directoryId,
+      hourlyRate: hourlyRateSchema,
+      currency: v.picklist(["BRL", "USD"], "Escolha BRL ou USD."),
+    },
+    invalid,
+  ),
+  v.check(
+    (input) => input.id === undefined || input.version !== undefined,
+    invalidId,
+  ),
+);
+export type ProjectInput = v.InferInput<typeof projectInputSchema>;
+
 export function parseClientInput(value: unknown) {
-  const data = record(value);
-  const name = text(data, "name");
-  if (!name) throw new Error("Informe o nome de exibição do cliente.");
-  return {
-    ...parseIdentity(data),
-    name,
-    legalName: text(data, "legalName"),
-    taxId: text(data, "taxId"),
-    address: text(data, "address"),
-  };
+  return v.parse(clientInputSchema, value);
 }
-export type ClientInput = {
-  id?: number;
-  version?: number;
-  name: string;
-  legalName: string;
-  taxId: string;
-  address: string;
-};
-
 export function parseProjectInput(value: unknown) {
-  const data = record(value);
-  const name = text(data, "name");
-  if (!name) throw new Error("Informe o nome do projeto.");
-  const clientId = parseDirectoryId(data.clientId);
-  const rate = text(data, "hourlyRate");
-  hourlyRateToCents(rate);
-  const currency = data.currency;
-  if (currency !== "BRL" && currency !== "USD")
-    throw new Error("Escolha BRL ou USD.");
-  return {
-    ...parseIdentity(data),
-    name,
-    clientId,
-    hourlyRate: rate,
-    currency,
-  } as const;
+  return v.parse(projectInputSchema, value);
 }
-export type ProjectInput = {
-  id?: number;
-  version?: number;
-  name: string;
-  clientId: number;
-  hourlyRate: string;
-  currency: "BRL" | "USD";
-};
-
 export function hourlyRateToCents(rate: string) {
-  if (!/^\d+(?:[.,]\d{1,2})?$/.test(rate.trim()))
-    throw new Error(
-      "Informe um valor de hora não negativo com até duas casas decimais.",
-    );
-  const [whole, fraction = ""] = rate.trim().replace(",", ".").split(".");
-  const cents = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
-  if (!Number.isSafeInteger(cents))
-    throw new Error("O valor de hora é muito alto.");
-  return cents;
-}
-
-function parseIdentity(data: Record<string, unknown>) {
-  return data.id === undefined
-    ? {}
-    : {
-        id: parseDirectoryId(data.id),
-        version: parseDirectoryId(data.version),
-      };
+  return centsFromHourlyRate(v.parse(hourlyRateSchema, rate));
 }
 
 export function hourlyRateInputValue(cents: number) {

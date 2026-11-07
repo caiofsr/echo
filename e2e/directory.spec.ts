@@ -17,8 +17,6 @@ test("cadastra e edita Clientes e Projetos com persistência entre sessões", as
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Clientes");
   await expect(page.getByText("Nenhum cliente cadastrado")).toBeVisible();
-  await page.goto("/directory");
-  await expect(page).toHaveURL("/clients");
   await expect(
     page.getByRole("button", { name: "Novo projeto", exact: true }),
   ).toBeDisabled();
