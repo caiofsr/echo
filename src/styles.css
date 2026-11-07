@@ -349,7 +349,7 @@ input {
   margin: 2.1rem 0 1.5rem;
 }
 .settings-page {
-  width: min(100%, 58rem);
+  width: 100%;
   margin-inline: auto;
 }
 .settings-page > h1 {
@@ -774,17 +774,6 @@ input {
   }
 }
 
-/* Keep the unavailable timer secondary to client management. */
-.timer-placeholder-compact {
-  display: flex;
-  gap: 0.75rem;
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-.timer-placeholder-compact .timer-digits {
-  display: none;
-}
 .directory-page > h1 {
   margin-block: 1.25rem 1rem;
 }

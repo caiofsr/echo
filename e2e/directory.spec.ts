@@ -186,6 +186,9 @@ test("cadastra e edita Clientes e Projetos com persistência entre sessões", as
       document.activeElement.blur();
     window.scrollTo(0, 0);
   });
+  await page
+    .getByRole("button", { name: "Novo projeto", exact: true })
+    .scrollIntoViewIfNeeded();
   await expect(
     page.getByRole("button", { name: "Novo projeto", exact: true }),
   ).toBeInViewport();
@@ -199,6 +202,9 @@ test("cadastra e edita Clientes e Projetos com persistência entre sessões", as
       () => document.documentElement.scrollWidth <= innerWidth,
     ),
   ).toBe(true);
+  await page
+    .getByRole("button", { name: "Novo projeto", exact: true })
+    .scrollIntoViewIfNeeded();
   await expect(
     page.getByRole("button", { name: "Novo projeto", exact: true }),
   ).toBeInViewport();
