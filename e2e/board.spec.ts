@@ -132,8 +132,8 @@ test("organiza tarefas e colunas no quadro com persistência no servidor", async
   ).toBeDisabled();
   await expect(dialog.getByText("1 tarefa")).toBeVisible();
   await dialog
-    .getByRole("button", { name: "Mover coluna Primeiro quadro para baixo" })
-    .click();
+    .getByRole("button", { name: "Reordenar coluna Primeiro quadro" })
+    .press("ArrowDown");
   await dialog.getByRole("button", { name: "Fechar", exact: true }).click();
   await expect(dialog).not.toBeVisible();
   await expect(page.getByRole("status")).toHaveText("Colunas reordenadas.");

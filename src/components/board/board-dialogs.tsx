@@ -738,6 +738,31 @@ export function ColumnManagerDialog({
                   }
                 }}
               >
+                <button
+                  type="button"
+                  className="column-manager-grip"
+                  aria-label={`Reordenar coluna ${column.name}`}
+                  aria-describedby="column-manager-drag-hint"
+                  disabled={order.length < 2 || busy}
+                  onKeyDown={(event) => {
+                    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+                      event.preventDefault();
+                      const direction = event.key === "ArrowUp" ? -1 : 1;
+                      if (
+                        index + direction >= 0 &&
+                        index + direction < order.length
+                      )
+                        moveBy(index, direction);
+                    }
+                  }}
+                >
+                  <img
+                    src="/icons/drag-handle.svg"
+                    alt=""
+                    width="16"
+                    height="20"
+                  />
+                </button>
                 <Input
                   className="column-manager-name"
                   aria-label={`Nome da coluna ${column.name}`}
@@ -759,24 +784,6 @@ export function ColumnManagerDialog({
                 <span className="column-manager-actions">
                   <button
                     type="button"
-                    className="column-manager-action"
-                    aria-label={`Mover coluna ${column.name} para cima`}
-                    disabled={index === 0 || busy}
-                    onClick={() => moveBy(index, -1)}
-                  >
-                    Subir
-                  </button>
-                  <button
-                    type="button"
-                    className="column-manager-action"
-                    aria-label={`Mover coluna ${column.name} para baixo`}
-                    disabled={index === order.length - 1 || busy}
-                    onClick={() => moveBy(index, 1)}
-                  >
-                    Descer
-                  </button>
-                  <button
-                    type="button"
                     className="column-manager-action column-manager-action-danger"
                     aria-label={`Remover coluna ${column.name}`}
                     disabled={Boolean(occupied) || busy}
@@ -789,7 +796,9 @@ export function ColumnManagerDialog({
             );
           })}
         </ul>
-        <p className="field-hint">Arraste uma linha para reordenar.</p>
+        <p className="field-hint" id="column-manager-drag-hint">
+          Arraste para reordenar. Pelo teclado, use as setas no indicador.
+        </p>
         {error && (
           <p className="settings-error" role="alert">
             {error}

@@ -1047,7 +1047,7 @@ input {
 }
 .column-manager-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: 2rem minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 0.75rem;
   padding: 0.35rem 0;
@@ -1059,6 +1059,23 @@ input {
 }
 .column-manager-row:last-child {
   border-bottom: 0;
+}
+.column-manager-grip {
+  display: grid;
+  place-items: center;
+  min-height: 2.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: grab;
+}
+.column-manager-grip:active {
+  cursor: grabbing;
+}
+.column-manager-grip:disabled {
+  cursor: default;
+  opacity: 0.45;
 }
 .column-manager-name {
   min-width: 0;
@@ -1208,12 +1225,12 @@ input {
     padding: 1rem;
   }
   .column-manager-row {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: 1.5rem minmax(0, 1fr) auto;
     gap: 0.15rem 0.75rem;
     padding: 0.5rem 0;
   }
   .column-manager-actions {
-    grid-column: 1 / -1;
+    grid-column: 2 / -1;
     justify-content: flex-end;
   }
 }
