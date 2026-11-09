@@ -786,10 +786,15 @@ export function ColumnManagerDialog({
                     type="button"
                     className="column-manager-action column-manager-action-danger"
                     aria-label={`Remover coluna ${column.name}`}
+                    title={
+                      occupied
+                        ? "Mova as tarefas antes de remover a coluna"
+                        : `Remover coluna ${column.name}`
+                    }
                     disabled={Boolean(occupied) || busy}
                     onClick={() => void removeConfirmed(column)}
                   >
-                    Remover
+                    <img src="/icons/trash.svg" alt="" width="28" height="28" />
                   </button>
                 </span>
               </li>
