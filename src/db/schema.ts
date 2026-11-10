@@ -1,5 +1,11 @@
 import { relations } from "drizzle-orm";
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import {
+  sqliteTable,
+  text,
+  integer,
+  index,
+  unique,
+} from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
   id: text("id").primaryKey(),
@@ -139,4 +145,37 @@ export const project = sqliteTable(
     currency: text("currency", { enum: ["BRL", "USD"] }).notNull(),
   },
   (table) => [index("project_client_id_idx").on(table.clientId)],
+);
+
+export const boardColumn = sqliteTable(
+  "board_column",
+  {
+    version: integer("version").notNull().default(1),
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    name: text("name").notNull(),
+    position: integer("position").notNull(),
+  },
+  (table) => [unique("board_column_position_unique").on(table.position)],
+);
+
+export const boardTask = sqliteTable(
+  "board_task",
+  {
+    version: integer("version").notNull().default(1),
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    title: text("title").notNull(),
+    description: text("description"),
+    projectId: integer("project_id").references(() => project.id),
+    columnId: integer("column_id")
+      .notNull()
+      .references(() => boardColumn.id),
+    position: integer("position").notNull(),
+  },
+  (table) => [
+    unique("board_task_column_position_unique").on(
+      table.columnId,
+      table.position,
+    ),
+    index("board_task_project_id_idx").on(table.projectId),
+  ],
 );

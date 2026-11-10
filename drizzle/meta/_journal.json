@@ -29,6 +29,13 @@
       "when": 1793812374849,
       "tag": "0003_clients-projects",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1794019605303,
+      "tag": "0004_goofy_talos",
+      "breakpoints": true
     }
   ]
 }

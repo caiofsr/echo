@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="trash-title">
+  <title id="trash-title">Lixeira volumétrica em metal fosco com tampa, alça e caneluras sutis</title>
+  <defs>
+    <!-- Ground blur filter with safe bounds to prevent clipping -->
+    <filter id="trash-shadow" x="10" y="94" width="108" height="30" filterUnits="userSpaceOnUse">
+      <feGaussianBlur stdDeviation="3.2"/>
+    </filter>
+
+    <!-- Main cylindrical body gradient: light upper-left, turning shadow right -->
+    <linearGradient id="trash-body-grad" x1="30" y1="50" x2="98" y2="104" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#94a3b8"/>
+      <stop offset="0.18" stop-color="#f1f5f9"/>
+      <stop offset="0.42" stop-color="#cbd5e1"/>
+      <stop offset="0.70" stop-color="#64748b"/>
+      <stop offset="0.90" stop-color="#334155"/>
+      <stop offset="1" stop-color="#475569"/>
+    </linearGradient>
+
+    <!-- Base ring bevel gradient for grounding weight -->
+    <linearGradient id="trash-base-grad" x1="36" y1="102" x2="92" y2="108" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#475569"/>
+      <stop offset="0.6" stop-color="#334155"/>
+      <stop offset="1" stop-color="#1e293b"/>
+    </linearGradient>
+
+    <!-- Lid domed top face gradient -->
+    <linearGradient id="trash-lid-top-grad" x1="28" y1="32" x2="100" y2="52" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.25" stop-color="#e2e8f0"/>
+      <stop offset="0.65" stop-color="#94a3b8"/>
+      <stop offset="1" stop-color="#475569"/>
+    </linearGradient>
+
+    <!-- Lid vertical skirt rim gradient -->
+    <linearGradient id="trash-lid-rim-grad" x1="26" y1="44" x2="102" y2="54" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#94a3b8"/>
+      <stop offset="0.22" stop-color="#e2e8f0"/>
+      <stop offset="0.65" stop-color="#64748b"/>
+      <stop offset="1" stop-color="#334155"/>
+    </linearGradient>
+
+    <!-- Handle arch front-face gradient -->
+    <linearGradient id="trash-handle-grad" x1="50" y1="16" x2="78" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.30" stop-color="#e2e8f0"/>
+      <stop offset="0.70" stop-color="#64748b"/>
+      <stop offset="1" stop-color="#334155"/>
+    </linearGradient>
+
+    <!-- Handle thickness / underbody shade -->
+    <linearGradient id="trash-handle-under-grad" x1="50" y1="22" x2="78" y2="38" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#475569"/>
+      <stop offset="1" stop-color="#1e293b"/>
+    </linearGradient>
+
+    <!-- Subtle vertical rib highlight & shade gradients -->
+    <linearGradient id="trash-rib-light-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.65"/>
+      <stop offset="0.6" stop-color="#ffffff" stop-opacity="0.40"/>
+      <stop offset="1" stop-color="#e2e8f0" stop-opacity="0.15"/>
+    </linearGradient>
+
+    <linearGradient id="trash-rib-shade-grad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e293b" stop-opacity="0.38"/>
+      <stop offset="1" stop-color="#0f172a" stop-opacity="0.20"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 1. Ground Shadow: soft isometric projection, anchored at base -->
+  <g id="trash-ground">
+    <ellipse cx="64" cy="110" rx="42" ry="7" fill="#0f172a" opacity="0.16" filter="url(#trash-shadow)"/>
+  </g>
+
+  <!-- 2. Can Receptacle Body: tapered cylinder with base ring and vertical ribs -->
+  <g id="trash-body">
+    <!-- Main outer wall: top tucks cleanly under lid, tapers to bottom -->
+    <path d="M 30 48 Q 64 57 98 48 L 92 103 Q 64 112 36 103 Z" fill="url(#trash-body-grad)"/>
+
+    <!-- Left Rib (x ~ 49) -->
+    <path d="M 48 60 L 49.5 98" stroke="url(#trash-rib-light-grad)" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 50.5 60 L 52 98" stroke="url(#trash-rib-shade-grad)" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Center Rib (x ~ 64) -->
+    <path d="M 63 61 L 63 100" stroke="url(#trash-rib-light-grad)" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M 65.5 61 L 65.5 100" stroke="url(#trash-rib-shade-grad)" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Right Rib (x ~ 78) -->
+    <path d="M 78 60 L 76.5 98" stroke="url(#trash-rib-light-grad)" stroke-width="2" stroke-linecap="round" opacity="0.45"/>
+    <path d="M 80.2 60 L 78.7 98" stroke="url(#trash-rib-shade-grad)" stroke-width="2.5" stroke-linecap="round"/>
+
+    <!-- Base rim / foot bevel thickness -->
+    <path d="M 36 103 Q 64 112 92 103 L 91.5 106 Q 64 114.5 36.5 106 Z" fill="url(#trash-base-grad)"/>
+
+    <!-- Contact shadow cast by overhanging lid onto can body -->
+    <path d="M 29 52 Q 64 62 99 52 Q 64 57 29 52 Z" fill="#0f172a" opacity="0.36"/>
+  </g>
+
+  <!-- 3. Lid (Tampa): overhanging skirt rim, domed surface, bevel and step plateau -->
+  <g id="trash-lid">
+    <!-- Lid vertical rim / skirt -->
+    <path d="M 26 44 Q 64 54 102 44 L 102 49 Q 64 59 26 49 Z" fill="url(#trash-lid-rim-grad)"/>
+
+    <!-- Lid domed top surface -->
+    <path d="M 26 44 Q 64 34 102 44 Q 64 54 26 44 Z" fill="url(#trash-lid-top-grad)"/>
+
+    <!-- Specular highlight bevel along light-facing rim crest -->
+    <path d="M 28 43.5 Q 64 34.5 100 43.5" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0.85"/>
+
+    <!-- Concentric plateau ring for structural stiffness and handle mount -->
+    <ellipse cx="64" cy="42" rx="25" ry="5.5" fill="#e2e8f0" opacity="0.45"/>
+    <ellipse cx="64" cy="41.5" rx="23" ry="5" fill="none" stroke="#ffffff" stroke-width="0.8" opacity="0.6"/>
+  </g>
+
+  <!-- 4. Handle (Alça): contoured bridge grip with opening, top highlight and brackets -->
+  <g id="trash-handle">
+    <!-- Cast shadow of handle onto lid top -->
+    <ellipse cx="65" cy="40" rx="14" ry="2.5" fill="#0f172a" opacity="0.25"/>
+
+    <!-- Handle underbody / thickness extrusion -->
+    <path d="M 50 38 L 50 26 Q 50 16 64 16 Q 78 16 78 26 L 78 38 L 72.5 38 L 72.5 27 Q 72.5 21.5 64 21.5 Q 55.5 21.5 55.5 27 L 55.5 38 Z" fill="url(#trash-handle-under-grad)"/>
+
+    <!-- Handle front face -->
+    <path d="M 51 37 L 51 26 Q 51 17 64 17 Q 77 17 77 26 L 77 37 L 72.5 37 L 72.5 27 Q 72.5 22 64 22 Q 55.5 22 55.5 27 L 55.5 37 Z" fill="url(#trash-handle-grad)"/>
+
+    <!-- Handle top highlight ridge catching upper-left light -->
+    <path d="M 54 22 Q 64 18 74 22" stroke="#ffffff" stroke-width="1.6" stroke-linecap="round" fill="none" opacity="0.9"/>
+
+    <!-- Handle mounting brackets anchored to the lid -->
+    <rect x="49" y="35" width="7.5" height="3.5" rx="1.75" fill="#64748b"/>
+    <rect x="71.5" y="35" width="7.5" height="3.5" rx="1.75" fill="#475569"/>
+    <rect x="50" y="35" width="5.5" height="1.8" rx="0.9" fill="#e2e8f0" opacity="0.8"/>
+  </g>
+</svg>

@@ -68,6 +68,8 @@ test("migration inicial pode ser reaplicada sem perder credencial ou sessão", a
       ).map((table) => table.name),
     ).toEqual([
       "account",
+      "board_column",
+      "board_task",
       "client",
       "company_settings",
       "payment_method",
