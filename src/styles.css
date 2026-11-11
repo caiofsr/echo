@@ -1236,3 +1236,129 @@ input {
     justify-content: flex-end;
   }
 }
+
+.global-timer {
+  flex-wrap: wrap;
+}
+.timer-copy {
+  flex: 1;
+  min-width: 160px;
+}
+.timer-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.timer-preferences {
+  display: grid;
+  gap: 16px;
+  max-width: 480px;
+  margin-top: 20px;
+}
+.timer-preferences label {
+  display: grid;
+  gap: 8px;
+}
+.timer-preferences select {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--background);
+  color: inherit;
+}
+.hours-records {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+.hours-record {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.hours-record h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+.hours-record p {
+  margin: 8px 0 0;
+  font-size: 0.875rem;
+}
+@media (max-width: 600px) {
+  .global-timer .timer-digits {
+    display: block;
+    margin-left: auto;
+  }
+  .global-timer .timer-controls {
+    width: 100%;
+  }
+  .hours-record {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 680px) {
+  .global-timer .timer-controls {
+    grid-column: 1 / -1;
+  }
+}
+
+[data-sonner-toaster] [data-sonner-toast].echo-toast {
+  gap: 16px;
+  padding: 16px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+[data-sonner-toast].echo-toast .toast-content {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+[data-sonner-toast].echo-toast .toast-title {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+[data-sonner-toast].echo-toast .toast-description {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  margin-top: 6px;
+}
+[data-sonner-toaster] [data-sonner-toast].echo-toast .toast-close {
+  position: static;
+  transform: none;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  order: 2;
+  white-space: nowrap;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+[data-sonner-toaster] [data-sonner-toast].echo-toast .toast-close:hover {
+  background: var(--accent);
+  color: var(--foreground);
+}
+[data-sonner-toaster]
+  [data-sonner-toast].echo-toast
+  .toast-close:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+[data-sonner-toaster] [data-sonner-toast].echo-toast .toast-close svg {
+  width: 16px;
+  height: 16px;
+}

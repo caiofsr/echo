@@ -1,3 +1,4 @@
+import { GlobalTimer } from "../timer/global-timer";
 import { Link, Outlet } from "@tanstack/react-router";
 import { EchoIcon } from "../ui/icons";
 import { Button, buttonVariants } from "../ui/button";
@@ -60,16 +61,7 @@ export function AppShell() {
         </div>
       </header>
       <main id="content" className="workspace" tabIndex={-1}>
-        <div className="timer-placeholder">
-          <EchoIcon name="timer" size={32} />
-          <div>
-            <strong>Cronômetro global</strong>
-            <p>Disponível em uma próxima entrega.</p>
-          </div>
-          <span className="timer-digits" aria-label="Cronômetro indisponível">
-            —:—:—
-          </span>
-        </div>
+        <GlobalTimer />
         <Outlet />
       </main>
     </>

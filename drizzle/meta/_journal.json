@@ -36,6 +36,20 @@
       "when": 1794019605303,
       "tag": "0004_goofy_talos",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1794300000000,
+      "tag": "0005_global_timer",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1794367147800,
+      "tag": "0006_timer_revision_triggers",
+      "breakpoints": true
     }
   ]
 }

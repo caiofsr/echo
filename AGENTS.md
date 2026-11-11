@@ -1,5 +1,11 @@
 # Echo
 
+## UI components
+
+Always use shadcn/ui for interface controls and feedback, including buttons, inputs, selects, dialogs and toasts (Sonner). Before adding one, reuse the installed component in `src/components/ui`; if missing, add it with the official `shadcn` CLI using this repository's `components.json`.
+
+Adapt shadcn components to Echo's tokens, accessibility and icon rules. Build application-specific compositions from these components. Do not create a parallel UI primitive or bypass the shadcn wrapper to use a lower-level library in application screens. If shadcn has no suitable component, explain the gap and obtain approval before implementing a custom primitive.
+
 ## Agent skills
 
 ### Icons

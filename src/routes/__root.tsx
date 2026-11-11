@@ -1,3 +1,4 @@
+import { Toaster } from "../components/ui/sonner";
 import {
   createRootRouteWithContext,
   HeadContent,
@@ -48,6 +49,7 @@ function Root() {
       </head>
       <body>
         <Outlet />
+        <Toaster />
         <Scripts />
       </body>
     </html>
