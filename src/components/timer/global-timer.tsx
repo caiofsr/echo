@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { Toast } from "@base-ui/react/toast";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { timerQueryOptions } from "../../queries/timer";
@@ -11,7 +12,7 @@ export function GlobalTimer() {
   const query = useQuery(timerQueryOptions);
   const client = useQueryClient();
   const control = useServerFn(controlTimer);
-  const [message, setMessage] = useState("");
+  const toast = Toast.useToastManager();
   const mutation = useMutation({
     mutationFn: async (action: TimerCommand["action"]) => {
       // TanStack mutations must fail immediately offline, never pause for replay.
@@ -24,10 +25,41 @@ export function GlobalTimer() {
     },
     networkMode: "always",
     retry: false,
-    onSuccess: (result) => setMessage(result.message),
+    onSuccess: (result, action) =>
+      toast.add({
+        title:
+          result.ok && action === "resume"
+            ? "Trabalho livre retomado."
+            : result.message,
+        type: result.ok ? "success" : "warning",
+        timeout: result.ok ? 5000 : 8000,
+      }),
+    onError: (error) =>
+      toast.add({
+        title: "Não foi possível controlar o cronômetro",
+        description: error.message,
+        type: "error",
+        priority: "high",
+        timeout: 8000,
+      }),
     onSettled: () =>
       client.invalidateQueries({ queryKey: timerQueryOptions.queryKey }),
   });
+  const notifyConnection = useEffectEvent((failed: boolean) => {
+    if (failed)
+      toast.add({
+        id: "timer-connection",
+        title: "Não foi possível atualizar o cronômetro",
+        description: "Confira sua conexão. A contagem em andamento continua.",
+        type: "error",
+        priority: "high",
+        timeout: 8000,
+      });
+    else toast.close("timer-connection");
+  });
+  useEffect(() => {
+    notifyConnection(query.isError);
+  }, [query.isError]);
   const data = query.data;
   return (
     <section
@@ -73,17 +105,6 @@ export function GlobalTimer() {
           </Button>
         )}
       </div>
-      {(mutation.error || query.isError) && (
-        <p role="alert" className="timer-feedback">
-          {mutation.error?.message ||
-            "Sem conexão com o servidor. A contagem continua; atualize antes de agir."}
-        </p>
-      )}
-      {!mutation.error && message && (
-        <p role="status" className="timer-feedback">
-          {message}
-        </p>
-      )}
     </section>
   );
 }

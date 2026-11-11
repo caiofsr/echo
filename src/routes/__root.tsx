@@ -1,3 +1,4 @@
+import { ToastProvider } from "../components/ui/toast";
 import {
   createRootRouteWithContext,
   HeadContent,
@@ -47,7 +48,9 @@ function Root() {
         <HeadContent />
       </head>
       <body>
-        <Outlet />
+        <ToastProvider>
+          <Outlet />
+        </ToastProvider>
         <Scripts />
       </body>
     </html>

@@ -33,6 +33,9 @@ test("cronômetro persiste entre duas sessões e retoma sem incluir pausa", asyn
         global.getByRole("button", { name: "Iniciar", exact: true }),
       ).toBeVisible();
     }
+    await expect(
+      second.getByRole("button", { name: "Iniciar", exact: true }),
+    ).toBeVisible({ timeout: 10000 });
     const before = await page.locator(".hours-record").count();
     await global.getByRole("button", { name: "Iniciar", exact: true }).click();
     await expect(
@@ -44,11 +47,21 @@ test("cronômetro persiste entre duas sessões e retoma sem incluir pausa", asyn
     await expect(global.getByLabel("Tempo em andamento")).not.toHaveText(
       "00:00:00",
     );
+    await expect(
+      page.getByTestId("toast").filter({ hasText: "Cronômetro iniciado." }),
+    ).toBeVisible();
+    await page.screenshot({
+      path: testInfo.outputPath("timer-toast.png"),
+      fullPage: true,
+    });
     await page.reload();
     await expect(
       global.getByRole("button", { name: "Parar", exact: true }),
     ).toBeVisible();
     await second.getByRole("button", { name: "Parar", exact: true }).click();
+    await expect(
+      second.getByTestId("toast").filter({ hasText: "Período salvo." }),
+    ).toBeVisible();
     await expect(
       global.getByRole("button", { name: "Iniciar", exact: true }),
     ).toBeVisible({ timeout: 10000 });
@@ -64,12 +77,23 @@ test("cronômetro persiste entre duas sessões e retoma sem incluir pausa", asyn
       global.getByRole("button", { name: "Parar", exact: true }),
     ).toBeVisible();
     await expect(page.locator(".hours-record")).toHaveCount(before + 2);
+    const resumedToast = page
+      .getByTestId("toast")
+      .filter({ hasText: "Trabalho livre retomado." });
+    await expect(resumedToast).toBeVisible();
+    await resumedToast.locator("button").click();
+    await expect(resumedToast).not.toBeVisible();
     expect(await page.locator(".hours-record").nth(1).textContent()).toBe(
       firstPeriod,
     );
     await page.context().setOffline(true);
     await global.getByRole("button", { name: "Parar", exact: true }).click();
-    await expect(global.getByRole("alert")).toContainText("Conecte-se");
+    await expect(
+      page
+        .getByTestId("toast")
+        .filter({ hasText: "Não foi possível controlar o cronômetro" }),
+    ).toContainText("Conecte-se");
+    await expect(global.locator(".timer-feedback")).toHaveCount(0);
     await page.context().setOffline(false);
     await page.reload();
     await expect(
