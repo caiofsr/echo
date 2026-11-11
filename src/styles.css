@@ -1311,63 +1311,54 @@ input {
   }
 }
 
-.toast-viewport {
-  position: fixed;
-  z-index: 100;
-  right: max(24px, env(safe-area-inset-right));
-  bottom: max(24px, env(safe-area-inset-bottom));
-  width: min(420px, calc(100vw - 32px));
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  outline: none;
-}
-.echo-toast {
-  display: flex;
-  align-items: start;
+[data-sonner-toaster] [data-sonner-toast].echo-toast {
   gap: 16px;
   padding: 16px;
-  border: 1px solid var(--border);
   border-radius: 12px;
-  background: var(--surface);
-  color: var(--foreground);
-  transition:
-    opacity 150ms ease,
-    transform 150ms ease;
+  box-shadow: none;
 }
-.echo-toast[data-starting-style],
-.echo-toast[data-ending-style] {
-  opacity: 0;
-  transform: translateY(12px);
-}
-.echo-toast[data-limited] {
-  display: none;
-}
-.toast-content {
+[data-sonner-toast].echo-toast .toast-content {
   flex: 1;
   min-width: 0;
   overflow-wrap: anywhere;
 }
-.toast-title {
+[data-sonner-toast].echo-toast .toast-title {
   font-weight: 600;
   font-size: 0.9rem;
 }
-.toast-description {
+[data-sonner-toast].echo-toast .toast-description {
   color: var(--muted-foreground);
   font-size: 0.875rem;
   margin-top: 6px;
 }
-.toast-description:empty {
-  display: none;
+[data-sonner-toaster] [data-sonner-toast].echo-toast .toast-close {
+  position: static;
+  transform: none;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  order: 2;
+  white-space: nowrap;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
 }
-@media (max-width: 600px) {
-  .toast-viewport {
-    right: 16px;
-    bottom: max(16px, env(safe-area-inset-bottom));
-  }
+[data-sonner-toaster] [data-sonner-toast].echo-toast .toast-close:hover {
+  background: var(--accent);
+  color: var(--foreground);
 }
-@media (prefers-reduced-motion: reduce) {
-  .echo-toast {
-    transition: none;
-  }
+[data-sonner-toaster]
+  [data-sonner-toast].echo-toast
+  .toast-close:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+[data-sonner-toaster] [data-sonner-toast].echo-toast .toast-close svg {
+  width: 16px;
+  height: 16px;
 }

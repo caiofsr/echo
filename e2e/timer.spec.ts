@@ -48,7 +48,9 @@ test("cronômetro persiste entre duas sessões e retoma sem incluir pausa", asyn
       "00:00:00",
     );
     await expect(
-      page.getByTestId("toast").filter({ hasText: "Cronômetro iniciado." }),
+      page
+        .locator("[data-sonner-toast]")
+        .filter({ hasText: "Cronômetro iniciado." }),
     ).toBeVisible();
     await page.screenshot({
       path: testInfo.outputPath("timer-toast.png"),
@@ -60,7 +62,9 @@ test("cronômetro persiste entre duas sessões e retoma sem incluir pausa", asyn
     ).toBeVisible();
     await second.getByRole("button", { name: "Parar", exact: true }).click();
     await expect(
-      second.getByTestId("toast").filter({ hasText: "Período salvo." }),
+      second
+        .locator("[data-sonner-toast]")
+        .filter({ hasText: "Período salvo." }),
     ).toBeVisible();
     await expect(
       global.getByRole("button", { name: "Iniciar", exact: true }),
@@ -78,10 +82,12 @@ test("cronômetro persiste entre duas sessões e retoma sem incluir pausa", asyn
     ).toBeVisible();
     await expect(page.locator(".hours-record")).toHaveCount(before + 2);
     const resumedToast = page
-      .getByTestId("toast")
+      .locator("[data-sonner-toast]")
       .filter({ hasText: "Trabalho livre retomado." });
     await expect(resumedToast).toBeVisible();
-    await resumedToast.locator("button").click();
+    await resumedToast
+      .getByRole("button", { name: "Fechar notificação" })
+      .click();
     await expect(resumedToast).not.toBeVisible();
     expect(await page.locator(".hours-record").nth(1).textContent()).toBe(
       firstPeriod,
@@ -90,7 +96,7 @@ test("cronômetro persiste entre duas sessões e retoma sem incluir pausa", asyn
     await global.getByRole("button", { name: "Parar", exact: true }).click();
     await expect(
       page
-        .getByTestId("toast")
+        .locator("[data-sonner-toast]")
         .filter({ hasText: "Não foi possível controlar o cronômetro" }),
     ).toContainText("Conecte-se");
     await expect(global.locator(".timer-feedback")).toHaveCount(0);
