@@ -22,6 +22,7 @@ async function setup() {
   });
   let now = 100_900;
   return {
+    db: a.db,
     a: createTimerStore(a.db, () => now),
     b: createTimerStore(b.db, () => now),
     clock: (value: number) => {
@@ -111,4 +112,24 @@ test("rejeita entradas inválidas e relógio regressivo sem perder o período at
   );
   expect((await a.getState()).version).toBe(1);
   expect((await a.getState()).active?.endedAt).toBeNull();
+});
+
+test("atualiza banco que aplicou a primeira migração do cronômetro sem recriar tabelas ou perder registros", async () => {
+  const { a, db, clock } = await setup();
+  await a.command({ action: "start", version: 0 });
+  clock(150_000);
+  await a.command({ action: "stop", version: 1 });
+  const before = (await a.getState()).records;
+  // Fixture: the dev server had applied 0005 before revision triggers existed.
+  await db.run("DROP TRIGGER time_record_start_revision");
+  await db.run("DROP TRIGGER time_record_stop_revision");
+  await db.run(
+    "DELETE FROM __drizzle_migrations WHERE created_at > 1794300000000",
+  );
+  await migrateDatabase(db);
+  await migrateDatabase(db);
+  expect((await a.getState()).records).toEqual(before);
+  clock(200_000);
+  await a.command({ action: "resume", version: 2 });
+  expect((await a.getState()).version).toBe(3);
 });
