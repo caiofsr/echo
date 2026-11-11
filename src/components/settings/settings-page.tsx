@@ -1,3 +1,4 @@
+import { TimerPreferences } from "../timer/preferences-form";
 import { useState } from "react";
 import {
   useMutation,
@@ -56,6 +57,7 @@ export function SettingsPage() {
       <p className="settings-intro">
         Cadastre as informações que poderão aparecer nas suas faturas.
       </p>
+      <TimerPreferences />
       <CompanyForm company={data.company} />
       <section className="settings-section" aria-labelledby="payment-heading">
         <div className="settings-section-heading">

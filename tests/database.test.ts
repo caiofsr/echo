@@ -76,6 +76,9 @@ test("migration inicial pode ser reaplicada sem perder credencial ou sessão", a
       "project",
       "rate_limit",
       "session",
+      "time_record",
+      "timer_preferences",
+      "timer_state",
       "user",
       "verification",
     ]);

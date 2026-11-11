@@ -1,10 +1,12 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
   sqliteTable,
   text,
   integer,
   index,
   unique,
+  uniqueIndex,
+  check,
 } from "drizzle-orm/sqlite-core";
 
 export const user = sqliteTable("user", {
@@ -177,5 +179,51 @@ export const boardTask = sqliteTable(
       table.position,
     ),
     index("board_task_project_id_idx").on(table.projectId),
+  ],
+);
+
+export const timerPreferences = sqliteTable(
+  "timer_preferences",
+  {
+    id: integer("id").primaryKey(),
+    hourlyRateCents: integer("hourly_rate_cents").notNull().default(0),
+    currency: text("currency", { enum: ["BRL", "USD"] })
+      .notNull()
+      .default("BRL"),
+    timezone: text("timezone").notNull().default("America/Recife"),
+  },
+  (table) => [
+    check("timer_preferences_singleton", sql`${table.id} = 1`),
+    check("timer_preferences_rate", sql`${table.hourlyRateCents} >= 0`),
+    check(
+      "timer_preferences_currency",
+      sql`${table.currency} IN ('BRL', 'USD')`,
+    ),
+  ],
+);
+export const timerState = sqliteTable(
+  "timer_state",
+  {
+    id: integer("id").primaryKey(),
+    version: integer("version").notNull().default(0),
+  },
+  (table) => [check("timer_state_singleton", sql`${table.id} = 1`)],
+);
+export const timeRecord = sqliteTable(
+  "time_record",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    startedAt: integer("started_at").notNull(),
+    endedAt: integer("ended_at"),
+    hourlyRateCents: integer("hourly_rate_cents").notNull(),
+    currency: text("currency", { enum: ["BRL", "USD"] }).notNull(),
+  },
+  (table) => [
+    uniqueIndex("time_record_single_active")
+      .on(sql`(1)`)
+      .where(sql`${table.endedAt} IS NULL`),
+    check("time_record_period", sql`${table.endedAt} >= ${table.startedAt}`),
+    check("time_record_rate", sql`${table.hourlyRateCents} >= 0`),
+    check("time_record_currency", sql`${table.currency} IN ('BRL', 'USD')`),
   ],
 );

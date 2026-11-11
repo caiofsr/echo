@@ -1236,3 +1236,82 @@ input {
     justify-content: flex-end;
   }
 }
+
+.global-timer {
+  flex-wrap: wrap;
+}
+.timer-copy {
+  flex: 1;
+  min-width: 160px;
+}
+.timer-controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.timer-feedback {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.875rem;
+}
+.timer-preferences {
+  display: grid;
+  gap: 16px;
+  max-width: 480px;
+  margin-top: 20px;
+}
+.timer-preferences label {
+  display: grid;
+  gap: 8px;
+}
+.timer-preferences select {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px;
+  background: var(--background);
+  color: inherit;
+}
+.hours-records {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+.hours-record {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.hours-record h2 {
+  font-size: 1rem;
+  margin: 0;
+}
+.hours-record p {
+  margin: 8px 0 0;
+  font-size: 0.875rem;
+}
+@media (max-width: 600px) {
+  .global-timer .timer-digits {
+    display: block;
+    margin-left: auto;
+  }
+  .global-timer .timer-controls {
+    width: 100%;
+  }
+  .hours-record {
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 680px) {
+  .global-timer .timer-controls,
+  .global-timer .timer-feedback {
+    grid-column: 1 / -1;
+  }
+}

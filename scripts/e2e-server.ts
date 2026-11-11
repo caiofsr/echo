@@ -34,6 +34,7 @@ const control = process.env.ECHO_TEST_CONTROL_PORT
           return new Response(null, { status: 204 });
         }
         if (path === "/reset-directory") {
+          await database.db.delete(boardTask).run();
           await database.db.delete(project).run();
           await database.db.delete(client).run();
           return new Response(null, { status: 204 });
