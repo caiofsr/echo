@@ -50,6 +50,13 @@
       "when": 1794367147800,
       "tag": "0006_timer_revision_triggers",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1794900000000,
+      "tag": "0007_task_timer",
+      "breakpoints": true
     }
   ]
 }

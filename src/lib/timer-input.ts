@@ -16,6 +16,7 @@ export const preferencesSchema = v.object({
 });
 export const timerCommandSchema = v.object({
   action: v.picklist(["start", "stop", "resume"]),
+  taskId: v.optional(v.pipe(v.number(), v.safeInteger(), v.minValue(1))),
   version: v.pipe(v.number(), v.safeInteger(), v.minValue(0)),
 });
 export type Preferences = v.InferOutput<typeof preferencesSchema>;

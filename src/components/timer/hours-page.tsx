@@ -7,7 +7,7 @@ export function HoursPage() {
   return (
     <section className="page-content">
       <h1>Horas</h1>
-      <p>Períodos de trabalho livre salvos pelo cronômetro.</p>
+      <p>Períodos de trabalho salvos pelo cronômetro.</p>
       {isError && (
         <p role="alert">
           Não foi possível atualizar os registros. Confira sua conexão.
@@ -32,7 +32,10 @@ export function HoursPage() {
             return (
               <article key={record.id} className="hours-record">
                 <div>
-                  <h2>Trabalho livre</h2>
+                  <h2>{record.taskTitle ?? "Trabalho livre"}</h2>
+                  <p>
+                    {record.description} · {record.projectName ?? "Sem projeto"}
+                  </p>
                   <p>
                     {format(record.startedAt)} →{" "}
                     {record.endedAt === null

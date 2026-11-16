@@ -213,6 +213,10 @@ export const timeRecord = sqliteTable(
   "time_record",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
+    taskId: integer("task_id").references(() => boardTask.id),
+    projectId: integer("project_id").references(() => project.id),
+    clientId: integer("client_id").references(() => client.id),
+    description: text("description"),
     startedAt: integer("started_at").notNull(),
     endedAt: integer("ended_at"),
     hourlyRateCents: integer("hourly_rate_cents").notNull(),

@@ -1,3 +1,4 @@
+import { TooltipProvider } from "../components/ui/tooltip";
 import { Toaster } from "../components/ui/sonner";
 import {
   createRootRouteWithContext,
@@ -48,7 +49,9 @@ function Root() {
         <HeadContent />
       </head>
       <body>
-        <Outlet />
+        <TooltipProvider>
+          <Outlet />
+        </TooltipProvider>
         <Toaster />
         <Scripts />
       </body>

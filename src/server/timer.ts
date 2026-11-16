@@ -1,7 +1,13 @@
 import * as v from "valibot";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import type { Database } from "../db/connection";
-import { timeRecord, timerPreferences, timerState } from "../db/schema";
+import {
+  boardTask,
+  project,
+  timeRecord,
+  timerPreferences,
+  timerState,
+} from "../db/schema";
 import {
   preferencesSchema,
   timerCommandSchema,
@@ -18,12 +24,26 @@ export function createTimerStore(db: Database, clock = Date.now) {
           preferences: timerPreferences,
           version: timerState.version,
           record: timeRecord,
+          taskTitle: boardTask.title,
+          projectName: project.name,
         })
         .from(timerState)
         .innerJoin(timerPreferences, eq(timerPreferences.id, 1))
         .leftJoin(timeRecord, sql`1 = 1`)
+        .leftJoin(boardTask, eq(boardTask.id, timeRecord.taskId))
+        .leftJoin(project, eq(project.id, timeRecord.projectId))
         .orderBy(desc(timeRecord.id));
-      const records = rows.flatMap((row) => (row.record ? [row.record] : []));
+      const records = rows.flatMap((row) =>
+        row.record
+          ? [
+              {
+                ...row.record,
+                taskTitle: row.taskTitle,
+                projectName: row.projectName,
+              },
+            ]
+          : [],
+      );
       return {
         preferences: rows[0].preferences,
         version: rows[0].version,
@@ -40,52 +60,65 @@ export function createTimerStore(db: Database, clock = Date.now) {
         .where(eq(timerPreferences.id, 1));
     },
     async command(input: TimerCommand) {
-      const { action, version } = v.parse(timerCommandSchema, input);
-      const now = Math.floor(clock() / 1000);
+      const { action, version, taskId } = v.parse(timerCommandSchema, input);
+      const conflict = {
+        ok: false,
+        message:
+          "Cronômetro alterado em outra sessão. O estado foi atualizado; confira antes de tentar novamente.",
+      };
       const [last] = await db
         .select()
         .from(timeRecord)
         .orderBy(desc(timeRecord.id))
         .limit(1);
-      if (action === "resume" && !last)
-        throw new Error("Nenhuma atividade para retomar.");
+      const now = Math.floor(clock() / 1000);
       if (last && now < (last.endedAt ?? last.startedAt))
         throw new Error(
           "O relógio do servidor está anterior ao último período.",
         );
-      // Each action is a single atomic statement. Triggers advance the revision
-      // within that same statement, including across independent connections.
-      const changed =
-        action === "stop"
-          ? await db
-              .update(timeRecord)
-              .set({ endedAt: now })
-              .where(
-                and(
-                  isNull(timeRecord.endedAt),
-                  sql`${timeRecord.startedAt} <= ${now}`,
-                  sql`(SELECT version FROM timer_state WHERE id = 1) = ${version}`,
-                ),
-              )
-              .returning({ id: timeRecord.id })
-          : await db.all<{
-              id: number;
-            }>(sql`INSERT INTO time_record (started_at, hourly_rate_cents, currency)
-          SELECT ${now}, hourly_rate_cents, currency FROM timer_preferences
-          WHERE id = 1 AND (SELECT version FROM timer_state WHERE id = 1) = ${version}
-          AND NOT EXISTS (SELECT 1 FROM time_record WHERE ended_at IS NULL OR ended_at > ${now})
+      if (action === "resume" && !last)
+        throw new Error("Nenhuma atividade para retomar.");
+      if (action === "stop") {
+        const changed =
+          await db.all(sql`UPDATE time_record SET ended_at = ${now}
+            WHERE ended_at IS NULL AND started_at <= ${now}
+            AND (SELECT version FROM timer_state WHERE id = 1) = ${version} RETURNING id`);
+        return changed.length
+          ? { ok: true, message: "Período salvo." }
+          : conflict;
+      }
+      const [preferences] = await db
+        .select()
+        .from(timerPreferences)
+        .where(eq(timerPreferences.id, 1));
+      const sourceTaskId = action === "resume" ? last?.taskId : taskId;
+      const [task] = sourceTaskId
+        ? await db
+            .select()
+            .from(boardTask)
+            .where(eq(boardTask.id, sourceTaskId))
+        : [];
+      if (sourceTaskId && !task)
+        throw new Error("Tarefa não encontrada. Atualize o quadro.");
+      const projectId = action === "resume" ? last!.projectId : task?.projectId;
+      const [linkedProject] = projectId
+        ? await db.select().from(project).where(eq(project.id, projectId))
+        : [];
+      // The insert and the switch trigger are one SQLite statement: failed
+      // inserts roll back the previous period's stop and revision as well.
+      const changed = await db.all(sql`INSERT INTO time_record
+          (started_at, task_id, project_id, client_id, description, hourly_rate_cents, currency)
+          SELECT ${now}, ${sourceTaskId ?? null}, ${projectId ?? null}, ${linkedProject?.clientId ?? null},
+            ${action === "resume" ? last!.description : task ? task.description || task.title : null},
+            ${linkedProject?.hourlyRateCents ?? preferences.hourlyRateCents}, ${linkedProject?.currency ?? preferences.currency}
+          WHERE (SELECT version FROM timer_state WHERE id = 1) = ${version}
+          AND NOT EXISTS (SELECT 1 FROM time_record WHERE ended_at > ${now} OR started_at > ${now})
+          AND NOT EXISTS (SELECT 1 FROM time_record WHERE ended_at IS NULL
+            AND (${action !== "start" || sourceTaskId == null} OR task_id = ${sourceTaskId ?? null}))
           RETURNING id`);
       return changed.length
-        ? {
-            ok: true,
-            message:
-              action === "stop" ? "Período salvo." : "Cronômetro iniciado.",
-          }
-        : {
-            ok: false,
-            message:
-              "Cronômetro alterado em outra sessão. O estado foi atualizado; confira antes de tentar novamente.",
-          };
+        ? { ok: true, message: "Cronômetro iniciado." }
+        : conflict;
     },
   };
 }

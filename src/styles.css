@@ -1362,3 +1362,13 @@ input {
   width: 16px;
   height: 16px;
 }
+
+.board-card-timer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+}

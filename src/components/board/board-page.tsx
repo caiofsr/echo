@@ -20,6 +20,9 @@ import {
   TaskMoveDialog,
 } from "./board-dialogs";
 
+import { useTimerControl } from "../../hooks/use-timer-control";
+import { duration } from "../../lib/timer-input";
+
 type Editor =
   | { kind: "column-create" }
   | { kind: "columns" }
@@ -29,6 +32,7 @@ type Editor =
   | { kind: "task-move"; task: Task };
 
 export function BoardPage() {
+  const timer = useTimerControl();
   const { data } = useSuspenseQuery(boardQueryOptions);
   const queryClient = useQueryClient();
   const returnFocus = useRef<HTMLElement | null>(null);
@@ -63,6 +67,15 @@ export function BoardPage() {
     },
   });
 
+  const taskSeconds = new Map<number, number>();
+  for (const record of timer.query.data?.records ?? []) {
+    if (record.taskId === null) continue;
+    const end = record.endedAt ?? timer.query.data!.serverNow;
+    taskSeconds.set(
+      record.taskId,
+      (taskSeconds.get(record.taskId) ?? 0) + end - record.startedAt,
+    );
+  }
   const columns = data.columns;
   const projects = data.projects;
   const projectNames = new Map(projects.map((item) => [item.id, item.name]));
@@ -256,6 +269,32 @@ export function BoardPage() {
                             </span>
                           )}
                         </button>
+                        <div className="board-card-timer">
+                          <span aria-label={`Horas de ${task.title}`}>
+                            {duration(taskSeconds.get(task.id) ?? 0)}
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            aria-label={`${timer.query.data?.active?.taskId === task.id ? "Parar" : "Iniciar"} ${task.title}`}
+                            disabled={
+                              !timer.query.data ||
+                              timer.query.isError ||
+                              timer.mutation.isPending
+                            }
+                            onClick={() =>
+                              timer.mutation.mutate(
+                                timer.query.data?.active?.taskId === task.id
+                                  ? { action: "stop" }
+                                  : { action: "start", taskId: task.id },
+                              )
+                            }
+                          >
+                            {timer.query.data?.active?.taskId === task.id
+                              ? "Parar"
+                              : "Iniciar"}
+                          </Button>
+                        </div>
                       </li>
                     ))}
                   </ul>

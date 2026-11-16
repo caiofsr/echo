@@ -1,6 +1,6 @@
 # Echo
 
-Aplicação pessoal para trabalho freelancer. Esta primeira entrega implementa acesso e sessão, com a navegação aprovada em português. Quadro, Horas, Faturas, Cadastros, Configurações e cronômetro mostram estados de indisponibilidade enquanto aguardam suas próximas issues.
+Aplicação pessoal para trabalho freelancer, com acesso protegido, clientes e projetos, quadro de tarefas, cronômetro global e configurações. A interface usa português e compartilha os dados entre dispositivos.
 
 ## Desenvolvimento
 
@@ -81,7 +81,7 @@ Ainda deve ser conferido no servidor Dokploy: versão disponível do Railpack, d
 
 `ReauthenticationBoundary` mantém seus filhos montados e ocultos durante reentrada, preservando estado React somente na memória daquela aba. Após autenticar, limpa consultas e invalida os dados do roteador sem enviar formulários. Formulários protegidos devem anexar ao `ref` do formulário o retorno de `useUnsavedChanges`, consultar a sessão pelo cliente nativo ao receber 401 e exigir ação explícita para salvar após atualizar os dados. Sair pede confirmação de alterações sinalizadas nesta ou em outra aba e encerra o acesso em todas as abas daquele navegador pela notificação nativa de saída do Better Auth. O BroadcastChannel do Echo comunica apenas alterações não salvas. A sessão é observada por `authClient.useSession()`; consultas automáticas não renovam a validade, e somente eventos de atividade em aba visível solicitam renovação. Não altera sessões de outros dispositivos.
 
-Não há formulários de trabalho nem cronômetro operacional nesta issue. Essas entregas devem integrar a proteção de sessão sem parar o cronômetro quando o acesso expira ou termina.
+O cronômetro global permanece ativo quando o acesso expira ou termina. Inicie trabalho livre pelo controle global ou uma Tarefa pelo card do Quadro. Iniciar outra Tarefa encerra o período anterior e começa o seguinte atomicamente; os cards mostram as horas acumuladas. Retomar último cria um novo período com a descrição e associações do anterior, usando o valor atual do Projeto ou padrão, sem incluir a pausa. Cada Registro preserva seu valor, moeda e descrição, independentemente de alterações futuras na Tarefa e no Projeto.
 
 ## Reautenticação e proteção de rascunhos
 

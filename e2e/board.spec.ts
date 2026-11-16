@@ -171,7 +171,9 @@ test("organiza tarefas e colunas no quadro com persistência no servidor", async
       .getByRole("button", { name: "Primeiro quadro" })
       .click();
   }
-  await firstTask.getByRole("button", { name: "Revisar proposta" }).click();
+  await firstTask
+    .getByRole("button", { name: "Revisar proposta", exact: true })
+    .click();
   dialog = page.getByRole("dialog");
   await expect(
     dialog.getByRole("heading", { name: "Revisar proposta" }),

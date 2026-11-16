@@ -3,6 +3,8 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { migrateDatabase, openDatabase } from "../src/db/connection";
+import { createBoardStore } from "../src/server/board";
+import { createDirectoryStore } from "../src/server/directory";
 import { createTimerStore } from "../src/server/timer";
 
 const cleanup: Array<() => Promise<void>> = [];
@@ -126,10 +128,178 @@ test("atualiza banco que aplicou a primeira migração do cronômetro sem recria
   await db.run(
     "DELETE FROM __drizzle_migrations WHERE created_at > 1794300000000",
   );
+  await db.run("DROP TRIGGER time_record_switch");
+  for (const column of ["task_id", "project_id", "client_id", "description"])
+    await db.run(`ALTER TABLE time_record DROP COLUMN ${column}`);
   await migrateDatabase(db);
   await migrateDatabase(db);
   expect((await a.getState()).records).toEqual(before);
   clock(200_000);
   await a.command({ action: "resume", version: 2 });
   expect((await a.getState()).version).toBe(3);
+});
+
+async function taskFixture(db: Parameters<typeof createBoardStore>[0]) {
+  const board = createBoardStore(db);
+  const directory = createDirectoryStore(db);
+  const client = await directory.saveClient({
+    name: "Cliente",
+    legalName: "",
+    taxId: "",
+    address: "",
+  });
+  const project = await directory.saveProject({
+    name: "Projeto",
+    clientId: client.id,
+    hourlyRate: "120,00",
+    currency: "USD",
+  });
+  const column = await board.saveColumn({ name: "Fazendo" });
+  const task = await board.saveTask({
+    title: "Implementar",
+    description: "Descrição original",
+    projectId: project.id,
+    columnId: column.id,
+  });
+  return { board, directory, client, project, column, task };
+}
+
+test("inicia Tarefa com descrição própria, associações e valor preservado", async () => {
+  const { a, b, db, clock } = await setup();
+  const { board, directory, client, project, column, task } =
+    await taskFixture(db);
+  expect(
+    (await a.command({ action: "start", taskId: task.id, version: 0 })).ok,
+  ).toBe(true);
+  expect((await b.getState()).active).toMatchObject({
+    taskId: task.id,
+    projectId: project.id,
+    clientId: client.id,
+    description: "Descrição original",
+    hourlyRateCents: 12000,
+    currency: "USD",
+  });
+  await board.saveTask({
+    ...task,
+    title: "Renomeada",
+    description: "Outra descrição",
+    columnId: column.id,
+  });
+  await directory.saveProject({
+    ...project,
+    hourlyRate: "200,00",
+    currency: "BRL",
+  });
+  clock(160_000);
+  await a.command({ action: "stop", version: 1 });
+  expect((await b.getState()).records[0]).toMatchObject({
+    description: "Descrição original",
+    hourlyRateCents: 12000,
+    currency: "USD",
+    endedAt: 160,
+  });
+});
+
+test("troca de Tarefa é atômica, disputas têm um vencedor e mover não altera contagem", async () => {
+  const { a, b, db, clock } = await setup();
+  const { board, task, column } = await taskFixture(db);
+  const next = await board.saveTask({ title: "Segunda", columnId: column.id });
+  await a.command({ action: "start", taskId: task.id, version: 0 });
+  clock(160_000);
+  const results = await Promise.all([
+    a.command({ action: "start", taskId: next.id, version: 1 }),
+    b.command({ action: "start", taskId: next.id, version: 1 }),
+  ]);
+  expect(results.filter((r) => r.ok)).toHaveLength(1);
+  const state = await b.getState();
+  expect(state.records).toHaveLength(2);
+  expect(state.active).toMatchObject({
+    taskId: next.id,
+    startedAt: 160,
+    projectId: null,
+  });
+  expect(state.records[1]).toMatchObject({ taskId: task.id, endedAt: 160 });
+  await board.moveTask({ taskId: next.id, columnId: column.id, position: 0 });
+  expect((await a.getState()).active).toEqual(state.active);
+  clock(190_000);
+  await a.command({ action: "stop", version: state.version });
+  clock(300_000);
+  const stopped = await a.getState();
+  await a.command({ action: "resume", version: stopped.version });
+  expect((await b.getState()).active).toMatchObject({
+    taskId: next.id,
+    startedAt: 300,
+  });
+});
+
+test("falha ao salvar nova Tarefa reverte parada e preserva versão e período", async () => {
+  const { a, db, clock } = await setup();
+  const { board, task, column } = await taskFixture(db);
+  const next = await board.saveTask({ title: "Segunda", columnId: column.id });
+  await a.command({ action: "start", taskId: task.id, version: 0 });
+  const before = await a.getState();
+  // Fault injection at the storage boundary; observations use the public query.
+  await db.run(
+    "CREATE TRIGGER fail_record AFTER INSERT ON time_record BEGIN SELECT RAISE(ABORT, 'save failed'); END",
+  );
+  clock(160_000);
+  await expect(
+    a.command({ action: "start", taskId: next.id, version: 1 }),
+  ).rejects.toThrow();
+  const after = await a.getState();
+  expect(after.records).toEqual(before.records);
+  expect(after.version).toBe(before.version);
+});
+
+test("retomada preserva associações e descrição do período, usando o valor atual do Projeto", async () => {
+  const { a, db, clock } = await setup();
+  const { board, directory, task, project, column } = await taskFixture(db);
+  await a.command({ action: "start", taskId: task.id, version: 0 });
+  clock(160_000);
+  await a.command({ action: "stop", version: 1 });
+  await board.saveTask({
+    ...task,
+    description: "Descrição alterada",
+    projectId: null,
+    columnId: column.id,
+  });
+  await directory.saveProject({
+    ...project,
+    hourlyRate: "200,00",
+    currency: "BRL",
+  });
+  clock(300_000);
+  await a.command({ action: "resume", version: 2 });
+  const state = await a.getState();
+  expect(state.active).toMatchObject({
+    taskId: task.id,
+    projectId: project.id,
+    description: "Descrição original",
+    hourlyRateCents: 20000,
+    currency: "BRL",
+    startedAt: 300,
+  });
+  expect(state.records[1]).toMatchObject({
+    hourlyRateCents: 12000,
+    currency: "USD",
+    endedAt: 160,
+  });
+});
+
+test("iniciar a mesma Tarefa ou uma inexistente não perde a contagem", async () => {
+  const { a, db, clock } = await setup();
+  const { task } = await taskFixture(db);
+  await a.command({ action: "start", taskId: task.id, version: 0 });
+  clock(160_000);
+  expect(
+    (await a.command({ action: "start", taskId: task.id, version: 1 })).ok,
+  ).toBe(false);
+  await expect(
+    a.command({ action: "start", taskId: 999999, version: 1 }),
+  ).rejects.toThrow("Tarefa não encontrada");
+  expect((await a.getState()).active).toMatchObject({
+    taskId: task.id,
+    startedAt: 100,
+  });
+  expect((await a.getState()).records).toHaveLength(1);
 });
