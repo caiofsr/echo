@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Button } from "../ui/button";
+import { TimerActionIcon } from "../ui/timer-action-icon";
 import {
   boardQueryOptions,
   type BoardColumn,
@@ -232,6 +233,9 @@ export function BoardPage() {
                         key={task.id}
                         className="board-card-wrap"
                         data-task-card
+                        data-running={
+                          timer.query.data?.active?.taskId === task.id
+                        }
                         draggable
                         onDragStart={(event) => {
                           draggedTask.current = task;
@@ -274,8 +278,14 @@ export function BoardPage() {
                             {duration(taskSeconds.get(task.id) ?? 0)}
                           </span>
                           <Button
-                            variant="outline"
-                            size="sm"
+                            variant="ghost"
+                            size="icon"
+                            className="board-card-timer-action"
+                            title={
+                              timer.query.data?.active?.taskId === task.id
+                                ? "Parar"
+                                : "Iniciar"
+                            }
                             aria-label={`${timer.query.data?.active?.taskId === task.id ? "Parar" : "Iniciar"} ${task.title}`}
                             disabled={
                               !timer.query.data ||
@@ -290,9 +300,11 @@ export function BoardPage() {
                               )
                             }
                           >
-                            {timer.query.data?.active?.taskId === task.id
-                              ? "Parar"
-                              : "Iniciar"}
+                            <TimerActionIcon
+                              running={
+                                timer.query.data?.active?.taskId === task.id
+                              }
+                            />
                           </Button>
                         </div>
                       </li>

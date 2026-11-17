@@ -390,6 +390,7 @@ input {
 .settings-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
   gap: 1.25rem 1.5rem;
 }
 .settings-form-wide {
@@ -888,16 +889,24 @@ input {
 }
 .board-card-wrap[data-task-card] {
   cursor: grab;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--background);
+  overflow-wrap: anywhere;
+}
+.board-card-wrap[data-task-card]:focus-within,
+.board-card-wrap[data-running="true"] {
+  border-color: var(--primary);
 }
 .board-card-wrap[data-task-card]:active {
   cursor: grabbing;
 }
 .board-card {
   width: 100%;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--card);
-  padding: 0.6rem 0.7rem;
+  border: 0;
+  border-radius: 12px 12px 0 0;
+  background: transparent;
+  padding: 0.75rem;
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
@@ -1371,4 +1380,15 @@ input {
   padding: 0.5rem 0.75rem;
   font-variant-numeric: tabular-nums;
   color: var(--muted-foreground);
+}
+.board-card-timer .board-card-timer-action {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+}
+.board-card-timer > span {
+  font-size: 0.875rem;
+}
+.board-card-wrap[data-running="true"] .board-card-timer > span {
+  color: var(--primary);
 }
