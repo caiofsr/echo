@@ -7,3 +7,7 @@ export const timerQueryOptions = queryOptions({
   refetchInterval: 3000,
   refetchOnWindowFocus: "always",
 });
+
+export type HoursRecord = Awaited<
+  ReturnType<typeof getTimer>
+>["records"][number];

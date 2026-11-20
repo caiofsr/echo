@@ -58,7 +58,7 @@ export function GlobalTimer() {
         >
           {data?.active ? "Parar" : "Iniciar"}
         </Button>
-        {data && !data.active && data.records.length > 0 && (
+        {data && !data.active && data.lastTimedRecord && (
           <Tooltip>
             <TooltipTrigger
               render={
@@ -67,17 +67,17 @@ export function GlobalTimer() {
                   disabled={mutation.isPending || query.isError}
                   onClick={() => mutation.mutate({ action: "resume" })}
                 >
-                  {data.records[0].taskId
+                  {data.lastTimedRecord.taskId
                     ? "Retomar último"
                     : "Retomar trabalho livre"}
                 </Button>
               }
             />
             <TooltipContent>
-              {data.records[0].taskTitle ??
-                data.records[0].description ??
+              {data.lastTimedRecord.taskTitle ??
+                data.lastTimedRecord.description ??
                 "Trabalho livre"}{" "}
-              · {data.records[0].projectName ?? "Sem projeto"}
+              · {data.lastTimedRecord.projectName ?? "Sem projeto"}
             </TooltipContent>
           </Tooltip>
         )}

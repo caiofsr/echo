@@ -1,3 +1,5 @@
+import { saveTimeRecord } from "./hours";
+import type { TimeRecordInput } from "../lib/hours-input";
 import * as v from "valibot";
 import { desc, eq, sql } from "drizzle-orm";
 import type { Database } from "../db/connection";
@@ -32,7 +34,7 @@ export function createTimerStore(db: Database, clock = Date.now) {
         .leftJoin(timeRecord, sql`1 = 1`)
         .leftJoin(boardTask, eq(boardTask.id, timeRecord.taskId))
         .leftJoin(project, eq(project.id, timeRecord.projectId))
-        .orderBy(desc(timeRecord.id));
+        .orderBy(desc(timeRecord.startedAt), desc(timeRecord.id));
       const records = rows.flatMap((row) =>
         row.record
           ? [
@@ -48,10 +50,19 @@ export function createTimerStore(db: Database, clock = Date.now) {
         preferences: rows[0].preferences,
         version: rows[0].version,
         active: records.find((r) => r.endedAt === null) ?? null,
+        lastTimedRecord: records.reduce<(typeof records)[number] | null>(
+          (last, record) =>
+            !record.manual && (last === null || record.id > last.id)
+              ? record
+              : last,
+          null,
+        ),
         records,
         serverNow: Math.floor(clock() / 1000),
       };
     },
+    saveRecord: (input: TimeRecordInput) =>
+      saveTimeRecord(db, input, Math.floor(clock() / 1000)),
     async savePreferences(input: Preferences) {
       const values = v.parse(preferencesSchema, input);
       await db
@@ -69,6 +80,7 @@ export function createTimerStore(db: Database, clock = Date.now) {
       const [last] = await db
         .select()
         .from(timeRecord)
+        .where(eq(timeRecord.manual, false))
         .orderBy(desc(timeRecord.id))
         .limit(1);
       const now = Math.floor(clock() / 1000);
@@ -108,7 +120,7 @@ export function createTimerStore(db: Database, clock = Date.now) {
       // inserts roll back the previous period's stop and revision as well.
       const changed = await db.all(sql`INSERT INTO time_record
           (started_at, task_id, project_id, client_id, description, hourly_rate_cents, currency)
-          SELECT ${now}, ${sourceTaskId ?? null}, ${projectId ?? null}, ${linkedProject?.clientId ?? null},
+          SELECT ${now}, ${sourceTaskId ?? null}, ${projectId ?? null}, ${linkedProject?.clientId ?? (action === "resume" && !projectId ? last!.clientId : null)},
             ${action === "resume" ? last!.description : task ? task.description || task.title : null},
             ${linkedProject?.hourlyRateCents ?? preferences.hourlyRateCents}, ${linkedProject?.currency ?? preferences.currency}
           WHERE (SELECT version FROM timer_state WHERE id = 1) = ${version}
