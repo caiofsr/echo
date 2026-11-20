@@ -1277,27 +1277,66 @@ input {
   background: var(--background);
   color: inherit;
 }
+.hours-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.hours-heading h1 {
+  margin: 0;
+}
+.hours-filters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
 .hours-records {
   display: grid;
   gap: 12px;
   margin-top: 24px;
 }
 .hours-record {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 20px;
+  min-width: 0;
   border: 1px solid var(--border);
   border-radius: 12px;
 }
-.hours-record h2 {
-  font-size: 1rem;
-  margin: 0;
+.hours-record-summary {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px;
 }
-.hours-record p {
-  margin: 8px 0 0;
+button.hours-record-summary:hover {
+  background: var(--accent);
+}
+.hours-record-details {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 4px;
+  overflow-wrap: anywhere;
+}
+.hours-record-details span {
+  color: var(--muted-foreground);
   font-size: 0.875rem;
+}
+.hours-duration {
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+}
+.hours-record-editor:not([hidden]) {
+  border-top: 1px solid var(--border);
+  padding: 16px;
+}
+.hours-fieldset {
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+  border: 0;
 }
 @media (max-width: 600px) {
   .global-timer .timer-digits {
@@ -1307,10 +1346,12 @@ input {
   .global-timer .timer-controls {
     width: 100%;
   }
-  .hours-record {
-    align-items: flex-start;
-    flex-direction: column;
-    padding: 16px;
+  .hours-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .hours-record-summary {
+    gap: 8px;
+    padding: 12px;
   }
 }
 

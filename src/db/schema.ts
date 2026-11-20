@@ -213,6 +213,8 @@ export const timeRecord = sqliteTable(
   "time_record",
   {
     id: integer("id").primaryKey({ autoIncrement: true }),
+    manual: integer("manual", { mode: "boolean" }).notNull().default(false),
+    version: integer("version").notNull().default(0),
     taskId: integer("task_id").references(() => boardTask.id),
     projectId: integer("project_id").references(() => project.id),
     clientId: integer("client_id").references(() => client.id),

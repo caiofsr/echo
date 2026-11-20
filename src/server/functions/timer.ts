@@ -1,3 +1,4 @@
+import { timeRecordInputSchema } from "../../lib/hours-input";
 import { createServerFn } from "@tanstack/react-start";
 import { requireSessionMiddleware } from "../middleware/auth";
 import { db } from "../../db";
@@ -14,3 +15,8 @@ export const saveTimerPreferences = createServerFn({ method: "POST" })
   .middleware([requireSessionMiddleware])
   .validator(preferencesSchema)
   .handler(({ data }) => createTimerStore(db).savePreferences(data));
+
+export const saveHoursRecord = createServerFn({ method: "POST" })
+  .middleware([requireSessionMiddleware])
+  .validator(timeRecordInputSchema)
+  .handler(({ data }) => createTimerStore(db).saveRecord(data));

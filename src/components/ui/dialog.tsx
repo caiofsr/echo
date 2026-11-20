@@ -37,4 +37,6 @@ function DialogDescription(props: DialogPrimitive.Description.Props) {
   );
 }
 
-export { Dialog, DialogContent, DialogDescription, DialogTitle };
+const DialogTrigger = DialogPrimitive.Trigger;
+
+export { Dialog, DialogTrigger, DialogContent, DialogDescription, DialogTitle };
