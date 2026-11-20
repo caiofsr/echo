@@ -86,7 +86,7 @@ test("navegação responsiva sem dados fictícios e sem redirecionamento externo
       ).toBeVisible();
     } else if (title === "Horas") {
       await expect(
-        page.getByText("Períodos de trabalho livre salvos pelo cronômetro."),
+        page.getByText("Períodos de trabalho salvos pelo cronômetro."),
       ).toBeVisible();
     } else if (title === "Quadro") {
       await expect(

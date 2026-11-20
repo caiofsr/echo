@@ -204,22 +204,27 @@ test("troca de Tarefa é atômica, disputas têm um vencedor e mover não altera
   const { a, b, db, clock } = await setup();
   const { board, task, column } = await taskFixture(db);
   const next = await board.saveTask({ title: "Segunda", columnId: column.id });
+  const other = await board.saveTask({
+    title: "Terceira",
+    columnId: column.id,
+  });
   await a.command({ action: "start", taskId: task.id, version: 0 });
   clock(160_000);
   const results = await Promise.all([
     a.command({ action: "start", taskId: next.id, version: 1 }),
-    b.command({ action: "start", taskId: next.id, version: 1 }),
+    b.command({ action: "start", taskId: other.id, version: 1 }),
   ]);
   expect(results.filter((r) => r.ok)).toHaveLength(1);
+  const winner = results[0].ok ? next : other;
   const state = await b.getState();
   expect(state.records).toHaveLength(2);
   expect(state.active).toMatchObject({
-    taskId: next.id,
+    taskId: winner.id,
     startedAt: 160,
     projectId: null,
   });
   expect(state.records[1]).toMatchObject({ taskId: task.id, endedAt: 160 });
-  await board.moveTask({ taskId: next.id, columnId: column.id, position: 0 });
+  await board.moveTask({ taskId: winner.id, columnId: column.id, position: 0 });
   expect((await a.getState()).active).toEqual(state.active);
   clock(190_000);
   await a.command({ action: "stop", version: state.version });
@@ -227,7 +232,7 @@ test("troca de Tarefa é atômica, disputas têm um vencedor e mover não altera
   const stopped = await a.getState();
   await a.command({ action: "resume", version: stopped.version });
   expect((await b.getState()).active).toMatchObject({
-    taskId: next.id,
+    taskId: winner.id,
     startedAt: 300,
   });
 });
