@@ -102,8 +102,8 @@ test("inicia, troca e retoma Tarefas preservando períodos e horas dos cards", a
   );
   const periods = await page
     .locator(".hours-record")
-    .filter({ has: page.getByRole("heading", { name: "Segunda atividade" }) })
-    .locator("strong")
+    .filter({ has: page.getByText(/· Segunda atividade$/) })
+    .locator(".hours-duration")
     .allTextContents();
   expect(periods).toHaveLength(2);
   const seconds = (value: string) =>

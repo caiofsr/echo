@@ -1,4 +1,9 @@
 import { afterEach, expect, test } from "bun:test";
+import {
+  filterHours,
+  hoursDateFormatter,
+  hoursTimestamp,
+} from "../src/lib/hours-date";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -129,7 +134,14 @@ test("atualiza banco que aplicou a primeira migração do cronômetro sem recria
     "DELETE FROM __drizzle_migrations WHERE created_at > 1794300000000",
   );
   await db.run("DROP TRIGGER time_record_switch");
-  for (const column of ["task_id", "project_id", "client_id", "description"])
+  for (const column of [
+    "task_id",
+    "project_id",
+    "client_id",
+    "description",
+    "version",
+    "manual",
+  ])
     await db.run(`ALTER TABLE time_record DROP COLUMN ${column}`);
   await migrateDatabase(db);
   await migrateDatabase(db);
@@ -307,4 +319,282 @@ test("iniciar a mesma Tarefa ou uma inexistente não perde a contagem", async ()
     startedAt: 100,
   });
   expect((await a.getState()).records).toHaveLength(1);
+});
+
+test("lança registro manual em segundos e preserva valor e moeda ao vincular Projeto", async () => {
+  const { a, b, db } = await setup();
+  const { client, project } = await taskFixture(db);
+  await a.savePreferences({
+    hourlyRateCents: 4500,
+    currency: "BRL",
+    timezone: "UTC",
+  });
+  expect(
+    await a.saveRecord({
+      startedAt: 11,
+      endedAt: 44,
+      description: "Pesquisa",
+      taskId: null,
+      projectId: null,
+      clientId: null,
+    }),
+  ).toMatchObject({ ok: true });
+  const [record] = (await b.getState()).records;
+  expect(record).toMatchObject({
+    startedAt: 11,
+    endedAt: 44,
+    projectId: null,
+    hourlyRateCents: 4500,
+    currency: "BRL",
+  });
+  expect(
+    await b.saveRecord({
+      ...record,
+      description: "Pesquisa",
+      endedAt: 44,
+      projectId: project.id,
+      clientId: client.id,
+    }),
+  ).toMatchObject({ ok: true });
+  expect((await a.getState()).records[0]).toMatchObject({
+    projectId: project.id,
+    clientId: client.id,
+    hourlyRateCents: 4500,
+    currency: "BRL",
+  });
+});
+
+test("lançamento manual com Tarefa mantém cronômetro ativo e identifica conflitos", async () => {
+  const { a, b, db, clock } = await setup();
+  const { board, task, project, client } = await taskFixture(db);
+  await a.command({ action: "start", taskId: task.id, version: 0 });
+  const active = (await a.getState()).active!;
+  clock(180_000);
+  const input = {
+    description: "Revisão",
+    taskId: task.id,
+    projectId: project.id,
+    clientId: null,
+    startedAt: 70,
+    endedAt: 100,
+  };
+  expect(await b.saveRecord({ ...input, endedAt: 101 })).toMatchObject({
+    ok: false,
+    conflict: { id: active.id, startedAt: 100, endedAt: null },
+  });
+  expect((await b.saveRecord(input)).ok).toBe(true);
+  expect((await a.getState()).active).toEqual(active);
+  const record = (await a.getState()).records.find(
+    (record) => record.id !== active.id,
+  )!;
+  expect(record).toMatchObject({
+    clientId: client.id,
+    hourlyRateCents: 12000,
+    currency: "USD",
+  });
+  expect(
+    (
+      await b.saveRecord({
+        ...input,
+        id: record.id,
+        version: record.version,
+        description: "Descrição corrigida",
+        startedAt: 69,
+      })
+    ).ok,
+  ).toBe(true);
+  expect(
+    (await a.getState()).records.find(({ id }) => id === record.id),
+  ).toMatchObject({
+    startedAt: 69,
+    endedAt: 100,
+    description: "Descrição corrigida",
+  });
+  expect((await board.getBoard()).tasks[0].description).toBe(
+    "Descrição original",
+  );
+  const { version } = await a.getState();
+  expect((await a.command({ action: "stop", version })).ok).toBe(true);
+});
+
+test("gravações simultâneas de períodos e revisões da mesma linha têm um vencedor", async () => {
+  const { a, b } = await setup();
+  const input = {
+    description: "Primeiro",
+    taskId: null,
+    projectId: null,
+    clientId: null,
+    startedAt: 10,
+    endedAt: 30,
+  };
+  const created = await Promise.all([
+    a.saveRecord(input),
+    b.saveRecord({ ...input, startedAt: 20, endedAt: 40 }),
+  ]);
+  expect(created.filter(({ ok }) => ok)).toHaveLength(1);
+  const [record] = (await a.getState()).records;
+  expect(created.find(({ ok }) => !ok)).toMatchObject({
+    conflict: { id: record.id },
+  });
+  const update = { ...input, id: record.id, version: record.version };
+  const edits = await Promise.all([
+    a.saveRecord({ ...update, description: "Edição A" }),
+    b.saveRecord({ ...update, description: "Edição B" }),
+  ]);
+  expect(edits.filter(({ ok }) => ok)).toHaveLength(1);
+  expect((await a.getState()).records[0].description).toBe(
+    edits[0].ok ? "Edição A" : "Edição B",
+  );
+});
+
+test("filtra dados persistidos pelo início no fuso e pelas associações históricas", async () => {
+  const { a, db, clock } = await setup();
+  const { client, project } = await taskFixture(db);
+  clock(Date.parse("2026-06-02T06:00:00Z"));
+  const starts = (iso: string) => Date.parse(iso) / 1000;
+  const free = starts("2026-06-02T02:59:59Z");
+  const linked = starts("2026-06-02T03:00:00Z");
+  const fields = {
+    description: "Pesquisa",
+    taskId: null,
+    projectId: null,
+    clientId: null,
+  };
+  expect(
+    (await a.saveRecord({ ...fields, startedAt: free, endedAt: linked })).ok,
+  ).toBe(true);
+  expect(
+    (
+      await a.saveRecord({
+        ...fields,
+        projectId: project.id,
+        startedAt: linked,
+        endedAt: linked + 17,
+      })
+    ).ok,
+  ).toBe(true);
+  const { records, preferences } = await a.getState();
+  const date = hoursDateFormatter(preferences.timezone);
+  const filters = { from: "", to: "", client: "", project: "" };
+  expect(filterHours(records, filters, date)).toHaveLength(2);
+  expect(
+    filterHours(records, { ...filters, to: "2026-06-01" }, date).map(
+      ({ projectId }) => projectId,
+    ),
+  ).toEqual([null]);
+  expect(
+    filterHours(
+      records,
+      { ...filters, from: "2026-06-02", client: String(client.id) },
+      date,
+    ).map(({ projectId }) => projectId),
+  ).toEqual([project.id]);
+  expect(
+    filterHours(records, { ...filters, project: String(project.id) }, date),
+  ).toHaveLength(1);
+  expect(hoursTimestamp("2026-06-01T23:59:59", date)).toBe(free);
+  const newYork = hoursDateFormatter("America/New_York");
+  expect(hoursTimestamp("2026-03-08T02:30", newYork)).toBeNull();
+  expect(
+    hoursTimestamp("2026-11-01T01:30", newYork, starts("2026-11-01T06:30:00Z")),
+  ).toBe(starts("2026-11-01T06:30:00Z"));
+});
+
+test("corrige um registro de zero segundos sem ampliar o período", async () => {
+  const { a, clock } = await setup();
+  await a.command({ action: "start", version: 0 });
+  await a.command({ action: "stop", version: 1 });
+  clock(150_000);
+  const [record] = (await a.getState()).records;
+  const fields = {
+    startedAt: 100,
+    endedAt: 100,
+    description: "Conferência",
+    taskId: null,
+    clientId: null,
+    projectId: null,
+  };
+  expect((await a.saveRecord(fields)).ok).toBe(false);
+  expect(
+    (await a.saveRecord({ ...fields, id: record.id, version: record.version }))
+      .ok,
+  ).toBe(true);
+  expect((await a.getState()).records[0]).toMatchObject({
+    startedAt: 100,
+    endedAt: 100,
+    description: "Conferência",
+  });
+});
+
+test("lançamentos manuais não disputam o comando de parada nem substituem a última contagem", async () => {
+  const { a, b, clock } = await setup();
+  await a.command({ action: "start", version: 0 });
+  clock(140_000);
+  expect(
+    (
+      await b.saveRecord({
+        startedAt: 50,
+        endedAt: 80,
+        description: "Trabalho anterior",
+        taskId: null,
+        clientId: null,
+        projectId: null,
+      })
+    ).ok,
+  ).toBe(true);
+  expect((await a.command({ action: "stop", version: 1 })).ok).toBe(true);
+  clock(200_000);
+  expect(
+    (
+      await b.saveRecord({
+        startedAt: 150,
+        endedAt: 170,
+        description: "Trabalho posterior",
+        taskId: null,
+        clientId: null,
+        projectId: null,
+      })
+    ).ok,
+  ).toBe(true);
+  const state = await a.getState();
+  expect(state.records[0].description).toBe("Trabalho posterior");
+  expect(state.lastTimedRecord).toMatchObject({ startedAt: 100, endedAt: 140 });
+  expect((await a.command({ action: "resume", version: 2 })).ok).toBe(true);
+  expect((await b.getState()).active).toMatchObject({
+    startedAt: 200,
+    description: null,
+  });
+});
+
+test("edições simultâneas de linhas diferentes não criam sobreposição", async () => {
+  const { a, b } = await setup();
+  const fields = {
+    description: "Revisão",
+    taskId: null,
+    clientId: null,
+    projectId: null,
+  };
+  await a.saveRecord({ ...fields, startedAt: 10, endedAt: 20 });
+  await a.saveRecord({ ...fields, startedAt: 70, endedAt: 80 });
+  const [later, earlier] = (await a.getState()).records;
+  const changes = await Promise.all([
+    a.saveRecord({
+      ...fields,
+      id: earlier.id,
+      version: earlier.version,
+      startedAt: 30,
+      endedAt: 50,
+    }),
+    b.saveRecord({
+      ...fields,
+      id: later.id,
+      version: later.version,
+      startedAt: 40,
+      endedAt: 60,
+    }),
+  ]);
+  expect(changes.filter(({ ok }) => ok)).toHaveLength(1);
+  expect(changes.find(({ ok }) => !ok)).toMatchObject({
+    conflict: { id: changes[0].ok ? earlier.id : later.id },
+  });
 });

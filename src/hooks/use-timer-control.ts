@@ -24,7 +24,7 @@ export function useTimerControl() {
     onSuccess: (result, command) => {
       const message =
         result.ok && command.action === "resume"
-          ? query.data?.records[0]?.taskId
+          ? query.data?.lastTimedRecord?.taskId
             ? "Atividade retomada."
             : "Trabalho livre retomado."
           : result.message;
