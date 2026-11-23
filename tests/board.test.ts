@@ -121,6 +121,7 @@ test("remove Coluna vazia e exige mover as Tarefas da Coluna ocupada", async () 
   expect(boardAfter.columns).toHaveLength(1);
   expect(boardAfter.tasks).toEqual([
     {
+      archiveBatch: null,
       version: 1,
       id: tarefa.id,
       title: "Revisar texto",
@@ -177,6 +178,7 @@ test("cria Tarefa posicionada, edita texto e vínculo de Projeto", async () => {
     columnId: coluna.id,
   });
   expect(primeira).toEqual({
+    archiveBatch: null,
     version: 1,
     id: primeira.id,
     title: "Escrever proposta",
@@ -200,6 +202,7 @@ test("cria Tarefa posicionada, edita texto e vínculo de Projeto", async () => {
     columnId: coluna.id,
   });
   expect(edited).toEqual({
+    archiveBatch: null,
     version: 2,
     id: primeira.id,
     title: "Escrever proposta final",
@@ -246,6 +249,7 @@ test("rejeita Tarefa inválida ou referências inexistentes", async () => {
   const boardAfter = await board.getBoard();
   expect(boardAfter.tasks).toEqual([
     {
+      archiveBatch: null,
       version: 1,
       id: saved.id,
       title: "Tarefa",

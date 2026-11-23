@@ -1,4 +1,4 @@
-import { and, asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Database } from "../db/connection";
 import { boardColumn, boardTask, client, project } from "../db/schema";
 import {
@@ -30,7 +30,7 @@ export function createBoardStore(db: Database) {
     const [found] = await db
       .select({ id: project.id })
       .from(project)
-      .where(eq(project.id, projectId))
+      .where(and(eq(project.id, projectId), isNull(project.archiveBatch)))
       .limit(1);
     if (!found) throw new Error("Escolha um projeto cadastrado.");
   }
@@ -55,6 +55,7 @@ export function createBoardStore(db: Database) {
             id: project.id,
             name: project.name,
             clientId: project.clientId,
+            archiveBatch: project.archiveBatch,
           })
           .from(project)
           .innerJoin(client, eq(client.id, project.clientId))
@@ -174,7 +175,7 @@ export function createBoardStore(db: Database) {
             position: boardTask.position,
           })
           .from(boardTask)
-          .where(eq(boardTask.id, id))
+          .where(and(eq(boardTask.id, id), isNull(boardTask.archiveBatch)))
           .limit(1);
         if (!existing)
           throw new Error(
@@ -211,7 +212,7 @@ export function createBoardStore(db: Database) {
         const [task] = await tx
           .select({ id: boardTask.id, columnId: boardTask.columnId })
           .from(boardTask)
-          .where(eq(boardTask.id, taskId))
+          .where(and(eq(boardTask.id, taskId), isNull(boardTask.archiveBatch)))
           .limit(1);
         if (!task)
           throw new Error(
@@ -220,13 +221,21 @@ export function createBoardStore(db: Database) {
         const affectedColumns = [columnId];
         if (task.columnId !== columnId) affectedColumns.push(task.columnId);
         const affected = await tx
-          .select({ id: boardTask.id, columnId: boardTask.columnId })
+          .select({
+            id: boardTask.id,
+            columnId: boardTask.columnId,
+            archiveBatch: boardTask.archiveBatch,
+          })
           .from(boardTask)
-          .where(inArray(boardTask.columnId, affectedColumns));
+          .where(inArray(boardTask.columnId, affectedColumns))
+          .orderBy(asc(boardTask.position));
         const build = (columnOf: number, excludeId?: number) =>
           affected
             .filter(
-              (item) => item.columnId === columnOf && item.id !== excludeId,
+              (item) =>
+                item.columnId === columnOf &&
+                item.id !== excludeId &&
+                item.archiveBatch === null,
             )
             .map((item) => item.id);
         const sequence: Array<{
@@ -251,6 +260,22 @@ export function createBoardStore(db: Database) {
           same.forEach((id, index) =>
             sequence.push({ id, columnId, position: index }),
           );
+        }
+        for (const id of affectedColumns) {
+          const activeCount = sequence.filter(
+            (item) => item.columnId === id,
+          ).length;
+          affected
+            .filter(
+              (item) => item.columnId === id && item.archiveBatch !== null,
+            )
+            .forEach((item, index) =>
+              sequence.push({
+                id: item.id,
+                columnId: id,
+                position: activeCount + index,
+              }),
+            );
         }
         if (affectedColumns.length > 0) {
           await tx

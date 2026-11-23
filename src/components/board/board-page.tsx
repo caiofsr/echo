@@ -5,6 +5,8 @@ import {
   useSuspenseQuery,
 } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { ArchiveDialog, type ArchiveTarget } from "../archive/archive-dialog";
+import { ArchiveFilter } from "../archive/archive-filter";
 import { Button } from "../ui/button";
 import { TimerActionIcon } from "../ui/timer-action-icon";
 import {
@@ -38,6 +40,10 @@ export function BoardPage() {
   const queryClient = useQueryClient();
   const returnFocus = useRef<HTMLElement | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
+  const [archiveTarget, setArchiveTarget] = useState<ArchiveTarget | null>(
+    null,
+  );
+  const [showArchived, setShowArchived] = useState(false);
   const [notice, setNotice] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const [dropTarget, setDropTarget] = useState<{
@@ -78,10 +84,17 @@ export function BoardPage() {
     );
   }
   const columns = data.columns;
-  const projects = data.projects;
-  const projectNames = new Map(projects.map((item) => [item.id, item.name]));
+  const projects = data.projects.filter(
+    (project) => project.archiveBatch === null,
+  );
+  const projectNames = new Map(
+    data.projects.map((item) => [item.id, item.name]),
+  );
   const tasksByColumn = new Map<number, Task[]>();
-  for (const task of data.tasks) {
+  const visibleTasks = data.tasks.filter(
+    (task) => (task.archiveBatch !== null) === showArchived,
+  );
+  for (const task of visibleTasks) {
     const list = tasksByColumn.get(task.columnId) ?? [];
     list.push(task);
     tasksByColumn.set(task.columnId, list);
@@ -158,6 +171,14 @@ export function BoardPage() {
           >
             Gerenciar colunas
           </Button>
+          <ArchiveFilter
+            id="board-task-status"
+            label="Filtrar tarefas"
+            activeLabel="Ativas"
+            archivedLabel="Arquivadas"
+            archived={showArchived}
+            onChange={setShowArchived}
+          />
         </div>
       </div>
       {columns.length === 0 ? (
@@ -236,7 +257,7 @@ export function BoardPage() {
                         data-running={
                           timer.query.data?.active?.taskId === task.id
                         }
-                        draggable
+                        draggable={!showArchived}
                         onDragStart={(event) => {
                           draggedTask.current = task;
                           event.dataTransfer.effectAllowed = "move";
@@ -277,51 +298,58 @@ export function BoardPage() {
                           <span aria-label={`Horas de ${task.title}`}>
                             {duration(taskSeconds.get(task.id) ?? 0)}
                           </span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="board-card-timer-action"
-                            title={
-                              timer.query.data?.active?.taskId === task.id
-                                ? "Parar"
-                                : "Iniciar"
-                            }
-                            aria-label={`${timer.query.data?.active?.taskId === task.id ? "Parar" : "Iniciar"} ${task.title}`}
-                            disabled={
-                              !timer.query.data ||
-                              timer.query.isError ||
-                              timer.mutation.isPending
-                            }
-                            onClick={() =>
-                              timer.mutation.mutate(
+                          {!showArchived && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="board-card-timer-action"
+                              title={
                                 timer.query.data?.active?.taskId === task.id
-                                  ? { action: "stop" }
-                                  : { action: "start", taskId: task.id },
-                              )
-                            }
-                          >
-                            <TimerActionIcon
-                              running={
-                                timer.query.data?.active?.taskId === task.id
+                                  ? "Parar"
+                                  : "Iniciar"
                               }
-                            />
-                          </Button>
+                              aria-label={`${timer.query.data?.active?.taskId === task.id ? "Parar" : "Iniciar"} ${task.title}`}
+                              disabled={
+                                !timer.query.data ||
+                                timer.query.isError ||
+                                timer.mutation.isPending
+                              }
+                              onClick={() =>
+                                timer.mutation.mutate(
+                                  timer.query.data?.active?.taskId === task.id
+                                    ? { action: "stop" }
+                                    : { action: "start", taskId: task.id },
+                                )
+                              }
+                            >
+                              <TimerActionIcon
+                                running={
+                                  timer.query.data?.active?.taskId === task.id
+                                }
+                              />
+                            </Button>
+                          )}
                         </div>
                       </li>
                     ))}
                   </ul>
-                  <footer className="board-column-footer">
-                    <button
-                      type="button"
-                      className="board-column-add"
-                      onClick={(event) => {
-                        returnFocus.current = event.currentTarget;
-                        setEditor({ kind: "task-create", columnId: column.id });
-                      }}
-                    >
-                      + Tarefa
-                    </button>
-                  </footer>
+                  {!showArchived && (
+                    <footer className="board-column-footer">
+                      <button
+                        type="button"
+                        className="board-column-add"
+                        onClick={(event) => {
+                          returnFocus.current = event.currentTarget;
+                          setEditor({
+                            kind: "task-create",
+                            columnId: column.id,
+                          });
+                        }}
+                      >
+                        + Tarefa
+                      </button>
+                    </footer>
+                  )}
                 </li>
               );
             })}
@@ -343,7 +371,7 @@ export function BoardPage() {
             new Map(
               columns.map((column) => [
                 column.id,
-                (tasksByColumn.get(column.id) ?? []).length,
+                data.tasks.filter((task) => task.columnId === column.id).length,
               ]),
             )
           }
@@ -377,6 +405,16 @@ export function BoardPage() {
           onCancel={() => setEditor(null)}
           onEdit={() => setEditor({ kind: "task-edit", task: editor.task })}
           onMove={() => setEditor({ kind: "task-move", task: editor.task })}
+          onArchive={() => {
+            setArchiveTarget({
+              kind: "task",
+              id: editor.task.id,
+              version: editor.task.version,
+              name: editor.task.title,
+              action: editor.task.archiveBatch === null ? "archive" : "restore",
+            });
+            setEditor(null);
+          }}
         />
       )}
       {editor?.kind === "task-edit" && (
@@ -394,9 +432,16 @@ export function BoardPage() {
           returnFocus={returnFocus}
           task={editor.task}
           columns={columns}
-          tasks={data.tasks}
+          tasks={visibleTasks}
           onCancel={() => setEditor(null)}
           onSaved={() => saved("Tarefa movida.")}
+        />
+      )}
+      {archiveTarget && (
+        <ArchiveDialog
+          target={archiveTarget}
+          returnFocus={returnFocus}
+          onClose={() => setArchiveTarget(null)}
         />
       )}
     </section>

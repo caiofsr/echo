@@ -181,6 +181,7 @@ export function TaskDetailsDialog({
   onCancel,
   onEdit,
   onMove,
+  onArchive,
   returnFocus,
 }: {
   onCancel: () => void;
@@ -190,6 +191,7 @@ export function TaskDetailsDialog({
   projectName: string;
   onEdit: () => void;
   onMove: () => void;
+  onArchive: () => void;
 }) {
   return (
     <Dialog
@@ -216,10 +218,19 @@ export function TaskDetailsDialog({
           <p>{task.description?.trim() || "Sem descrição cadastrada."}</p>
         </section>
         <div className="task-details-actions">
-          <Button variant="outline" onClick={onMove}>
-            Mover
+          {task.archiveBatch === null && (
+            <>
+              <Button variant="outline" onClick={onMove}>
+                Mover
+              </Button>
+              <Button onClick={onEdit}>Editar tarefa</Button>
+            </>
+          )}
+          <Button variant="outline" onClick={onArchive}>
+            {task.archiveBatch === null
+              ? "Arquivar tarefa"
+              : "Restaurar tarefa"}
           </Button>
-          <Button onClick={onEdit}>Editar tarefa</Button>
           <Button variant="ghost" onClick={onCancel}>
             Fechar
           </Button>

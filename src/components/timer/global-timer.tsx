@@ -58,7 +58,7 @@ export function GlobalTimer() {
         >
           {data?.active ? "Parar" : "Iniciar"}
         </Button>
-        {data && !data.active && data.lastTimedRecord && (
+        {data && !data.active && data.canResume && data.lastTimedRecord && (
           <Tooltip>
             <TooltipTrigger
               render={

@@ -1,4 +1,4 @@
-import { and, asc, eq, sql } from "drizzle-orm";
+import { and, asc, eq, isNull, sql } from "drizzle-orm";
 import type { Database } from "../db/connection";
 import { client, project } from "../db/schema";
 import {
@@ -22,7 +22,7 @@ export function createDirectoryStore(db: Database) {
       const [owner] = await db
         .select({ id: client.id })
         .from(client)
-        .where(eq(client.id, values.clientId))
+        .where(and(eq(client.id, values.clientId), isNull(client.archiveBatch)))
         .limit(1);
       if (!owner) throw new Error("Escolha um cliente cadastrado.");
       if (id === undefined) {
@@ -32,7 +32,13 @@ export function createDirectoryStore(db: Database) {
       const [updated] = await db
         .update(project)
         .set({ ...values, version: sql`${project.version} + 1` })
-        .where(and(eq(project.id, id), eq(project.version, version ?? 0)))
+        .where(
+          and(
+            eq(project.id, id),
+            eq(project.version, version ?? 0),
+            isNull(project.archiveBatch),
+          ),
+        )
         .returning();
       if (!updated)
         throw new Error(
@@ -57,7 +63,13 @@ export function createDirectoryStore(db: Database) {
       const [updated] = await db
         .update(client)
         .set({ ...values, version: sql`${client.version} + 1` })
-        .where(and(eq(client.id, id), eq(client.version, version ?? 0)))
+        .where(
+          and(
+            eq(client.id, id),
+            eq(client.version, version ?? 0),
+            isNull(client.archiveBatch),
+          ),
+        )
         .returning();
       if (!updated)
         throw new Error(

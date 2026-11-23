@@ -35,6 +35,7 @@ test("cadastra Cliente sem dados legais e consulta em outra conexão", async () 
   try {
     expect(await createDirectoryStore(second.db).listClients()).toEqual([
       {
+        archiveBatch: null,
         id: client.id,
         version: 1,
         name: "Cliente Exemplo",
@@ -64,6 +65,7 @@ test("edita os dados do Cliente e rejeita nome vazio ou cliente inexistente", as
   });
   expect(await store.listClients()).toEqual([
     {
+      archiveBatch: null,
       id: saved.id,
       version: 2,
       name: "Novo nome",
@@ -92,6 +94,7 @@ test("cria Projeto com valor exato em centavos e edita seu vínculo com um únic
   });
   expect(await store.listProjects()).toEqual([
     {
+      archiveBatch: null,
       id: project.id,
       version: 1,
       name: "Site",
@@ -112,6 +115,7 @@ test("cria Projeto com valor exato em centavos e edita seu vínculo com um únic
   try {
     expect(await createDirectoryStore(connection.db).listProjects()).toEqual([
       {
+        archiveBatch: null,
         id: project.id,
         version: 2,
         name: "Aplicativo",
@@ -164,6 +168,7 @@ test("rejeita Projeto inválido sem alterar o cadastro existente", async () => {
   ).rejects.toThrow("Projeto alterado");
   expect(await store.listProjects()).toEqual([
     {
+      archiveBatch: null,
       id: saved.id,
       version: 1,
       name: "Projeto",

@@ -4,7 +4,8 @@ import {
   hoursDateFormatter,
   hoursTimestamp,
 } from "../src/lib/hours-date";
-import { mkdtemp, rm } from "node:fs/promises";
+import { cp, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { migrate } from "drizzle-orm/libsql/migrator";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { migrateDatabase, openDatabase } from "../src/db/connection";
@@ -122,33 +123,38 @@ test("rejeita entradas inválidas e relógio regressivo sem perder o período at
 });
 
 test("atualiza banco que aplicou a primeira migração do cronômetro sem recriar tabelas ou perder registros", async () => {
-  const { a, db, clock } = await setup();
-  await a.command({ action: "start", version: 0 });
-  clock(150_000);
-  await a.command({ action: "stop", version: 1 });
-  const before = (await a.getState()).records;
-  // Fixture: the dev server had applied 0005 before revision triggers existed.
-  await db.run("DROP TRIGGER time_record_start_revision");
-  await db.run("DROP TRIGGER time_record_stop_revision");
+  const dir = await mkdtemp(join(tmpdir(), "echo-timer-legacy-"));
+  const { db, close } = await openDatabase(`file:${join(dir, "legacy.db")}`);
+  cleanup.push(async () => {
+    close();
+    await rm(dir, { recursive: true });
+  });
+  const migrationsFolder = join(dir, "drizzle");
+  await cp("drizzle", migrationsFolder, { recursive: true });
+  const journalPath = join(migrationsFolder, "meta", "_journal.json");
+  const journal = JSON.parse(await readFile(journalPath, "utf8"));
+  journal.entries = journal.entries.slice(0, 6);
+  await writeFile(journalPath, JSON.stringify(journal));
+  await migrate(db, { migrationsFolder });
   await db.run(
-    "DELETE FROM __drizzle_migrations WHERE created_at > 1794300000000",
+    "INSERT INTO time_record (started_at, hourly_rate_cents, currency) VALUES (100, 0, 'BRL')",
   );
-  await db.run("DROP TRIGGER time_record_switch");
-  for (const column of [
-    "task_id",
-    "project_id",
-    "client_id",
-    "description",
-    "version",
-    "manual",
-  ])
-    await db.run(`ALTER TABLE time_record DROP COLUMN ${column}`);
+  await db.run("UPDATE time_record SET ended_at = 150 WHERE id = 1");
+
   await migrateDatabase(db);
   await migrateDatabase(db);
-  expect((await a.getState()).records).toEqual(before);
-  clock(200_000);
-  await a.command({ action: "resume", version: 2 });
-  expect((await a.getState()).version).toBe(3);
+  const timer = createTimerStore(db, () => 200_000);
+  expect((await timer.getState()).records).toMatchObject([
+    {
+      id: 1,
+      startedAt: 100,
+      endedAt: 150,
+      hourlyRateCents: 0,
+      currency: "BRL",
+    },
+  ]);
+  await timer.command({ action: "resume", version: 2 });
+  expect((await timer.getState()).version).toBe(3);
 });
 
 async function taskFixture(db: Parameters<typeof createBoardStore>[0]) {

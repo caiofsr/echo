@@ -5,6 +5,7 @@ import { desc, eq, sql } from "drizzle-orm";
 import type { Database } from "../db/connection";
 import {
   boardTask,
+  client,
   project,
   timeRecord,
   timerPreferences,
@@ -28,12 +29,22 @@ export function createTimerStore(db: Database, clock = Date.now) {
           record: timeRecord,
           taskTitle: boardTask.title,
           projectName: project.name,
+          taskArchive: boardTask.archiveBatch,
+          projectArchive: project.archiveBatch,
+          clientArchive: client.archiveBatch,
         })
         .from(timerState)
         .innerJoin(timerPreferences, eq(timerPreferences.id, 1))
         .leftJoin(timeRecord, sql`1 = 1`)
         .leftJoin(boardTask, eq(boardTask.id, timeRecord.taskId))
         .leftJoin(project, eq(project.id, timeRecord.projectId))
+        .leftJoin(
+          client,
+          eq(
+            client.id,
+            sql`coalesce(${project.clientId}, ${timeRecord.clientId})`,
+          ),
+        )
         .orderBy(desc(timeRecord.startedAt), desc(timeRecord.id));
       const records = rows.flatMap((row) =>
         row.record
@@ -46,17 +57,27 @@ export function createTimerStore(db: Database, clock = Date.now) {
             ]
           : [],
       );
+      const last = rows.reduce<(typeof rows)[number] | null>(
+        (latest, row) =>
+          row.record &&
+          !row.record.manual &&
+          (!latest?.record || row.record.id > latest.record.id)
+            ? row
+            : latest,
+        null,
+      );
       return {
+        canResume: Boolean(
+          last &&
+          !last.taskArchive &&
+          !last.projectArchive &&
+          !last.clientArchive,
+        ),
         preferences: rows[0].preferences,
         version: rows[0].version,
         active: records.find((r) => r.endedAt === null) ?? null,
-        lastTimedRecord: records.reduce<(typeof records)[number] | null>(
-          (last, record) =>
-            !record.manual && (last === null || record.id > last.id)
-              ? record
-              : last,
-          null,
-        ),
+        lastTimedRecord:
+          records.find((record) => record.id === last?.record?.id) ?? null,
         records,
         serverNow: Math.floor(clock() / 1000),
       };
@@ -116,14 +137,24 @@ export function createTimerStore(db: Database, clock = Date.now) {
       const [linkedProject] = projectId
         ? await db.select().from(project).where(eq(project.id, projectId))
         : [];
+      const clientId =
+        linkedProject?.clientId ??
+        (action === "resume" && !projectId ? last!.clientId : null);
+      if (task?.archiveBatch || linkedProject?.archiveBatch)
+        throw new Error(
+          "Restaure o trabalho arquivado antes de iniciar o cronômetro.",
+        );
       // The insert and the switch trigger are one SQLite statement: failed
       // inserts roll back the previous period's stop and revision as well.
       const changed = await db.all(sql`INSERT INTO time_record
           (started_at, task_id, project_id, client_id, description, hourly_rate_cents, currency)
-          SELECT ${now}, ${sourceTaskId ?? null}, ${projectId ?? null}, ${linkedProject?.clientId ?? (action === "resume" && !projectId ? last!.clientId : null)},
+          SELECT ${now}, ${sourceTaskId ?? null}, ${projectId ?? null}, ${clientId},
             ${action === "resume" ? last!.description : task ? task.description || task.title : null},
             ${linkedProject?.hourlyRateCents ?? preferences.hourlyRateCents}, ${linkedProject?.currency ?? preferences.currency}
           WHERE (SELECT version FROM timer_state WHERE id = 1) = ${version}
+          AND NOT EXISTS (SELECT 1 FROM board_task WHERE id = ${sourceTaskId ?? null} AND archive_batch IS NOT NULL)
+          AND NOT EXISTS (SELECT 1 FROM project WHERE id = ${projectId ?? null} AND archive_batch IS NOT NULL)
+          AND NOT EXISTS (SELECT 1 FROM client WHERE id = ${clientId} AND archive_batch IS NOT NULL)
           AND NOT EXISTS (SELECT 1 FROM time_record WHERE ended_at > ${now} OR started_at > ${now})
           AND NOT EXISTS (SELECT 1 FROM time_record WHERE ended_at IS NULL
             AND (${action !== "start" || sourceTaskId == null} OR task_id = ${sourceTaskId ?? null}))

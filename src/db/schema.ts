@@ -126,6 +126,7 @@ export const accountRelations = relations(account, ({ one }) => ({
 }));
 
 export const client = sqliteTable("client", {
+  archiveBatch: text("archive_batch"),
   version: integer("version").notNull().default(1),
   id: integer("id").primaryKey({ autoIncrement: true }),
   name: text("name").notNull(),
@@ -137,6 +138,7 @@ export const client = sqliteTable("client", {
 export const project = sqliteTable(
   "project",
   {
+    archiveBatch: text("archive_batch"),
     version: integer("version").notNull().default(1),
     id: integer("id").primaryKey({ autoIncrement: true }),
     name: text("name").notNull(),
@@ -163,6 +165,7 @@ export const boardColumn = sqliteTable(
 export const boardTask = sqliteTable(
   "board_task",
   {
+    archiveBatch: text("archive_batch"),
     version: integer("version").notNull().default(1),
     id: integer("id").primaryKey({ autoIncrement: true }),
     title: text("title").notNull(),
