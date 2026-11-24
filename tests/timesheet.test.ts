@@ -1,4 +1,5 @@
 import { expect, test } from "bun:test";
+import { PDFDocument } from "pdf-lib";
 import { formatTimesheetCsv, type TimesheetRow } from "../src/lib/timesheet";
 import { createTimesheetPdf } from "../src/lib/timesheet-pdf";
 
@@ -47,4 +48,16 @@ test("PDF gera um documento com a opção de Tarefa escolhida", async () => {
 
   expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
   expect(bytes.byteLength).toBeGreaterThan(1000);
+});
+
+test("PDF pagina nomes longos sem cortar conteúdo", async () => {
+  const bytes = await createTimesheetPdf(
+    [{ ...rows[0], clientName: "Cliente".repeat(500) }],
+    "UTC",
+    0,
+    false,
+  );
+  const document = await PDFDocument.load(bytes);
+
+  expect(document.getPageCount()).toBeGreaterThan(1);
 });

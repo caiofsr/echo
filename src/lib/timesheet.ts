@@ -35,7 +35,10 @@ function csvCell(value: string) {
   return `"${value.replaceAll('"', '""')}"`;
 }
 
-function rowDuration(row: TimesheetRow, serverNow: number) {
+export function formatTimesheetRowDuration(
+  row: TimesheetRow,
+  serverNow: number,
+) {
   return formatTimesheetDuration((row.endedAt ?? serverNow) - row.startedAt);
 }
 
@@ -60,7 +63,7 @@ export function formatTimesheetCsv(
       row.clientName,
       row.projectName,
       ...(includeTask ? [row.taskName ?? "Sem tarefa"] : []),
-      rowDuration(row, serverNow),
+      formatTimesheetRowDuration(row, serverNow),
     ]
       .map(csvCell)
       .join(";"),

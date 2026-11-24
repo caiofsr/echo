@@ -1,8 +1,8 @@
 import { PDFDocument, PageSizes, StandardFonts, rgb } from "pdf-lib";
 import {
   formatTimesheetDate,
-  formatTimesheetDuration,
   formatTimesheetEnd,
+  formatTimesheetRowDuration,
   type TimesheetRow,
 } from "./timesheet";
 
@@ -22,14 +22,18 @@ function wrapText(
       continue;
     }
     if (line) lines.push(line);
-    line =
-      font.widthOfTextAtSize(word, size) <= width
-        ? word
-        : `${word.slice(0, 18)}...`;
+    line = "";
+    for (const character of word) {
+      const next = line + character;
+      if (font.widthOfTextAtSize(next, size) <= width) {
+        line = next;
+      } else {
+        if (line) lines.push(line);
+        line = character;
+      }
+    }
   }
   if (line) lines.push(line);
-  if (lines.length > 3)
-    return [...lines.slice(0, 2), `${lines[2].slice(0, 16)}...`];
   return lines;
 }
 
@@ -67,7 +71,7 @@ export async function createTimesheetPdf(
     row.clientName,
     row.projectName,
     ...(includeTask ? [row.taskName ?? "Sem tarefa"] : []),
-    formatTimesheetDuration((row.endedAt ?? serverNow) - row.startedAt),
+    formatTimesheetRowDuration(row, serverNow),
   ];
 
   let page = document.addPage(pageSize);
@@ -119,34 +123,48 @@ export async function createTimesheetPdf(
     const wrapped = values.map((value, index) =>
       wrapText(value, widths[index] - 10, regular, 8),
     );
-    const rowHeight = Math.max(
-      34,
-      Math.max(...wrapped.map((cell) => cell.length)) * 11 + 12,
-    );
-    if (y - rowHeight < margin + 26) {
-      page = document.addPage(pageSize);
-      drawTableHeading();
-    }
-    let x = margin;
-    wrapped.forEach((lines, index) => {
-      lines.forEach((line, lineIndex) =>
-        page.drawText(line, {
-          x: x + 5,
-          y: y - 15 - lineIndex * 11,
-          size: 8,
-          font: regular,
-          color: rgb(0.2, 0.23, 0.21),
-        }),
+    const lineCount = Math.max(...wrapped.map((cell) => cell.length));
+    let lineOffset = 0;
+    while (lineOffset < lineCount) {
+      const availableHeight = y - (margin + 26);
+      if (availableHeight < 34) {
+        page = document.addPage(pageSize);
+        drawTableHeading();
+        continue;
+      }
+      const linesOnPage = Math.min(
+        lineCount - lineOffset,
+        Math.floor((availableHeight - 12) / 11),
       );
-      x += widths[index] + gap;
-    });
-    page.drawLine({
-      start: { x: margin, y: y - rowHeight },
-      end: { x: pageSize[0] - margin, y: y - rowHeight },
-      thickness: 0.5,
-      color: rgb(0.86, 0.88, 0.86),
-    });
-    y -= rowHeight;
+      const rowHeight = Math.max(34, linesOnPage * 11 + 12);
+      let x = margin;
+      wrapped.forEach((lines, index) => {
+        lines
+          .slice(lineOffset, lineOffset + linesOnPage)
+          .forEach((line, lineIndex) =>
+            page.drawText(line, {
+              x: x + 5,
+              y: y - 15 - lineIndex * 11,
+              size: 8,
+              font: regular,
+              color: rgb(0.2, 0.23, 0.21),
+            }),
+          );
+        x += widths[index] + gap;
+      });
+      page.drawLine({
+        start: { x: margin, y: y - rowHeight },
+        end: { x: pageSize[0] - margin, y: y - rowHeight },
+        thickness: 0.5,
+        color: rgb(0.86, 0.88, 0.86),
+      });
+      y -= rowHeight;
+      lineOffset += linesOnPage;
+      if (lineOffset < lineCount) {
+        page = document.addPage(pageSize);
+        drawTableHeading();
+      }
+    }
   }
 
   document.getPages().forEach((currentPage, index) => {
