@@ -29,6 +29,14 @@ Registro das decisões confirmadas antes da migração para GitHub Issues. A esp
 - Movimentar tarefas é independente do cronômetro.
 - Arquivamento de tarefas, projetos e clientes preserva o histórico.
 
+### Exclusão permanente de Tarefas, 23/11/2026
+
+- Somente Tarefas ativas podem ser excluídas; Tarefas arquivadas são consideradas concluídas e permanecem protegidas contra exclusão.
+- A exclusão é permanente e tem duas etapas: escolher se preserva ou apaga as horas e confirmar a ação após ver seus efeitos.
+- Preservar horas mantém os Registros de horas e seus dados, removendo apenas a associação à Tarefa.
+- Apagar horas remove somente registros não vinculados a faturas válidas. Registros vinculados a faturas válidas são preservados e desvinculados da Tarefa; registros e documentos da fatura não são alterados.
+- Se houver cronômetro ativo na Tarefa, o período encerrado participa da escolha. Encerramento, preservação ou exclusão permitida dos registros e exclusão da Tarefa são atômicos; em caso de falha, a Tarefa permanece e o cronômetro continua ativo.
+
 ## Valores e exportações
 
 - Valor de hora padrão geral, com valor específico por projeto.

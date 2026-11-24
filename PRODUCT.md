@@ -45,6 +45,8 @@ Reunir organização do trabalho, registro do tempo efetivo e faturamento sem re
 - Durações têm precisão de segundos, sem arredondamento em blocos. Retomar cria outro período e não inclui a pausa.
 - Cada registro tem descrição própria e preserva o valor de hora e a moeda usados. Alterar padrões ou projetos não recalcula registros antigos.
 - Arquivar clientes, projetos e tarefas preserva o histórico. A restauração respeita quais descendentes foram arquivados pela mesma ação.
+- A exclusão permanente só é permitida para Tarefas ativas; Tarefas arquivadas são consideradas concluídas. Antes da confirmação final, o usuário escolhe preservar os Registros de horas sem associação à Tarefa ou excluir os ainda não vinculados a uma fatura válida. Registros ligados a faturas válidas são sempre preservados e desvinculados; os dados e documentos das faturas permanecem intactos.
+- Se a Tarefa estiver sendo cronometrada, encerrar o período, aplicar a escolha aos registros permitidos e excluir a Tarefa é uma operação atômica. Uma falha mantém a Tarefa e a contagem ativa.
 - Operações simultâneas conflitantes seguem a primeira confirmação válida. Falhas não devem deixar operações parcialmente concluídas.
 
 ### Timesheet e faturas

@@ -15,6 +15,9 @@ _Evitar_: Freela como entidade diferente de projeto.
 Atividade do quadro global, com associação opcional a um projeto.
 _Evitar_: Task nos documentos em português.
 
+**Exclusão de Tarefa**:
+Remoção permanente de uma Tarefa ativa. Os Registros de horas podem ser preservados sem a associação à Tarefa ou, quando ainda não vinculados a uma fatura válida, excluídos mediante escolha e confirmação explícitas. Tarefas arquivadas são consideradas concluídas e não podem ser excluídas.
+
 **Cronômetro global**:
 Contagem única do trabalho em andamento, associada opcionalmente a uma tarefa e a um projeto.
 

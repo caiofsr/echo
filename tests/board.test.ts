@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { migrateDatabase, openDatabase } from "../src/db/connection";
 import { createBoardStore } from "../src/server/board";
 import { createDirectoryStore } from "../src/server/directory";
+import { createTimerStore } from "../src/server/timer";
+import { createArchiveStore } from "../src/server/archive";
 type DirectoryStore = ReturnType<typeof createDirectoryStore>;
 
 const databases: Array<{ close: () => void; dir: string }> = [];
@@ -14,15 +16,16 @@ afterEach(async () => {
     await rm(database.dir, { recursive: true, force: true });
   }
 });
-async function createStore() {
+async function createStore(clock = Date.now) {
   const dir = await mkdtemp(join(tmpdir(), "echo-board-"));
   const url = `file:${join(dir, "board.db")}`;
   const database = await openDatabase(url);
   await migrateDatabase(database.db);
   databases.push({ ...database, dir });
   return {
-    board: createBoardStore(database.db),
+    board: createBoardStore(database.db, clock),
     directory: createDirectoryStore(database.db),
+    db: database.db,
     url,
   };
 }
@@ -344,4 +347,237 @@ test("valida tipos e identificadores na fronteira de entrada", async () => {
   for (const input of [null, [], { columns: "" }, { columns: [0] }]) {
     expect(() => parseColumnOrderInput(input)).toThrow();
   }
+});
+
+test("exclui Tarefa ativa e preserva os Registros de horas desvinculados", async () => {
+  const { board, db } = await createStore();
+  const column = await board.saveColumn({ name: "Fazendo" });
+  const task = await board.saveTask({ columnId: column.id, title: "Revisar" });
+  await db.run(`INSERT INTO time_record
+    (manual, task_id, description, started_at, ended_at, hourly_rate_cents, currency)
+    VALUES (1, ${task.id}, 'revisão final', 10, 70, 12500, 'USD')`);
+  const preview = await board.prepareTaskDeletion({
+    id: task.id,
+    version: task.version,
+  });
+  expect(preview).toMatchObject({ status: "ready", recordCount: 1 });
+  if (preview.status !== "ready") throw new Error("Prévia inesperada.");
+
+  await expect(
+    board.deleteTask({
+      id: task.id,
+      version: task.version,
+      timerVersion: preview.timerVersion,
+      records: preview.records,
+      deleteHours: false,
+    }),
+  ).resolves.toEqual({ status: "deleted" });
+
+  const state = await createTimerStore(db).getState();
+  expect(state.records).toMatchObject([
+    {
+      taskId: null,
+      description: "revisão final",
+      startedAt: 10,
+      endedAt: 70,
+      hourlyRateCents: 12500,
+      currency: "USD",
+    },
+  ]);
+  expect((await board.getBoard()).tasks).toEqual([]);
+});
+
+test("apaga os Registros de horas não faturados quando essa opção é confirmada", async () => {
+  const { board, db } = await createStore();
+  const column = await board.saveColumn({ name: "Fazendo" });
+  const task = await board.saveTask({ columnId: column.id, title: "Revisar" });
+  await db.run(`INSERT INTO time_record
+    (manual, task_id, started_at, ended_at, hourly_rate_cents, currency)
+    VALUES (1, ${task.id}, 10, 70, 12500, 'USD')`);
+  const preview = await board.prepareTaskDeletion({
+    id: task.id,
+    version: task.version,
+  });
+  if (preview.status !== "ready") throw new Error("Prévia inesperada.");
+
+  await expect(
+    board.deleteTask({
+      id: task.id,
+      version: task.version,
+      timerVersion: preview.timerVersion,
+      records: preview.records,
+      deleteHours: true,
+    }),
+  ).resolves.toEqual({ status: "deleted" });
+  expect(await createTimerStore(db).getState()).toMatchObject({
+    records: [],
+  });
+  expect((await board.getBoard()).tasks).toEqual([]);
+});
+
+test("não exclui Tarefa arquivada e detecta alterações após a prévia", async () => {
+  const { board, db } = await createStore();
+  const column = await board.saveColumn({ name: "Fazendo" });
+  const task = await board.saveTask({ columnId: column.id, title: "Revisar" });
+  await createArchiveStore(db).change({
+    kind: "task",
+    action: "archive",
+    id: task.id,
+    version: task.version,
+  });
+  await expect(
+    board.prepareTaskDeletion({ id: task.id, version: task.version + 1 }),
+  ).resolves.toEqual({ status: "blocked" });
+
+  const active = await board.saveTask({
+    columnId: column.id,
+    title: "Escrever",
+  });
+  const preview = await board.prepareTaskDeletion({
+    id: active.id,
+    version: active.version,
+  });
+  if (preview.status !== "ready") throw new Error("Prévia inesperada.");
+  await board.saveTask({
+    id: active.id,
+    version: active.version,
+    title: "Editar",
+    columnId: column.id,
+  });
+  await expect(
+    board.deleteTask({
+      id: active.id,
+      version: active.version,
+      timerVersion: preview.timerVersion,
+      records: preview.records,
+      deleteHours: false,
+    }),
+  ).resolves.toEqual({ status: "conflict" });
+  expect((await board.getBoard()).tasks.map((item) => item.title)).toContain(
+    "Editar",
+  );
+});
+
+test("para o cronômetro atomicamente com a exclusão da Tarefa", async () => {
+  let now = 100_000;
+  const { board, db } = await createStore(() => now);
+  const timer = createTimerStore(db, () => now);
+  const column = await board.saveColumn({ name: "Fazendo" });
+  const task = await board.saveTask({ columnId: column.id, title: "Revisar" });
+  await timer.command({ action: "start", taskId: task.id, version: 0 });
+  const preview = await board.prepareTaskDeletion({
+    id: task.id,
+    version: task.version,
+  });
+  if (preview.status !== "ready") throw new Error("Prévia inesperada.");
+  expect(preview).toMatchObject({ recordCount: 1, activeRecordCount: 1 });
+  now = 145_000;
+
+  await expect(
+    board.deleteTask({
+      id: task.id,
+      version: task.version,
+      timerVersion: preview.timerVersion,
+      records: preview.records,
+      deleteHours: false,
+    }),
+  ).resolves.toEqual({ status: "deleted" });
+  expect(await timer.getState()).toMatchObject({
+    active: null,
+    records: [{ taskId: null, startedAt: 100, endedAt: 145 }],
+  });
+});
+
+test("apaga o período do cronômetro na mesma operação quando essa escolha é feita", async () => {
+  let now = 100_000;
+  const { board, db } = await createStore(() => now);
+  const timer = createTimerStore(db, () => now);
+  const column = await board.saveColumn({ name: "Fazendo" });
+  const task = await board.saveTask({ columnId: column.id, title: "Revisar" });
+  await timer.command({ action: "start", taskId: task.id, version: 0 });
+  const preview = await board.prepareTaskDeletion({
+    id: task.id,
+    version: task.version,
+  });
+  if (preview.status !== "ready") throw new Error("Prévia inesperada.");
+  now = 145_000;
+
+  await expect(
+    board.deleteTask({
+      id: task.id,
+      version: task.version,
+      timerVersion: preview.timerVersion,
+      records: preview.records,
+      deleteHours: true,
+    }),
+  ).resolves.toEqual({ status: "deleted" });
+  expect(await timer.getState()).toMatchObject({
+    active: null,
+    records: [],
+  });
+  expect((await board.getBoard()).tasks).toEqual([]);
+});
+
+test("rejeita exclusão quando um Registro de horas mudou após a prévia", async () => {
+  const { board, db } = await createStore();
+  const column = await board.saveColumn({ name: "Fazendo" });
+  const task = await board.saveTask({ columnId: column.id, title: "Revisar" });
+  await db.run(`INSERT INTO time_record
+    (manual, task_id, description, started_at, ended_at, hourly_rate_cents, currency)
+    VALUES (1, ${task.id}, 'descrição original', 10, 70, 12500, 'USD')`);
+  const preview = await board.prepareTaskDeletion({
+    id: task.id,
+    version: task.version,
+  });
+  if (preview.status !== "ready") throw new Error("Prévia inesperada.");
+  await db.run(`UPDATE time_record
+    SET description = 'descrição corrigida', version = version + 1
+    WHERE task_id = ${task.id}`);
+
+  await expect(
+    board.deleteTask({
+      id: task.id,
+      version: task.version,
+      timerVersion: preview.timerVersion,
+      records: preview.records,
+      deleteHours: true,
+    }),
+  ).resolves.toEqual({ status: "conflict" });
+  expect((await createTimerStore(db).getState()).records).toMatchObject([
+    { taskId: task.id, description: "descrição corrigida" },
+  ]);
+  expect((await board.getBoard()).tasks).toHaveLength(1);
+});
+
+test("uma falha ao excluir reverte a parada e mantém o cronômetro ativo", async () => {
+  let now = 100_000;
+  const { board, db } = await createStore(() => now);
+  const timer = createTimerStore(db, () => now);
+  const column = await board.saveColumn({ name: "Fazendo" });
+  const task = await board.saveTask({ columnId: column.id, title: "Revisar" });
+  await timer.command({ action: "start", taskId: task.id, version: 0 });
+  const preview = await board.prepareTaskDeletion({
+    id: task.id,
+    version: task.version,
+  });
+  if (preview.status !== "ready") throw new Error("Prévia inesperada.");
+  await db.run(`CREATE TRIGGER reject_task_delete BEFORE DELETE ON board_task
+    BEGIN SELECT RAISE(ABORT, 'falha'); END`);
+  now = 145_000;
+
+  await expect(
+    board.deleteTask({
+      id: task.id,
+      version: task.version,
+      timerVersion: preview.timerVersion,
+      records: preview.records,
+      deleteHours: false,
+    }),
+  ).rejects.toThrow();
+  expect(await timer.getState()).toMatchObject({
+    active: { taskId: task.id, endedAt: null },
+    records: [{ taskId: task.id, endedAt: null }],
+  });
+  expect((await board.getBoard()).tasks).toHaveLength(1);
+  await db.run("DROP TRIGGER reject_task_delete");
 });

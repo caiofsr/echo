@@ -111,3 +111,76 @@ test("inicia, troca e retoma Tarefas preservando períodos e horas dos cards", a
   expect(periods.map(seconds).every((value) => value > 0)).toBe(true);
   expect(seconds(accumulated)).toBe(seconds(periods[0]) + seconds(periods[1]));
 });
+
+test("exclui Tarefa ativa em duas confirmações e preserva o período encerrado", async ({
+  page,
+  request,
+}) => {
+  await request.post("http://127.0.0.1:4319/reset-board");
+  await request.post("http://127.0.0.1:4319/reset-directory");
+  await request.post("http://127.0.0.1:4319/reset-rate-limit");
+  await page.goto("/");
+  await page
+    .getByLabel("Senha pessoal")
+    .fill("senha pessoal de teste no navegador");
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await page.getByRole("button", { name: "Nova coluna", exact: true }).click();
+  let dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Nome da coluna").fill("Fazendo");
+  await dialog.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+  await page.getByRole("button", { name: "+ Tarefa" }).click();
+  dialog = page.getByRole("dialog");
+  await dialog.getByLabel("Título").fill("Descartar atividade antiga");
+  await dialog.getByLabel("Descrição").fill("Período preservado após exclusão");
+  await dialog.getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(dialog).not.toBeVisible();
+
+  await page
+    .getByRole("button", {
+      name: "Iniciar Descartar atividade antiga",
+      exact: true,
+    })
+    .click();
+  const globalTimer = page.getByRole("region", { name: "Cronômetro global" });
+  await expect(globalTimer).toContainText("Descartar atividade antiga");
+  await expect(
+    globalTimer.getByRole("button", { name: "Parar" }),
+  ).toBeVisible();
+  await expect(globalTimer.getByLabel("Tempo em andamento")).not.toHaveText(
+    "00:00:00",
+  );
+  await page
+    .getByRole("button", { name: "Descartar atividade antiga", exact: true })
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Excluir tarefa" })
+    .click();
+
+  dialog = page.getByRole("dialog");
+  await expect(dialog).toContainText("1 registro de horas está associado");
+  await dialog.getByRole("button", { name: "Preservar as horas" }).click();
+  await dialog.getByRole("button", { name: "Continuar" }).click();
+  await expect(dialog).toContainText("1 registro será preservado");
+  await dialog
+    .getByRole("button", { name: "Salvar período e excluir tarefa" })
+    .click();
+  await expect(dialog).not.toBeVisible();
+  await expect(
+    page.getByRole("button", {
+      name: "Descartar atividade antiga",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await expect(
+    globalTimer.getByRole("button", { name: "Retomar trabalho livre" }),
+  ).toBeVisible();
+
+  await page.getByRole("link", { name: "Horas", exact: true }).click();
+  const row = page.locator(".hours-record");
+  await expect(row).toHaveCount(1);
+  await expect(row.first()).toContainText("Período preservado após exclusão");
+  await expect(row.first()).toContainText("Sem projeto");
+  await expect(row.first()).not.toContainText("· Descartar atividade antiga");
+});

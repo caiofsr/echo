@@ -182,6 +182,7 @@ export function TaskDetailsDialog({
   onEdit,
   onMove,
   onArchive,
+  onDelete,
   returnFocus,
 }: {
   onCancel: () => void;
@@ -192,6 +193,7 @@ export function TaskDetailsDialog({
   onEdit: () => void;
   onMove: () => void;
   onArchive: () => void;
+  onDelete: () => void;
 }) {
   return (
     <Dialog
@@ -224,6 +226,9 @@ export function TaskDetailsDialog({
                 Mover
               </Button>
               <Button onClick={onEdit}>Editar tarefa</Button>
+              <Button variant="destructive" onClick={onDelete}>
+                Excluir tarefa
+              </Button>
             </>
           )}
           <Button variant="outline" onClick={onArchive}>

@@ -1,11 +1,22 @@
 import { and, asc, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { Database } from "../db/connection";
-import { boardColumn, boardTask, client, project } from "../db/schema";
+import {
+  boardColumn,
+  boardTask,
+  client,
+  project,
+  timeRecord,
+  timerState,
+} from "../db/schema";
 import {
   parseColumnInput,
   parseTaskInput,
+  parseTaskDeletionInput,
+  parseTaskDeletionPreviewInput,
   parseTaskMoveInput,
   type ColumnInput,
+  type TaskDeletionInput,
+  type TaskDeletionPreviewInput,
   type TaskInput,
   type TaskMoveInput,
 } from "../lib/board-input";
@@ -14,7 +25,7 @@ import {
 // resequenciamento; qualquer quadro pessoal fica muito abaixo desta marca.
 const REPLACEMENT_OFFSET = 1_000_000;
 
-export function createBoardStore(db: Database) {
+export function createBoardStore(db: Database, clock = Date.now) {
   async function verifyColumn(columnId: number) {
     const [column] = await db
       .select({ id: boardColumn.id })
@@ -203,6 +214,141 @@ export function createBoardStore(db: Database) {
         return row;
       });
       return updated;
+    },
+
+    async prepareTaskDeletion(input: TaskDeletionPreviewInput) {
+      const { id, version } = parseTaskDeletionPreviewInput(input);
+      const [task] = await db
+        .select()
+        .from(boardTask)
+        .where(eq(boardTask.id, id))
+        .limit(1);
+      if (!task) return { status: "conflict" } as const;
+      if (task.archiveBatch !== null) return { status: "blocked" } as const;
+      if (task.version !== version) return { status: "conflict" } as const;
+
+      const [[timer], records] = await Promise.all([
+        db.select({ version: timerState.version }).from(timerState).limit(1),
+        db
+          .select({
+            id: timeRecord.id,
+            version: timeRecord.version,
+            endedAt: timeRecord.endedAt,
+          })
+          .from(timeRecord)
+          .where(eq(timeRecord.taskId, id))
+          .orderBy(asc(timeRecord.id)),
+      ]);
+      return {
+        status: "ready" as const,
+        timerVersion: timer.version,
+        records: records.map(({ id: recordId, version: recordVersion }) => ({
+          id: recordId,
+          version: recordVersion,
+        })),
+        recordCount: records.length,
+        activeRecordCount: records.filter((record) => record.endedAt === null)
+          .length,
+      };
+    },
+
+    async deleteTask(input: TaskDeletionInput) {
+      const { id, version, timerVersion, records, deleteHours } =
+        parseTaskDeletionInput(input);
+      const expectedRecords = records
+        .map((record) => ({ id: record.id, version: record.version }))
+        .sort((left, right) => left.id - right.id);
+      const finalWriteConflict = Symbol("task-delete-conflict");
+
+      try {
+        return await db.transaction(async (tx) => {
+          const [task] = await tx
+            .select()
+            .from(boardTask)
+            .where(eq(boardTask.id, id))
+            .limit(1);
+          if (!task) return { status: "conflict" } as const;
+          if (task.archiveBatch !== null) return { status: "blocked" } as const;
+          if (task.version !== version) return { status: "conflict" } as const;
+
+          const [timer] = await tx
+            .select({ version: timerState.version })
+            .from(timerState)
+            .limit(1);
+          if (timer.version !== timerVersion)
+            return { status: "conflict" } as const;
+
+          const currentRecords = await tx
+            .select({ id: timeRecord.id, version: timeRecord.version })
+            .from(timeRecord)
+            .where(eq(timeRecord.taskId, id))
+            .orderBy(asc(timeRecord.id));
+          if (
+            JSON.stringify(currentRecords) !== JSON.stringify(expectedRecords)
+          )
+            return { status: "conflict" } as const;
+
+          const [active] = await tx
+            .select({ id: timeRecord.id, startedAt: timeRecord.startedAt })
+            .from(timeRecord)
+            .where(and(eq(timeRecord.taskId, id), isNull(timeRecord.endedAt)))
+            .limit(1);
+          if (active) {
+            const endedAt = Math.floor(clock() / 1000);
+            if (endedAt < active.startedAt)
+              throw new Error(
+                "O relógio do servidor está anterior ao início do período.",
+              );
+            const [stopped] = await tx
+              .update(timeRecord)
+              .set({ endedAt })
+              .where(
+                and(eq(timeRecord.id, active.id), isNull(timeRecord.endedAt)),
+              )
+              .returning({ id: timeRecord.id });
+            if (!stopped) return { status: "conflict" } as const;
+          }
+
+          for (const record of currentRecords) {
+            const predicate = and(
+              eq(timeRecord.id, record.id),
+              eq(timeRecord.version, record.version),
+              eq(timeRecord.taskId, id),
+            );
+            const changed = deleteHours
+              ? await tx
+                  .delete(timeRecord)
+                  .where(predicate)
+                  .returning({ id: timeRecord.id })
+              : await tx
+                  .update(timeRecord)
+                  .set({
+                    taskId: null,
+                    version: sql`${timeRecord.version} + 1`,
+                  })
+                  .where(predicate)
+                  .returning({ id: timeRecord.id });
+            if (!changed.length) throw finalWriteConflict;
+          }
+
+          const [deleted] = await tx
+            .delete(boardTask)
+            .where(
+              and(
+                eq(boardTask.id, id),
+                eq(boardTask.version, version),
+                isNull(boardTask.archiveBatch),
+              ),
+            )
+            .returning({ id: boardTask.id });
+          if (!deleted) throw finalWriteConflict;
+          return { status: "deleted" } as const;
+        });
+      } catch (error) {
+        if (error === finalWriteConflict)
+          return { status: "conflict" } as const;
+        throw error;
+      }
     },
 
     async moveTask(input: TaskMoveInput) {
