@@ -498,10 +498,16 @@ export function InvoicesPage() {
               <li key={invoice.id}>
                 <div>
                   <strong>
-                    Fatura {invoice.number} · {invoice.clientSnapshot.name}
+                    Fatura {invoice.number} ·{" "}
+                    {invoice.clientSnapshot?.name ??
+                      `Cliente #${invoice.clientId}`}
                   </strong>
                   <span>
-                    {invoice.periodFrom} a {invoice.periodTo} ·{" "}
+                    {invoice.periodFrom && invoice.periodTo && (
+                      <>
+                        {invoice.periodFrom} a {invoice.periodTo} ·{" "}
+                      </>
+                    )}
                     {invoice.cancelledAt
                       ? "Cancelada"
                       : invoice.paidAt
@@ -590,20 +596,27 @@ export function InvoicesPage() {
               {new Date(selectedInvoice.issuedAt * 1000).toLocaleString(
                 "pt-BR",
               )}{" "}
-              · {selectedInvoice.periodFrom} a {selectedInvoice.periodTo} (
-              {selectedInvoice.timezone})
+              {selectedInvoice.periodFrom && selectedInvoice.periodTo && (
+                <>
+                  · {selectedInvoice.periodFrom} a {selectedInvoice.periodTo} (
+                  {selectedInvoice.timezone})
+                </>
+              )}
             </DialogDescription>
             <div className="invoice-detail-parties">
               <section>
                 <h3>Cliente</h3>
-                <strong>{selectedInvoice.clientSnapshot.name}</strong>
-                {selectedInvoice.clientSnapshot.legalName && (
+                <strong>
+                  {selectedInvoice.clientSnapshot?.name ??
+                    `Cliente #${selectedInvoice.clientId}`}
+                </strong>
+                {selectedInvoice.clientSnapshot?.legalName && (
                   <span>{selectedInvoice.clientSnapshot.legalName}</span>
                 )}
-                {selectedInvoice.clientSnapshot.taxId && (
+                {selectedInvoice.clientSnapshot?.taxId && (
                   <span>{selectedInvoice.clientSnapshot.taxId}</span>
                 )}
-                {selectedInvoice.clientSnapshot.address && (
+                {selectedInvoice.clientSnapshot?.address && (
                   <span>{selectedInvoice.clientSnapshot.address}</span>
                 )}
               </section>
@@ -627,10 +640,12 @@ export function InvoicesPage() {
                 )}
               </section>
             </div>
-            <section className="invoice-detail-payment">
-              <h3>Pagamento · {selectedInvoice.paymentSnapshot.label}</h3>
-              <p>{selectedInvoice.paymentSnapshot.instructions}</p>
-            </section>
+            {selectedInvoice.paymentSnapshot && (
+              <section className="invoice-detail-payment">
+                <h3>Pagamento · {selectedInvoice.paymentSnapshot.label}</h3>
+                <p>{selectedInvoice.paymentSnapshot.instructions}</p>
+              </section>
+            )}
             {selectedInvoice.exchangeRate && (
               <p>1 USD = {selectedInvoice.exchangeRate} BRL</p>
             )}

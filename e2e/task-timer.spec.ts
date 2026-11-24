@@ -1,12 +1,16 @@
 import { expect, test } from "@playwright/test";
 
+const control = `http://127.0.0.1:${process.env.ECHO_TEST_CONTROL_PORT ?? "4319"}`;
+
 test("inicia, troca e retoma Tarefas preservando períodos e horas dos cards", async ({
   page,
   request,
 }, testInfo) => {
-  await request.post("http://127.0.0.1:4319/reset-board");
-  await request.post("http://127.0.0.1:4319/reset-directory");
-  await request.post("http://127.0.0.1:4319/reset-rate-limit");
+  expect((await request.post(`${control}/reset-board`)).status()).toBe(204);
+  expect((await request.post(`${control}/reset-directory`)).status()).toBe(204);
+  expect((await request.post(`${control}/reset-rate-limit`)).status()).toBe(
+    204,
+  );
   await page.goto("/");
   await page
     .getByLabel("Senha pessoal")
@@ -116,9 +120,11 @@ test("exclui Tarefa ativa em duas confirmações e preserva o período encerrado
   page,
   request,
 }) => {
-  await request.post("http://127.0.0.1:4319/reset-board");
-  await request.post("http://127.0.0.1:4319/reset-directory");
-  await request.post("http://127.0.0.1:4319/reset-rate-limit");
+  expect((await request.post(`${control}/reset-board`)).status()).toBe(204);
+  expect((await request.post(`${control}/reset-directory`)).status()).toBe(204);
+  expect((await request.post(`${control}/reset-rate-limit`)).status()).toBe(
+    204,
+  );
   await page.goto("/");
   await page
     .getByLabel("Senha pessoal")

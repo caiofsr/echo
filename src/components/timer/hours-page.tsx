@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { boardQueryOptions } from "../../queries/board";
 import { directoryQueryOptions } from "../../queries/directory";
 import { timerQueryOptions, type HoursRecord } from "../../queries/timer";
@@ -9,6 +10,7 @@ import {
   hoursDisplayFormatter,
 } from "../../lib/hours-date";
 import { duration } from "../../lib/timer-input";
+import { formatTimesheetCsv } from "../../lib/timesheet";
 import {
   Accordion,
   AccordionContent,
@@ -39,6 +41,8 @@ export function HoursPage() {
   });
   const [expanded, setExpanded] = useState<number[]>([]);
   const [manualOpen, setManualOpen] = useState(false);
+  const [includeTask, setIncludeTask] = useState(false);
+  const [exportingPdf, setExportingPdf] = useState(false);
   const timezone = timer.data?.preferences.timezone;
   const formProps =
     timezone && directory.data && board.data
@@ -60,6 +64,60 @@ export function HoursPage() {
             String(record.clientId) === filters.client,
         ),
     ) ?? [];
+  const timesheetRows = records.map((record) => ({
+    startedAt: record.startedAt,
+    endedAt: record.endedAt,
+    clientName:
+      directory.data?.clients.find(({ id }) => id === record.clientId)?.name ??
+      "Sem cliente",
+    projectName: record.projectName ?? "Sem projeto",
+    taskName: record.taskTitle,
+  }));
+
+  function download(filename: string, blob: Blob) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function exportCsv() {
+    if (!timezone || !timer.data) return;
+    const csv = formatTimesheetCsv(
+      timesheetRows,
+      timezone,
+      timer.data.serverNow,
+      includeTask,
+    );
+    download(
+      "timesheet.csv",
+      new Blob([csv], { type: "text/csv;charset=utf-8" }),
+    );
+  }
+
+  async function exportPdf() {
+    if (!timezone || !timer.data) return;
+    setExportingPdf(true);
+    try {
+      const { createTimesheetPdf } = await import("../../lib/timesheet-pdf");
+      const pdf = await createTimesheetPdf(
+        timesheetRows,
+        timezone,
+        timer.data.serverNow,
+        includeTask,
+      );
+      download(
+        "timesheet.pdf",
+        new Blob([pdf as BlobPart], { type: "application/pdf" }),
+      );
+    } catch {
+      toast.error("Não foi possível gerar o PDF. Tente novamente.");
+    } finally {
+      setExportingPdf(false);
+    }
+  }
 
   function recordSummary(record: HoursRecord) {
     const value = new Intl.NumberFormat("pt-BR", {
@@ -178,6 +236,34 @@ export function HoursPage() {
           />
         </label>
       </div>
+      <section className="timesheet-export" aria-label="Exportar timesheet">
+        <label className="timesheet-task-option">
+          <Input
+            type="checkbox"
+            className="timesheet-task-checkbox"
+            checked={includeTask}
+            onChange={(event) => setIncludeTask(event.target.checked)}
+          />
+          Incluir Tarefa
+        </label>
+        <div className="timesheet-export-actions">
+          <Button
+            type="button"
+            variant="outline"
+            disabled={!timesheetRows.length || !timezone}
+            onClick={exportCsv}
+          >
+            Baixar CSV
+          </Button>
+          <Button
+            type="button"
+            disabled={!timesheetRows.length || !timezone || exportingPdf}
+            onClick={exportPdf}
+          >
+            {exportingPdf ? "Gerando PDF…" : "Baixar PDF"}
+          </Button>
+        </div>
+      </section>
       {(timer.isError || directory.isError || board.isError) && (
         <p role="alert">
           Não foi possível atualizar os dados de horas. Confira sua conexão.

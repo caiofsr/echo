@@ -310,10 +310,18 @@ function decodeInvoice(row: typeof invoice.$inferSelect) {
   } = row;
   return {
     ...fields,
-    clientSnapshot: JSON.parse(clientSnapshot) as ClientSnapshot,
-    companySnapshot: JSON.parse(companySnapshot) as CompanySnapshot,
-    paymentSnapshot: JSON.parse(paymentSnapshot) as PaymentSnapshot,
-    lines: JSON.parse(linesSnapshot) as InvoiceLineSnapshot[],
+    clientSnapshot: clientSnapshot
+      ? (JSON.parse(clientSnapshot) as ClientSnapshot)
+      : null,
+    companySnapshot: companySnapshot
+      ? (JSON.parse(companySnapshot) as CompanySnapshot)
+      : null,
+    paymentSnapshot: paymentSnapshot
+      ? (JSON.parse(paymentSnapshot) as PaymentSnapshot)
+      : null,
+    lines: linesSnapshot
+      ? (JSON.parse(linesSnapshot) as InvoiceLineSnapshot[])
+      : [],
   };
 }
 

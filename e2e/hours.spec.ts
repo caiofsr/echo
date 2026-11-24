@@ -1,10 +1,16 @@
 import { expect, test } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+
+const control = `http://127.0.0.1:${process.env.ECHO_TEST_CONTROL_PORT ?? "4319"}`;
 
 test("lança, corrige e filtra registros de horas", async ({
   page,
   request,
 }, testInfo) => {
-  await request.post("http://127.0.0.1:4319/reset-rate-limit");
+  expect((await request.post(`${control}/reset-rate-limit`)).status()).toBe(
+    204,
+  );
+  expect((await request.post(`${control}/reset-directory`)).status()).toBe(204);
   await page.goto("/hours");
   await page
     .getByLabel("Senha pessoal")
@@ -90,6 +96,30 @@ test("lança, corrige e filtra registros de horas", async ({
   await filters.getByRole("combobox", { name: "Projeto", exact: true }).click();
   await page.getByRole("option", { name: projectName }).click();
   await expect(row).toContainText(projectName);
+  const csvDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Baixar CSV" }).click();
+  const csvDownload = await csvDownloadPromise;
+  const csv = await readFile((await csvDownload.path())!, "utf8");
+  expect(csv).toContain(clientName);
+  expect(csv).toContain(projectName);
+  expect(csv).toContain("00:00:48");
+  expect(csv).not.toContain("Pesquisa revisada");
+  expect(csv).not.toContain("175,50");
+  expect(csv).not.toContain('"Tarefa"');
+
+  await page.getByLabel("Incluir Tarefa").check();
+  const taskCsvDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Baixar CSV" }).click();
+  const taskCsvDownload = await taskCsvDownloadPromise;
+  const taskCsv = await readFile((await taskCsvDownload.path())!, "utf8");
+  expect(taskCsv).toContain('"Tarefa"');
+  expect(taskCsv).toContain('"Sem tarefa"');
+
+  const pdfDownloadPromise = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Baixar PDF" }).click();
+  const pdfDownload = await pdfDownloadPromise;
+  const pdf = await readFile((await pdfDownload.path())!);
+  expect(pdf.subarray(0, 5).toString()).toBe("%PDF-");
   await page.reload();
   await expect(
     page.getByRole("button", { name: /Pesquisa revisada/ }).first(),

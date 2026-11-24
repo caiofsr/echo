@@ -442,55 +442,6 @@
           "autoincrement": false,
           "default": 0
         },
-        "period_from": {
-          "name": "period_from",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "period_to": {
-          "name": "period_to",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "timezone": {
-          "name": "timezone",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "client_snapshot": {
-          "name": "client_snapshot",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "company_snapshot": {
-          "name": "company_snapshot",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "payment_snapshot": {
-          "name": "payment_snapshot",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "lines_snapshot": {
-          "name": "lines_snapshot",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
         "issued_at": {
           "name": "issued_at",
           "type": "integer",
@@ -548,10 +499,6 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {
-        "invoice_number_positive": {
-          "name": "invoice_number_positive",
-          "value": "\"invoice\".\"number\" > 0"
-        },
         "invoice_language": {
           "name": "invoice_language",
           "value": "\"invoice\".\"language\" IN ('pt', 'en')"
