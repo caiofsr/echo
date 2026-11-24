@@ -2,11 +2,13 @@ import { afterEach, expect, test } from "bun:test";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { eq } from "drizzle-orm";
 import { migrateDatabase, openDatabase } from "../src/db/connection";
 import { createBoardStore } from "../src/server/board";
 import { createDirectoryStore } from "../src/server/directory";
 import { createTimerStore } from "../src/server/timer";
 import { createArchiveStore } from "../src/server/archive";
+import { invoice, invoiceRecord, timeRecord } from "../src/db/schema";
 type DirectoryStore = ReturnType<typeof createDirectoryStore>;
 
 const databases: Array<{ close: () => void; dir: string }> = [];
@@ -413,6 +415,209 @@ test("apaga os Registros de horas não faturados quando essa opção é confirma
     records: [],
   });
   expect((await board.getBoard()).tasks).toEqual([]);
+});
+
+test("ao apagar horas, preserva e desvincula registros de faturas válidas", async () => {
+  const { board, db, directory } = await createStore();
+  const column = await board.saveColumn({ name: "Fazendo" });
+  const task = await board.saveTask({ columnId: column.id, title: "Revisar" });
+  const owner = await directory.saveClient({
+    name: "Cliente faturado",
+    legalName: "",
+    taxId: "",
+    address: "",
+  });
+  await db.run(`INSERT INTO time_record
+    (manual, task_id, description, started_at, ended_at, hourly_rate_cents, currency)
+    VALUES (1, ${task.id}, 'trabalho faturado', 10, 70, 12500, 'USD')`);
+  const [record] = await db
+    .select()
+    .from(timeRecord)
+    .where(eq(timeRecord.taskId, task.id));
+  const [issued] = await db
+    .insert(invoice)
+    .values({
+      id: 77,
+      clientId: owner.id,
+      number: 23,
+      language: "pt",
+      currency: "USD",
+      totalCents: 20000,
+      periodFrom: "2026-07-01",
+      periodTo: "2026-07-31",
+      timezone: "UTC",
+      clientSnapshot: JSON.stringify({ name: "Cliente faturado" }),
+      companySnapshot: JSON.stringify(null),
+      paymentSnapshot: JSON.stringify({ label: "PIX", instructions: "chave" }),
+      linesSnapshot: JSON.stringify([{ projectName: "Projeto" }]),
+      issuedAt: 100,
+    })
+    .returning();
+  await db
+    .insert(invoiceRecord)
+    .values({ invoiceId: issued.id, recordId: record.id });
+
+  const preview = await board.prepareTaskDeletion({
+    id: task.id,
+    version: task.version,
+  });
+  expect(preview).toMatchObject({
+    status: "ready",
+    recordCount: 1,
+    invoicedRecordCount: 1,
+    deletableRecordCount: 0,
+  });
+  if (preview.status !== "ready") throw new Error("Prévia inesperada.");
+  expect(preview.records).toEqual([
+    { id: record.id, version: record.version, isInvoiced: true },
+  ]);
+
+  await expect(
+    board.deleteTask({
+      id: task.id,
+      version: task.version,
+      timerVersion: preview.timerVersion,
+      records: preview.records,
+      deleteHours: true,
+    }),
+  ).resolves.toEqual({ status: "deleted" });
+  expect(await db.select().from(timeRecord)).toMatchObject([
+    { id: record.id, taskId: null, description: "trabalho faturado" },
+  ]);
+  expect(await db.select().from(invoiceRecord)).toEqual([
+    { invoiceId: issued.id, recordId: record.id },
+  ]);
+  expect(await db.select().from(invoice)).toMatchObject([
+    { id: issued.id, number: 23, totalCents: 20000 },
+  ]);
+  expect((await board.getBoard()).tasks).toEqual([]);
+});
+
+test("mudança para fatura válida após a prévia bloqueia a exclusão até atualizar", async () => {
+  const { board, db, directory } = await createStore();
+  const column = await board.saveColumn({ name: "Fazendo" });
+  const task = await board.saveTask({ columnId: column.id, title: "Revisar" });
+  const owner = await directory.saveClient({
+    name: "Cliente faturado",
+    legalName: "",
+    taxId: "",
+    address: "",
+  });
+  await db.run(`INSERT INTO time_record
+    (manual, task_id, started_at, ended_at, hourly_rate_cents, currency)
+    VALUES (1, ${task.id}, 10, 70, 12500, 'USD')`);
+  const [record] = await db
+    .select()
+    .from(timeRecord)
+    .where(eq(timeRecord.taskId, task.id));
+  const preview = await board.prepareTaskDeletion({
+    id: task.id,
+    version: task.version,
+  });
+  if (preview.status !== "ready") throw new Error("Prévia inesperada.");
+  const [issued] = await db
+    .insert(invoice)
+    .values({
+      id: 77,
+      clientId: owner.id,
+      number: 1,
+      language: "pt",
+      currency: "BRL",
+      totalCents: 100,
+      periodFrom: "2026-07-01",
+      periodTo: "2026-07-31",
+      timezone: "UTC",
+      clientSnapshot: JSON.stringify({ name: owner.name }),
+      companySnapshot: JSON.stringify(null),
+      paymentSnapshot: JSON.stringify({ label: "PIX", instructions: "chave" }),
+      linesSnapshot: JSON.stringify([]),
+      issuedAt: 100,
+    })
+    .returning();
+  await db
+    .insert(invoiceRecord)
+    .values({ invoiceId: issued.id, recordId: record.id });
+
+  await expect(
+    board.deleteTask({
+      id: task.id,
+      version: task.version,
+      timerVersion: preview.timerVersion,
+      records: preview.records,
+      deleteHours: true,
+    }),
+  ).resolves.toEqual({ status: "conflict" });
+  expect(
+    (await db.select().from(timeRecord)).map(({ taskId }) => taskId),
+  ).toEqual([task.id]);
+  expect((await board.getBoard()).tasks).toHaveLength(1);
+});
+
+test("fatura cancelada libera as horas para exclusão sem apagar o snapshot", async () => {
+  const { board, db, directory } = await createStore();
+  const column = await board.saveColumn({ name: "Fazendo" });
+  const task = await board.saveTask({ columnId: column.id, title: "Revisar" });
+  const owner = await directory.saveClient({
+    name: "Cliente faturado",
+    legalName: "",
+    taxId: "",
+    address: "",
+  });
+  await db.run(`INSERT INTO time_record
+    (manual, task_id, started_at, ended_at, hourly_rate_cents, currency)
+    VALUES (1, ${task.id}, 10, 70, 12500, 'USD')`);
+  const [record] = await db
+    .select()
+    .from(timeRecord)
+    .where(eq(timeRecord.taskId, task.id));
+  const [cancelled] = await db
+    .insert(invoice)
+    .values({
+      id: 77,
+      clientId: owner.id,
+      number: 1,
+      language: "pt",
+      currency: "USD",
+      totalCents: 20000,
+      periodFrom: "2026-07-01",
+      periodTo: "2026-07-31",
+      timezone: "UTC",
+      clientSnapshot: JSON.stringify({ name: owner.name }),
+      companySnapshot: JSON.stringify(null),
+      paymentSnapshot: JSON.stringify({ label: "PIX", instructions: "chave" }),
+      linesSnapshot: JSON.stringify([{ projectName: "Projeto" }]),
+      issuedAt: 100,
+      cancelledAt: 200,
+    })
+    .returning();
+  await db
+    .insert(invoiceRecord)
+    .values({ invoiceId: cancelled.id, recordId: record.id });
+
+  const preview = await board.prepareTaskDeletion({
+    id: task.id,
+    version: task.version,
+  });
+  expect(preview).toMatchObject({
+    status: "ready",
+    invoicedRecordCount: 0,
+    deletableRecordCount: 1,
+  });
+  if (preview.status !== "ready") throw new Error("Prévia inesperada.");
+  await expect(
+    board.deleteTask({
+      id: task.id,
+      version: task.version,
+      timerVersion: preview.timerVersion,
+      records: preview.records,
+      deleteHours: true,
+    }),
+  ).resolves.toEqual({ status: "deleted" });
+  expect(await db.select().from(timeRecord)).toEqual([]);
+  expect(await db.select().from(invoiceRecord)).toEqual([]);
+  expect(await db.select().from(invoice)).toMatchObject([
+    { id: cancelled.id, number: 1, cancelledAt: 200 },
+  ]);
 });
 
 test("não exclui Tarefa arquivada e detecta alterações após a prévia", async () => {

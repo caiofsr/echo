@@ -234,6 +234,11 @@ export function createBoardStore(db: Database, clock = Date.now) {
             id: timeRecord.id,
             version: timeRecord.version,
             endedAt: timeRecord.endedAt,
+            isInvoiced: sql<number>`EXISTS (
+              SELECT 1 FROM invoice_record ir
+              JOIN invoice i ON i.id = ir.invoice_id
+              WHERE ir.record_id = time_record.id AND i.cancelled_at IS NULL
+            )`,
           })
           .from(timeRecord)
           .where(eq(timeRecord.taskId, id))
@@ -242,11 +247,18 @@ export function createBoardStore(db: Database, clock = Date.now) {
       return {
         status: "ready" as const,
         timerVersion: timer.version,
-        records: records.map(({ id: recordId, version: recordVersion }) => ({
-          id: recordId,
-          version: recordVersion,
-        })),
+        records: records.map(
+          ({ id: recordId, version: recordVersion, isInvoiced }) => ({
+            id: recordId,
+            version: recordVersion,
+            isInvoiced: Boolean(isInvoiced),
+          }),
+        ),
         recordCount: records.length,
+        invoicedRecordCount: records.filter((record) => record.isInvoiced)
+          .length,
+        deletableRecordCount: records.filter((record) => !record.isInvoiced)
+          .length,
         activeRecordCount: records.filter((record) => record.endedAt === null)
           .length,
       };
@@ -256,7 +268,11 @@ export function createBoardStore(db: Database, clock = Date.now) {
       const { id, version, timerVersion, records, deleteHours } =
         parseTaskDeletionInput(input);
       const expectedRecords = records
-        .map((record) => ({ id: record.id, version: record.version }))
+        .map((record) => ({
+          id: record.id,
+          version: record.version,
+          isInvoiced: record.isInvoiced,
+        }))
         .sort((left, right) => left.id - right.id);
       const finalWriteConflict = Symbol("task-delete-conflict");
 
@@ -279,10 +295,24 @@ export function createBoardStore(db: Database, clock = Date.now) {
             return { status: "conflict" } as const;
 
           const currentRecords = await tx
-            .select({ id: timeRecord.id, version: timeRecord.version })
+            .select({
+              id: timeRecord.id,
+              version: timeRecord.version,
+              isInvoiced: sql<number>`EXISTS (
+                SELECT 1 FROM invoice_record ir
+                JOIN invoice i ON i.id = ir.invoice_id
+                WHERE ir.record_id = time_record.id AND i.cancelled_at IS NULL
+              )`,
+            })
             .from(timeRecord)
             .where(eq(timeRecord.taskId, id))
-            .orderBy(asc(timeRecord.id));
+            .orderBy(asc(timeRecord.id))
+            .then((rows) =>
+              rows.map((record) => ({
+                ...record,
+                isInvoiced: Boolean(record.isInvoiced),
+              })),
+            );
           if (
             JSON.stringify(currentRecords) !== JSON.stringify(expectedRecords)
           )
@@ -315,19 +345,20 @@ export function createBoardStore(db: Database, clock = Date.now) {
               eq(timeRecord.version, record.version),
               eq(timeRecord.taskId, id),
             );
-            const changed = deleteHours
-              ? await tx
-                  .delete(timeRecord)
-                  .where(predicate)
-                  .returning({ id: timeRecord.id })
-              : await tx
-                  .update(timeRecord)
-                  .set({
-                    taskId: null,
-                    version: sql`${timeRecord.version} + 1`,
-                  })
-                  .where(predicate)
-                  .returning({ id: timeRecord.id });
+            const changed =
+              deleteHours && !record.isInvoiced
+                ? await tx
+                    .delete(timeRecord)
+                    .where(predicate)
+                    .returning({ id: timeRecord.id })
+                : await tx
+                    .update(timeRecord)
+                    .set({
+                      taskId: null,
+                      version: sql`${timeRecord.version} + 1`,
+                    })
+                    .where(predicate)
+                    .returning({ id: timeRecord.id });
             if (!changed.length) throw finalWriteConflict;
           }
 

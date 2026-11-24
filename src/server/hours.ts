@@ -36,6 +36,11 @@ export async function saveTimeRecord(
   const owner = sql`COALESCE((SELECT client_id FROM project WHERE id = ${projectId}), ${clientId})`;
 
   const sameAssociation = sql`project_id IS ${projectId} AND client_id IS ${clientId}`;
+  const notInvoiced = sql`NOT EXISTS (
+    SELECT 1 FROM invoice_record ir
+    JOIN invoice i ON i.id = ir.invoice_id
+    WHERE ir.record_id = time_record.id AND i.cancelled_at IS NULL
+  )`;
 
   // SQLite evaluates the guards and writes in one statement, even across connections.
   const changed =
@@ -55,6 +60,7 @@ export async function saveTimeRecord(
         client_id = CASE WHEN ${sameAssociation} THEN client_id ELSE ${owner} END,
         version = version + 1
       WHERE id = ${id} AND version = ${"version" in input ? input.version : -1} AND ended_at IS NOT NULL
+        AND ${notInvoiced}
         AND (${!empty} OR (started_at = ${startedAt} AND ended_at = ${endedAt}))
         AND (${associations} OR (${sameAssociation} AND ${validTask}))
         AND NOT EXISTS (SELECT 1 FROM time_record WHERE ${overlap})
@@ -78,6 +84,14 @@ export async function saveTimeRecord(
       "Confira se a tarefa, o projeto e o cliente selecionados são válidos.",
     );
   if (id !== undefined) {
+    const [invoiced] = await db.all(sql`SELECT 1
+      FROM invoice_record ir
+      JOIN invoice i ON i.id = ir.invoice_id
+      WHERE ir.record_id = ${id} AND i.cancelled_at IS NULL LIMIT 1`);
+    if (invoiced)
+      return fail(
+        "Este registro está vinculado a uma fatura válida e não pode ser alterado.",
+      );
     const [current] = await db.all<{ version: number; endedAt: number | null }>(
       sql`SELECT version, ended_at AS endedAt FROM time_record WHERE id = ${id}`,
     );

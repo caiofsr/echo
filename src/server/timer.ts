@@ -32,6 +32,11 @@ export function createTimerStore(db: Database, clock = Date.now) {
           taskArchive: boardTask.archiveBatch,
           projectArchive: project.archiveBatch,
           clientArchive: client.archiveBatch,
+          invoiced: sql<number>`EXISTS (
+            SELECT 1 FROM invoice_record ir
+            JOIN invoice i ON i.id = ir.invoice_id
+            WHERE ir.record_id = time_record.id AND i.cancelled_at IS NULL
+          )`,
         })
         .from(timerState)
         .innerJoin(timerPreferences, eq(timerPreferences.id, 1))
@@ -53,6 +58,7 @@ export function createTimerStore(db: Database, clock = Date.now) {
                 ...row.record,
                 taskTitle: row.taskTitle,
                 projectName: row.projectName,
+                isInvoiced: Boolean(row.invoiced),
               },
             ]
           : [],

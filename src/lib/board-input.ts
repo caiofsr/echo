@@ -82,6 +82,7 @@ export const taskDeletionInputSchema = v.object({
     v.object({
       id: identifier,
       version: v.pipe(v.number(), v.safeInteger(), v.minValue(0)),
+      isInvoiced: v.boolean(),
     }),
   ),
   deleteHours: v.boolean(),

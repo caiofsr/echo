@@ -236,3 +236,52 @@ export const timeRecord = sqliteTable(
     check("time_record_currency", sql`${table.currency} IN ('BRL', 'USD')`),
   ],
 );
+
+export const invoice = sqliteTable(
+  "invoice",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    clientId: integer("client_id")
+      .notNull()
+      .references(() => client.id),
+    number: integer("number").notNull(),
+    language: text("language", { enum: ["pt", "en"] }).notNull(),
+    currency: text("currency", { enum: ["BRL", "USD"] }).notNull(),
+    exchangeRate: text("exchange_rate"),
+    totalCents: integer("total_cents").notNull().default(0),
+    periodFrom: text("period_from").notNull(),
+    periodTo: text("period_to").notNull(),
+    timezone: text("timezone").notNull(),
+    clientSnapshot: text("client_snapshot").notNull(),
+    companySnapshot: text("company_snapshot").notNull(),
+    paymentSnapshot: text("payment_snapshot").notNull(),
+    linesSnapshot: text("lines_snapshot").notNull(),
+    issuedAt: integer("issued_at").notNull(),
+    paidAt: integer("paid_at"),
+    cancelledAt: integer("cancelled_at"),
+  },
+  (table) => [
+    unique("invoice_client_number_unique").on(table.clientId, table.number),
+    index("invoice_client_id_idx").on(table.clientId),
+    check("invoice_number_positive", sql`${table.number} > 0`),
+    check("invoice_language", sql`${table.language} IN ('pt', 'en')`),
+    check("invoice_currency", sql`${table.currency} IN ('BRL', 'USD')`),
+    check("invoice_total", sql`${table.totalCents} >= 0`),
+  ],
+);
+
+export const invoiceRecord = sqliteTable(
+  "invoice_record",
+  {
+    invoiceId: integer("invoice_id")
+      .notNull()
+      .references(() => invoice.id),
+    recordId: integer("record_id")
+      .notNull()
+      .references(() => timeRecord.id, { onDelete: "cascade" }),
+  },
+  (table) => [
+    unique("invoice_record_unique").on(table.invoiceId, table.recordId),
+    index("invoice_record_record_id_idx").on(table.recordId),
+  ],
+);

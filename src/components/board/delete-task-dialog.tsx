@@ -26,6 +26,7 @@ export function DeleteTaskDialog({
 }) {
   const [choice, setChoice] = useState<Choice | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [staleConflict, setStaleConflict] = useState(false);
   const client = useQueryClient();
   const prepare = useServerFn(prepareTaskDeletion);
   const remove = useServerFn(deleteTask);
@@ -52,11 +53,9 @@ export function DeleteTaskDialog({
     onSuccess: async (result) => {
       if (result.status === "conflict") {
         toast.warning(
-          "Os dados mudaram em outra sessão. Confira a prévia e confirme novamente.",
+          "Os dados mudaram em outra sessão. Atualize o quadro antes de tentar novamente.",
         );
-        setChoice(null);
-        setConfirming(false);
-        await previewQuery.refetch();
+        setStaleConflict(true);
         return;
       }
       if (result.status === "blocked") {
@@ -81,8 +80,16 @@ export function DeleteTaskDialog({
   });
 
   const preview = previewQuery.data;
-  const ready = preview?.status === "ready" ? preview : null;
+  const ready = preview?.status === "ready" && !staleConflict ? preview : null;
   const busy = previewQuery.isPending || mutation.isPending;
+  async function refreshBoard() {
+    await Promise.all(
+      [boardQueryOptions, timerQueryOptions].map(({ queryKey }) =>
+        client.invalidateQueries({ queryKey }),
+      ),
+    );
+    onClose();
+  }
 
   return (
     <Dialog
@@ -111,10 +118,19 @@ export function DeleteTaskDialog({
             excluídas.
           </p>
         )}
-        {preview?.status === "conflict" && (
-          <p role="alert">
-            A tarefa mudou em outra sessão. Atualize o quadro e tente novamente.
-          </p>
+        {(preview?.status === "conflict" || staleConflict) && (
+          <section
+            className="task-delete-confirmation"
+            aria-label="Dados desatualizados"
+          >
+            <p role="alert">
+              A tarefa ou seus registros mudaram em outra sessão. Atualize o
+              quadro para revisar os dados e iniciar a exclusão novamente.
+            </p>
+            <Button type="button" variant="outline" onClick={refreshBoard}>
+              Atualizar quadro
+            </Button>
+          </section>
         )}
         {ready && !confirming && (
           <section
@@ -144,6 +160,13 @@ export function DeleteTaskDialog({
                 ? "1 registro de horas está associado a esta tarefa."
                 : `${ready.recordCount} registros de horas estão associados a esta tarefa.`}
             </p>
+            {ready.invoicedRecordCount > 0 && (
+              <p>
+                {ready.invoicedRecordCount === 1
+                  ? "1 registro pertence a uma fatura válida e será preservado em qualquer opção."
+                  : `${ready.invoicedRecordCount} registros pertencem a faturas válidas e serão preservados em qualquer opção.`}
+              </p>
+            )}
             {ready.activeRecordCount > 0 && (
               <p role="status">
                 O cronômetro está contando nesta tarefa. Ao confirmar, o período
@@ -166,13 +189,14 @@ export function DeleteTaskDialog({
             ) : (
               <>
                 <p>
-                  {ready.recordCount === 0
-                    ? "A tarefa será excluída sem registros de horas associados."
-                    : `${ready.recordCount} ${ready.recordCount === 1 ? "registro de horas será apagado" : "registros de horas serão apagados"}.`}
+                  {ready.deletableRecordCount === 0
+                    ? "Nenhum registro não faturado será apagado."
+                    : `${ready.deletableRecordCount} ${ready.deletableRecordCount === 1 ? "registro não faturado será apagado" : "registros não faturados serão apagados"}.`}
                 </p>
                 <p>
-                  Registros vinculados a faturas válidas serão preservados e
-                  desvinculados; as faturas não serão alteradas.
+                  {ready.invoicedRecordCount === 0
+                    ? "A Tarefa será excluída junto com os registros não faturados escolhidos."
+                    : `${ready.invoicedRecordCount} ${ready.invoicedRecordCount === 1 ? "registro faturado será preservado" : "registros faturados serão preservados"} e desvinculado da Tarefa. As faturas ficam intactas.`}
                 </p>
               </>
             )}
