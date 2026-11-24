@@ -71,6 +71,13 @@
       "when": 1795600000000,
       "tag": "0009_archive_work",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1795700000000,
+      "tag": "0010_invoice_preview",
+      "breakpoints": true
     }
   ]
 }

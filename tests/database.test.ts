@@ -72,6 +72,8 @@ test("migration inicial pode ser reaplicada sem perder credencial ou sessão", a
       "board_task",
       "client",
       "company_settings",
+      "invoice",
+      "invoice_record",
       "payment_method",
       "project",
       "rate_limit",

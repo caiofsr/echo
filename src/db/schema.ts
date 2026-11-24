@@ -236,3 +236,46 @@ export const timeRecord = sqliteTable(
     check("time_record_currency", sql`${table.currency} IN ('BRL', 'USD')`),
   ],
 );
+
+// An invoice is introduced with its record links so previews can identify
+// already billed hours. Emission fills the remaining snapshot in a later step.
+export const invoice = sqliteTable(
+  "invoice",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    clientId: integer("client_id")
+      .notNull()
+      .references(() => client.id),
+    number: integer("number").notNull(),
+    language: text("language", { enum: ["pt", "en"] }).notNull(),
+    currency: text("currency", { enum: ["BRL", "USD"] }).notNull(),
+    exchangeRate: text("exchange_rate"),
+    totalCents: integer("total_cents").notNull().default(0),
+    issuedAt: integer("issued_at").notNull(),
+    paidAt: integer("paid_at"),
+    cancelledAt: integer("cancelled_at"),
+  },
+  (table) => [
+    unique("invoice_client_number_unique").on(table.clientId, table.number),
+    index("invoice_client_id_idx").on(table.clientId),
+    check("invoice_language", sql`${table.language} IN ('pt', 'en')`),
+    check("invoice_currency", sql`${table.currency} IN ('BRL', 'USD')`),
+    check("invoice_total", sql`${table.totalCents} >= 0`),
+  ],
+);
+
+export const invoiceRecord = sqliteTable(
+  "invoice_record",
+  {
+    invoiceId: integer("invoice_id")
+      .notNull()
+      .references(() => invoice.id),
+    recordId: integer("record_id")
+      .notNull()
+      .references(() => timeRecord.id),
+  },
+  (table) => [
+    unique("invoice_record_unique").on(table.invoiceId, table.recordId),
+    index("invoice_record_record_id_idx").on(table.recordId),
+  ],
+);
