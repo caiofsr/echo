@@ -5,6 +5,8 @@ import {
   columnRemovalInputSchema,
   columnOrderInputSchema,
   taskInputSchema,
+  taskDeletionInputSchema,
+  taskDeletionPreviewInputSchema,
   taskMoveInputSchema,
 } from "../../lib/board-input";
 import { db } from "../../db";
@@ -42,6 +44,20 @@ export const saveTask = createServerFn({ method: "POST" })
   .validator(taskInputSchema)
   .handler(async ({ data }) => {
     return createBoardStore(db).saveTask(data);
+  });
+
+export const prepareTaskDeletion = createServerFn({ method: "POST" })
+  .middleware([requireSessionMiddleware])
+  .validator(taskDeletionPreviewInputSchema)
+  .handler(async ({ data }) => {
+    return createBoardStore(db).prepareTaskDeletion(data);
+  });
+
+export const deleteTask = createServerFn({ method: "POST" })
+  .middleware([requireSessionMiddleware])
+  .validator(taskDeletionInputSchema)
+  .handler(async ({ data }) => {
+    return createBoardStore(db).deleteTask(data);
   });
 
 export const moveTask = createServerFn({ method: "POST" })

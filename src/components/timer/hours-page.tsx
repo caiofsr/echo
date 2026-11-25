@@ -286,12 +286,17 @@ export function HoursPage() {
           onValueChange={(value) => setExpanded(value)}
         >
           {records.map((record) =>
-            record.endedAt === null ? (
+            record.endedAt === null || record.isInvoiced ? (
               <article
                 key={record.id}
                 className="hours-record hours-record-summary"
               >
                 {recordSummary(record)}
+                {record.isInvoiced && (
+                  <span className="hours-invoice-lock">
+                    Vinculado a uma fatura válida · edição bloqueada
+                  </span>
+                )}
               </article>
             ) : (
               <AccordionItem

@@ -7,6 +7,7 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { ArchiveDialog, type ArchiveTarget } from "../archive/archive-dialog";
 import { ArchiveFilter } from "../archive/archive-filter";
+import { DeleteTaskDialog } from "./delete-task-dialog";
 import { Button } from "../ui/button";
 import { TimerActionIcon } from "../ui/timer-action-icon";
 import {
@@ -39,10 +40,12 @@ export function BoardPage() {
   const { data } = useSuspenseQuery(boardQueryOptions);
   const queryClient = useQueryClient();
   const returnFocus = useRef<HTMLElement | null>(null);
+  const boardHeading = useRef<HTMLHeadingElement | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<ArchiveTarget | null>(
     null,
   );
+  const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [notice, setNotice] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -145,7 +148,7 @@ export function BoardPage() {
 
   return (
     <section className="page-content board-page">
-      <h1>Quadro</h1>
+      <h1 ref={boardHeading}>Quadro</h1>
       <p className="settings-success" role="status">
         {notice}
       </p>
@@ -415,6 +418,11 @@ export function BoardPage() {
             });
             setEditor(null);
           }}
+          onDelete={() => {
+            returnFocus.current = boardHeading.current;
+            setDeleteTarget(editor.task);
+            setEditor(null);
+          }}
         />
       )}
       {editor?.kind === "task-edit" && (
@@ -442,6 +450,13 @@ export function BoardPage() {
           target={archiveTarget}
           returnFocus={returnFocus}
           onClose={() => setArchiveTarget(null)}
+        />
+      )}
+      {deleteTarget && (
+        <DeleteTaskDialog
+          task={deleteTarget}
+          returnFocus={returnFocus}
+          onClose={() => setDeleteTarget(null)}
         />
       )}
     </section>
