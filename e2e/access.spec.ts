@@ -94,7 +94,7 @@ test("navegação responsiva sem dados fictícios e sem redirecionamento externo
       ).toBeVisible();
     } else {
       await expect(
-        page.getByText("Este espaço está sendo preparado"),
+        page.getByRole("region", { name: "Faturas emitidas" }),
       ).toBeVisible();
     }
   }

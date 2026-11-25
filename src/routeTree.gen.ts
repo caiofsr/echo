@@ -17,6 +17,7 @@ import { Route as AppHoursRouteImport } from './routes/_app.hours'
 import { Route as AppInvoicesRouteImport } from './routes/_app.invoices'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as ApiAuthSplatRouteImport } from './routes/api/auth/$'
+import { Route as ApiInvoicesIdPdfRouteImport } from './routes/api/invoices/$id.pdf'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -57,6 +58,11 @@ const ApiAuthSplatRoute = ApiAuthSplatRouteImport.update({
   path: '/api/auth/$',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiInvoicesIdPdfRoute = ApiInvoicesIdPdfRouteImport.update({
+  id: '/api/invoices/$id/pdf',
+  path: '/api/invoices/$id/pdf',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/invoices': typeof AppInvoicesRoute
   '/settings': typeof AppSettingsRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/invoices/$id/pdf': typeof ApiInvoicesIdPdfRoute
 }
 export interface FileRoutesByTo {
   '/login': typeof LoginRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/invoices/$id/pdf': typeof ApiInvoicesIdPdfRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,6 +94,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/': typeof AppIndexRoute
   '/api/auth/$': typeof ApiAuthSplatRoute
+  '/api/invoices/$id/pdf': typeof ApiInvoicesIdPdfRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -97,6 +106,7 @@ export interface FileRouteTypes {
     | '/invoices'
     | '/settings'
     | '/api/auth/$'
+    | '/api/invoices/$id/pdf'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/login'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/'
     | '/api/auth/$'
+    | '/api/invoices/$id/pdf'
   id:
     | '__root__'
     | '/_app'
@@ -116,12 +127,14 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/'
     | '/api/auth/$'
+    | '/api/invoices/$id/pdf'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   ApiAuthSplatRoute: typeof ApiAuthSplatRoute
+  ApiInvoicesIdPdfRoute: typeof ApiInvoicesIdPdfRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -182,6 +195,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthSplatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/invoices/$id/pdf': {
+      id: '/api/invoices/$id/pdf'
+      path: '/api/invoices/$id/pdf'
+      fullPath: '/api/invoices/$id/pdf'
+      preLoaderRoute: typeof ApiInvoicesIdPdfRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -207,6 +227,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   ApiAuthSplatRoute: ApiAuthSplatRoute,
+  ApiInvoicesIdPdfRoute: ApiInvoicesIdPdfRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

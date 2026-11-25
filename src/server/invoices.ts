@@ -329,6 +329,8 @@ function decodeInvoice(row: typeof invoice.$inferSelect) {
   };
 }
 
+export type IssuedInvoice = ReturnType<typeof decodeInvoice>;
+
 export function createInvoiceStore(db: Database, clock = Date.now) {
   return {
     /** Read-only preview: no number is reserved and no record is locked. */
@@ -440,6 +442,11 @@ export function createInvoiceStore(db: Database, clock = Date.now) {
         return created;
       });
       return decodeInvoice(row);
+    },
+
+    async find(id: number) {
+      const [row] = await db.select().from(invoice).where(eq(invoice.id, id));
+      return row ? decodeInvoice(row) : null;
     },
 
     async list() {

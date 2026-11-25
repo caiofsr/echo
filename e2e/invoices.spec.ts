@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
 
 const control = `http://127.0.0.1:${process.env.ECHO_TEST_CONTROL_PORT ?? "4319"}`;
@@ -130,6 +131,8 @@ test("emite uma cópia da prévia e bloqueia os registros incluídos", async ({
   await form.getByLabel("De", { exact: true }).fill("2020-04-01");
   await form.getByLabel("Até", { exact: true }).fill("2020-04-30");
   await form.getByLabel("Cotação", { exact: false }).fill("5,20");
+  await form.getByRole("combobox", { name: "Idioma", exact: true }).click();
+  await page.getByRole("option", { name: "English" }).click();
   await form
     .getByRole("combobox", { name: "Dados de pagamento", exact: true })
     .click();
@@ -166,6 +169,34 @@ test("emite uma cópia da prévia e bloqueia os registros incluídos", async ({
   await expect(detail).toContainText("Serviços de identidade e website");
   await expect(detail).toContainText("1 USD = 5,20 BRL");
   await expect(detail).toContainText("R$ 412,00");
+
+  const downloadButton = detail.getByRole("button", { name: "Baixar PDF" });
+  const path = await downloadButton.getAttribute("href");
+  expect(path).toBeTruthy();
+  const unauthorized = await request.get(path!);
+  expect(unauthorized.status()).toBe(401);
+  expect(unauthorized.headers()["cache-control"]).toBe("no-store");
+
+  const downloadPdf = async (filename: string, attachment: string) => {
+    const downloadPromise = page.waitForEvent("download");
+    await detail.getByRole("button", { name: "Baixar PDF" }).click();
+    const download = await downloadPromise;
+    expect(download.suggestedFilename()).toBe(filename);
+    const artifact = test.info().outputPath(`${attachment}.pdf`);
+    await download.saveAs(artifact);
+    const bytes = await readFile(artifact);
+    expect(bytes.subarray(0, 5).toString()).toBe("%PDF-");
+  };
+  await downloadPdf("invoice-2.pdf", "invoice-en");
+  await downloadPdf("invoice-2.pdf", "invoice-en-repeat");
+  await page.keyboard.press("Escape");
+  await expect(history.locator("li")).toHaveCount(2);
+  await history
+    .locator("li")
+    .filter({ hasText: "Fatura 1 · Oficina Aurora" })
+    .getByRole("button", { name: "Ver fatura" })
+    .click();
+  await downloadPdf("fatura-1.pdf", "invoice-pt");
 
   await page.goto("/");
   await page

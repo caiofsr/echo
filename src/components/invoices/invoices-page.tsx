@@ -673,6 +673,15 @@ export function InvoicesPage() {
                 )}
               </strong>
             </div>
+            <div>
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={<a href={`/api/invoices/${selectedInvoice.id}/pdf`} />}
+              >
+                Baixar PDF
+              </Button>
+            </div>
           </DialogContent>
         )}
       </Dialog>
