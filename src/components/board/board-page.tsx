@@ -23,6 +23,7 @@ import {
   TaskMoveDialog,
 } from "./board-dialogs";
 
+import { TaskDeletionDialog } from "./task-deletion-dialog";
 import { useTimerControl } from "../../hooks/use-timer-control";
 import { duration } from "../../lib/timer-input";
 
@@ -32,7 +33,8 @@ type Editor =
   | { kind: "task-create"; columnId: number }
   | { kind: "task-details"; task: Task }
   | { kind: "task-edit"; task: Task }
-  | { kind: "task-move"; task: Task };
+  | { kind: "task-move"; task: Task }
+  | { kind: "task-delete"; task: Task };
 
 export function BoardPage() {
   const timer = useTimerControl();
@@ -405,6 +407,7 @@ export function BoardPage() {
           onCancel={() => setEditor(null)}
           onEdit={() => setEditor({ kind: "task-edit", task: editor.task })}
           onMove={() => setEditor({ kind: "task-move", task: editor.task })}
+          onDelete={() => setEditor({ kind: "task-delete", task: editor.task })}
           onArchive={() => {
             setArchiveTarget({
               kind: "task",
@@ -435,6 +438,13 @@ export function BoardPage() {
           tasks={visibleTasks}
           onCancel={() => setEditor(null)}
           onSaved={() => saved("Tarefa movida.")}
+        />
+      )}
+      {editor?.kind === "task-delete" && (
+        <TaskDeletionDialog
+          task={editor.task}
+          returnFocus={returnFocus}
+          onClose={() => setEditor(null)}
         />
       )}
       {archiveTarget && (

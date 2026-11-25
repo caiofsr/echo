@@ -182,6 +182,7 @@ export function TaskDetailsDialog({
   onEdit,
   onMove,
   onArchive,
+  onDelete,
   returnFocus,
 }: {
   onCancel: () => void;
@@ -192,6 +193,7 @@ export function TaskDetailsDialog({
   onEdit: () => void;
   onMove: () => void;
   onArchive: () => void;
+  onDelete: () => void;
 }) {
   return (
     <Dialog
@@ -231,6 +233,11 @@ export function TaskDetailsDialog({
               ? "Arquivar tarefa"
               : "Restaurar tarefa"}
           </Button>
+          {task.archiveBatch === null && (
+            <Button variant="destructive" onClick={onDelete}>
+              Excluir tarefa
+            </Button>
+          )}
           <Button variant="ghost" onClick={onCancel}>
             Fechar
           </Button>

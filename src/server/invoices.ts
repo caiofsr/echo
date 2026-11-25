@@ -1,5 +1,5 @@
 import * as v from "valibot";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, type SQLWrapper } from "drizzle-orm";
 import type { Database } from "../db/connection";
 import { client, timerPreferences } from "../db/schema";
 import {
@@ -52,6 +52,14 @@ const exclusionMessages: Record<InvoiceExclusionReason, string> = {
   "already-invoiced": "Já incluído em uma fatura válida.",
 };
 
+export function hasValidInvoice(recordId: SQLWrapper) {
+  return sql<number>`exists (
+    select 1 from invoice_record
+    join invoice on invoice.id = invoice_record.invoice_id
+    where invoice_record.record_id = ${recordId} and invoice.cancelled_at is null
+  )`;
+}
+
 export function createInvoiceStore(db: Database) {
   return {
     /** Read-only preview: no number is reserved and no record is locked. */
@@ -75,11 +83,7 @@ export function createInvoiceStore(db: Database) {
         SELECT tr.id, tr.started_at AS startedAt, tr.ended_at AS endedAt,
           tr.description, tr.project_id AS projectId, p.name AS projectName,
           tr.hourly_rate_cents AS hourlyRateCents, tr.currency,
-          EXISTS (
-            SELECT 1 FROM invoice_record ir
-            JOIN invoice i ON i.id = ir.invoice_id
-            WHERE ir.record_id = tr.id AND i.cancelled_at IS NULL
-          ) AS alreadyInvoiced
+          ${hasValidInvoice(sql`tr.id`)} AS alreadyInvoiced
         FROM time_record tr
         LEFT JOIN project p ON p.id = tr.project_id
         WHERE tr.started_at < ${endAt}
