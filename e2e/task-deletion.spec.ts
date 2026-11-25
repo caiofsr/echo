@@ -55,8 +55,12 @@ test("confere o destino das horas e exclui uma Tarefa em andamento", async ({
   ).toBeVisible();
   await otherTab.close();
 
-  await dialog.getByRole("button", { name: "Excluir tarefa permanentemente" }).click();
-  await expect(dialog.getByRole("alert")).toContainText("mudaram em outra sessão");
+  await dialog
+    .getByRole("button", { name: "Salvar período e excluir tarefa" })
+    .click();
+  await expect(dialog.getByRole("alert")).toContainText(
+    "mudaram em outra sessão",
+  );
   await dialog.getByRole("button", { name: "Atualizar quadro" }).click();
   await expect(dialog).not.toBeVisible();
   await expect(task).toBeVisible();
@@ -70,7 +74,9 @@ test("confere o destino das horas e exclui uma Tarefa em andamento", async ({
   await dialog.getByRole("button", { name: "Preservar as horas" }).click();
   await dialog.getByRole("button", { name: "Continuar" }).click();
   await expect(dialog).toContainText("registros serão preservados sem vínculo");
-  await dialog.getByRole("button", { name: "Excluir tarefa permanentemente" }).click();
+  await dialog
+    .getByRole("button", { name: "Salvar período e excluir tarefa" })
+    .click();
   await expect(dialog).not.toBeVisible();
   await expect(task).toHaveCount(0);
   await expect(
