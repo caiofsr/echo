@@ -1,11 +1,16 @@
 import { expect, test } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
+const control = `http://127.0.0.1:${process.env.ECHO_TEST_CONTROL_PORT ?? "4319"}`;
+
 test("lança, corrige e filtra registros de horas", async ({
   page,
   request,
 }, testInfo) => {
-  await request.post("http://127.0.0.1:4319/reset-rate-limit");
+  expect((await request.post(`${control}/reset-rate-limit`)).status()).toBe(
+    204,
+  );
+  expect((await request.post(`${control}/reset-directory`)).status()).toBe(204);
   await page.goto("/hours");
   await page
     .getByLabel("Senha pessoal")

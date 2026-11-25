@@ -1038,6 +1038,21 @@ input {
   gap: 0.5rem;
   margin-top: 1.5rem;
 }
+.task-delete-choice,
+.task-delete-confirmation {
+  display: grid;
+  gap: 0.75rem;
+  line-height: 1.5;
+}
+.task-delete-choice p,
+.task-delete-confirmation p {
+  margin: 0;
+  color: var(--muted-foreground);
+}
+.task-delete-choice [aria-pressed="true"] {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
 .column-manager-list {
   list-style: none;
   margin: 0;
@@ -1641,6 +1656,105 @@ button.hours-record-summary:hover {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+.invoice-history {
+  margin-top: 2.5rem;
+}
+.invoice-history h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  font-weight: 620;
+}
+.invoice-history-list,
+.invoice-detail-lines {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.invoice-history-list li,
+.invoice-detail-lines li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+}
+.invoice-history-list li > div,
+.invoice-detail-lines li > div {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.invoice-history-list li span,
+.invoice-detail-lines li span {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
+}
+.invoice-confirm-summary {
+  display: grid;
+  gap: 0.4rem;
+  padding: 1rem;
+  border-radius: 10px;
+  background: var(--muted);
+  overflow-wrap: anywhere;
+}
+.invoice-confirm-summary span {
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+.invoice-detail-dialog {
+  display: grid;
+  gap: 1rem;
+}
+.invoice-detail-parties {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.invoice-detail-parties section {
+  display: grid;
+  align-content: start;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  overflow-wrap: anywhere;
+}
+.invoice-detail-parties h3,
+.invoice-detail-payment h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 620;
+}
+.invoice-detail-parties span,
+.invoice-detail-payment p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.invoice-detail-payment {
+  display: grid;
+  gap: 0.3rem;
+}
+.invoice-detail-lines li {
+  padding-inline: 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-border);
+  border-radius: 0;
+}
+.hours-invoice-lock {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  text-align: right;
+}
 @media (max-width: 900px) {
   .invoice-form-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1655,5 +1769,14 @@ button.hours-record-summary:hover {
   }
   .invoice-form-grid .field:first-child {
     grid-column: auto;
+  }
+  .invoice-detail-parties {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .invoice-history-list li {
+    align-items: flex-start;
+  }
+  .invoice-history-list li > button {
+    width: 100%;
   }
 }

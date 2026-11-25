@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-const control = "http://127.0.0.1:4319";
+const control = `http://127.0.0.1:${process.env.ECHO_TEST_CONTROL_PORT ?? "4319"}`;
 
 test("confere inclusões, exclusões e valores da prévia sem emitir a fatura", async ({
   page,
@@ -100,4 +100,99 @@ test("confere inclusões, exclusões e valores da prévia sem emitir a fatura", 
 
   // The preview leaves the cronômetro and the emitted invoice untouched.
   await expect(timer).toContainText("Sessão em andamento");
+
+  await form.getByLabel("De", { exact: true }).fill("2020-03-01");
+  await form.getByLabel("Até", { exact: true }).fill("2020-03-31");
+  await form.getByRole("button", { name: "Conferir prévia" }).click();
+  await expect(
+    preview.getByRole("heading", { name: "Nenhum registro elegível" }),
+  ).toBeVisible();
+  await expect(
+    preview.getByRole("button", { name: "Emitir fatura" }),
+  ).toBeDisabled();
+});
+
+test("emite uma cópia da prévia e bloqueia os registros incluídos", async ({
+  page,
+  request,
+}) => {
+  expect((await request.post(`${control}/seed-invoices`)).status()).toBe(204);
+  await page.goto("/invoices");
+  await page
+    .getByLabel("Senha pessoal")
+    .fill("senha pessoal de teste no navegador");
+  await page.getByRole("button", { name: "Entrar", exact: true }).click();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Faturas");
+
+  const form = page.locator("form.invoice-form");
+  await form.getByRole("combobox", { name: "Cliente", exact: true }).click();
+  await page.getByRole("option", { name: "Oficina Aurora" }).click();
+  await form.getByLabel("De", { exact: true }).fill("2020-04-01");
+  await form.getByLabel("Até", { exact: true }).fill("2020-04-30");
+  await form.getByLabel("Cotação", { exact: false }).fill("5,20");
+  await form
+    .getByRole("combobox", { name: "Dados de pagamento", exact: true })
+    .click();
+  await page.getByRole("option", { name: "Pix" }).click();
+  await expect(form.getByLabel("Próximo número")).toHaveValue("2");
+  await form.getByRole("button", { name: "Conferir prévia" }).click();
+
+  const preview = page.getByRole("region", { name: "Prévia", exact: true });
+  await expect(preview.locator(".invoice-total")).toContainText("R$ 412,00");
+  await preview
+    .getByLabel("Descrição do serviço")
+    .filter({ visible: true })
+    .first()
+    .fill("Serviços de identidade e website");
+  await preview.getByRole("button", { name: "Emitir fatura" }).click();
+
+  const confirmation = page.getByRole("dialog");
+  await expect(confirmation).toContainText("número 2");
+  await expect(confirmation).toContainText("R$ 412,00");
+  await confirmation.getByRole("button", { name: "Confirmar emissão" }).click();
+  await expect(page.getByText("Fatura 2 emitida.")).toBeVisible();
+
+  const history = page.getByRole("region", { name: "Faturas emitidas" });
+  const issued = history
+    .locator("li")
+    .filter({ hasText: "Fatura 2 · Oficina Aurora" });
+  await expect(issued).toContainText("R$ 412,00");
+  await issued.getByRole("button", { name: "Ver fatura" }).click();
+  const detail = page.getByRole("dialog");
+  await expect(detail).toContainText("Cliente");
+  await expect(detail).toContainText("Oficina Aurora");
+  await expect(detail).toContainText("Ateliê Aurora");
+  await expect(detail).toContainText("Pix para fatura@aurora.test");
+  await expect(detail).toContainText("Serviços de identidade e website");
+  await expect(detail).toContainText("1 USD = 5,20 BRL");
+  await expect(detail).toContainText("R$ 412,00");
+
+  await page.goto("/");
+  await page
+    .getByRole("button", { name: "Tarefa faturada", exact: true })
+    .click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Excluir tarefa" })
+    .click();
+  const deletion = page.getByRole("dialog");
+  await expect(deletion).toContainText(
+    "1 registro pertence a uma fatura válida",
+  );
+  await deletion.getByRole("button", { name: "Apagar as horas" }).click();
+  await deletion.getByRole("button", { name: "Continuar" }).click();
+  await expect(deletion).toContainText(
+    "Nenhum registro não faturado será apagado",
+  );
+  await expect(deletion).toContainText("1 registro faturado será preservado");
+  await deletion
+    .getByRole("button", { name: "Excluir tarefa permanentemente" })
+    .click();
+  await expect(deletion).not.toBeVisible();
+  await expect(page.getByText("Tarefa excluída.")).toBeVisible();
+
+  await page.goto("/hours");
+  await expect(
+    page.getByText("Vinculado a uma fatura válida · edição bloqueada"),
+  ).toHaveCount(3);
 });

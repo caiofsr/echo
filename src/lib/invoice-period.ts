@@ -6,7 +6,9 @@ export function isValidDay(value: string) {
   const match = dayPattern.exec(value);
   if (!match) return false;
   const [, year, month, day] = match;
-  const parsed = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+  const parsed = new Date(
+    Date.UTC(Number(year), Number(month) - 1, Number(day)),
+  );
   return (
     parsed.getUTCFullYear() === Number(year) &&
     parsed.getUTCMonth() === Number(month) - 1 &&

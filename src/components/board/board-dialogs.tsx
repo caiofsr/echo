@@ -226,6 +226,9 @@ export function TaskDetailsDialog({
                 Mover
               </Button>
               <Button onClick={onEdit}>Editar tarefa</Button>
+              <Button variant="destructive" onClick={onDelete}>
+                Excluir tarefa
+              </Button>
             </>
           )}
           <Button variant="outline" onClick={onArchive}>
@@ -233,11 +236,6 @@ export function TaskDetailsDialog({
               ? "Arquivar tarefa"
               : "Restaurar tarefa"}
           </Button>
-          {task.archiveBatch === null && (
-            <Button variant="destructive" onClick={onDelete}>
-              Excluir tarefa
-            </Button>
-          )}
           <Button variant="ghost" onClick={onCancel}>
             Fechar
           </Button>

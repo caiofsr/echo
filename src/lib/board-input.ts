@@ -66,6 +66,29 @@ export const taskMoveInputSchema = v.object(
 );
 export type TaskMoveInput = v.InferInput<typeof taskMoveInputSchema>;
 
+export const taskDeletionPreviewInputSchema = v.object({
+  id: identifier,
+  version: identifier,
+});
+export type TaskDeletionPreviewInput = v.InferInput<
+  typeof taskDeletionPreviewInputSchema
+>;
+
+export const taskDeletionInputSchema = v.object({
+  id: identifier,
+  version: identifier,
+  timerVersion: v.pipe(v.number(), v.safeInteger(), v.minValue(0)),
+  records: v.array(
+    v.object({
+      id: identifier,
+      version: v.pipe(v.number(), v.safeInteger(), v.minValue(0)),
+      isInvoiced: v.boolean(),
+    }),
+  ),
+  deleteHours: v.boolean(),
+});
+export type TaskDeletionInput = v.InferInput<typeof taskDeletionInputSchema>;
+
 export function parseColumnInput(value: unknown) {
   return v.parse(columnInputSchema, value);
 }
@@ -85,6 +108,12 @@ export function parseColumnOrderInput(value: unknown) {
 }
 export function parseTaskInput(value: unknown) {
   return v.parse(taskInputSchema, value);
+}
+export function parseTaskDeletionPreviewInput(value: unknown) {
+  return v.parse(taskDeletionPreviewInputSchema, value);
+}
+export function parseTaskDeletionInput(value: unknown) {
+  return v.parse(taskDeletionInputSchema, value);
 }
 export function parseTaskMoveInput(value: unknown) {
   return v.parse(taskMoveInputSchema, value);

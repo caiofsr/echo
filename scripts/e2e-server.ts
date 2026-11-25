@@ -63,6 +63,7 @@ async function seedInvoices() {
   await database.db.delete(invoice).run();
   await database.db.delete(timeRecord).run();
   await database.db.delete(boardTask).run();
+  await database.db.delete(boardColumn).run();
   await database.db.delete(project).run();
   await database.db.delete(client).run();
   await database.db.delete(paymentMethod).run();
@@ -101,6 +102,20 @@ async function seedInvoices() {
       currency: "USD",
     })
     .returning();
+  const [column] = await database.db
+    .insert(boardColumn)
+    .values({ name: "Fazendo", position: 0 })
+    .returning();
+  const [billedTask] = await database.db
+    .insert(boardTask)
+    .values({
+      title: "Tarefa faturada",
+      description: "Manter o histórico da fatura",
+      projectId: identity.id,
+      columnId: column.id,
+      position: 0,
+    })
+    .returning();
 
   const [invoiced] = await seedRecord({
     startedAt: "2020-04-15T12:00:00Z",
@@ -111,7 +126,7 @@ async function seedInvoices() {
     hourlyRateCents: 10000,
     currency: "BRL",
   });
-  await seedRecord({
+  const [taskRecord] = await seedRecord({
     startedAt: "2020-04-10T12:00:00Z",
     endedAt: "2020-04-10T13:00:00Z",
     description: "Pesquisa de identidade",
@@ -120,6 +135,10 @@ async function seedInvoices() {
     hourlyRateCents: 10000,
     currency: "BRL",
   });
+  await database.db
+    .update(timeRecord)
+    .set({ taskId: billedTask.id })
+    .where(eq(timeRecord.id, taskRecord.id));
   await seedRecord({
     startedAt: "2020-04-11T12:00:00Z",
     endedAt: "2020-04-11T13:00:00Z",
@@ -134,7 +153,7 @@ async function seedInvoices() {
     endedAt: "2020-04-12T13:00:00Z",
     description: "Estudo sem projeto",
     projectId: null,
-    clientId: null,
+    clientId: owner.id,
     hourlyRateCents: 0,
     currency: "BRL",
   });
@@ -174,6 +193,38 @@ async function seedInvoices() {
       language: "pt",
       currency: "BRL",
       totalCents: 10000,
+      periodFrom: "2020-04-01",
+      periodTo: "2020-04-30",
+      timezone: "America/Recife",
+      clientSnapshot: JSON.stringify({
+        name: owner.name,
+        legalName: null,
+        taxId: null,
+        address: null,
+      }),
+      companySnapshot: JSON.stringify({
+        name: "Ateliê Aurora",
+        taxId: null,
+        address: null,
+        phone: null,
+      }),
+      paymentSnapshot: JSON.stringify({
+        label: "Pix",
+        instructions:
+          "Pix para fatura@aurora.test\nBanco Aurora · Agência 0001",
+      }),
+      linesSnapshot: JSON.stringify([
+        {
+          projectId: identity.id,
+          projectName: "Identidade",
+          serviceDescription: "Identidade",
+          hoursSeconds: 3600,
+          subtotalCents: 10000,
+          rateCents: 10000,
+          rateCurrency: "BRL",
+          recordIds: [invoiced.id],
+        },
+      ]),
       issuedAt: seconds("2020-05-02T12:00:00Z"),
     })
     .returning();

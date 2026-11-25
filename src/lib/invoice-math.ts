@@ -6,6 +6,21 @@ export type Fraction = {
   denominator: bigint;
 };
 
+function gcd(left: bigint, right: bigint): bigint {
+  let a = left < 0n ? -left : left;
+  let b = right < 0n ? -right : right;
+  while (b !== 0n) [a, b] = [b, a % b];
+  return a || 1n;
+}
+
+function reduceFraction(value: Fraction): Fraction {
+  const divisor = gcd(value.numerator, value.denominator);
+  return {
+    numerator: value.numerator / divisor,
+    denominator: value.denominator / divisor,
+  };
+}
+
 const exchangeRatePattern = /^(\d+)(?:[.,](\d{1,8}))?$/;
 
 /**
@@ -18,16 +33,20 @@ export function parseExchangeRate(value: string): Fraction | null {
   const [, whole, fraction = ""] = match;
   const numerator = BigInt(whole + fraction);
   if (numerator <= 0n) return null;
-  return { numerator, denominator: 10n ** BigInt(fraction.length) };
+  return reduceFraction({
+    numerator,
+    denominator: 10n ** BigInt(fraction.length),
+  });
 }
 
 export function addFractions(left: Fraction, right: Fraction): Fraction {
-  return {
+  const common = gcd(left.denominator, right.denominator);
+  return reduceFraction({
     numerator:
-      left.numerator * right.denominator +
-      right.numerator * left.denominator,
-    denominator: left.denominator * right.denominator,
-  };
+      left.numerator * (right.denominator / common) +
+      right.numerator * (left.denominator / common),
+    denominator: left.denominator * (right.denominator / common),
+  });
 }
 
 /**
@@ -58,7 +77,7 @@ export function recordAmountFraction(
       denominator *= exchangeRate.numerator;
     }
   }
-  return { numerator, denominator };
+  return reduceFraction({ numerator, denominator });
 }
 
 /** Rounds a positive fraction of a cent to the nearest cent, half up. */

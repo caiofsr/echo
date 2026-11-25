@@ -6,13 +6,16 @@ import { eq } from "drizzle-orm";
 import { migrateDatabase, openDatabase } from "../src/db/connection";
 import { invoice, invoiceRecord, timeRecord } from "../src/db/schema";
 import {
+  addFractions,
   parseExchangeRate,
   recordAmountFraction,
   roundHalfUpCents,
 } from "../src/lib/invoice-math";
 import { dayStartSeconds, nextDay } from "../src/lib/invoice-period";
 import { createDirectoryStore } from "../src/server/directory";
+import { createBoardStore } from "../src/server/board";
 import { createInvoiceStore } from "../src/server/invoices";
+import { createSettingsStore } from "../src/server/settings";
 import { createTimerStore } from "../src/server/timer";
 
 const cleanup: Array<() => Promise<void>> = [];
@@ -32,6 +35,7 @@ async function setup() {
   let now = Date.parse("2026-07-15T12:00:00Z");
   return {
     db: database.db,
+    url,
     directory: createDirectoryStore(database.db),
     timer: createTimerStore(database.db, () => now),
     invoices: createInvoiceStore(database.db),
@@ -43,10 +47,45 @@ async function setup() {
 
 const seconds = (iso: string) => Date.parse(iso) / 1000;
 
+function issueInput(
+  preview: Awaited<
+    ReturnType<ReturnType<typeof createInvoiceStore>["preview"]>
+  >,
+  paymentMethodId: number,
+  numberStart = 1,
+) {
+  return {
+    clientId: preview.clientId,
+    from: preview.from,
+    to: preview.to,
+    currency: preview.currency,
+    exchangeRate: preview.exchangeRate ?? "",
+    language: preview.language,
+    paymentMethodId,
+    numberStart,
+    expectedTimezone: preview.timezone,
+    expectedTotalCents: preview.totalCents,
+    expectedLines: preview.lines.map((line) => ({
+      projectId: line.projectId,
+      projectName: line.projectName,
+      hoursSeconds: line.hoursSeconds,
+      subtotalCents: line.subtotalCents,
+      rateCents: line.rateCents,
+      rateCurrency: line.rateCurrency,
+      recordIds: line.recordIds,
+      serviceDescription: line.serviceDescription,
+    })),
+  };
+}
+
 async function createClientAndProject(
   directory: ReturnType<typeof createDirectoryStore>,
   name = "Estúdio",
-  project: { name?: string; hourlyRate?: string; currency?: "BRL" | "USD" } = {},
+  project: {
+    name?: string;
+    hourlyRate?: string;
+    currency?: "BRL" | "USD";
+  } = {},
 ) {
   const client = await directory.saveClient({
     name,
@@ -88,12 +127,10 @@ test("calcula frações de centavo com precisão e meio para cima", () => {
   expect(roundHalfUpCents({ numerator: 1n, denominator: 2n })).toBe(1);
   expect(roundHalfUpCents({ numerator: 1n, denominator: 3n })).toBe(0);
   expect(roundHalfUpCents({ numerator: 2n, denominator: 3n })).toBe(1);
-  expect(
-    roundHalfUpCents({ numerator: 10000n, denominator: 3n }),
-  ).toBe(3333);
+  expect(roundHalfUpCents({ numerator: 10000n, denominator: 3n })).toBe(3333);
 
   const noQuote = recordAmountFraction(18, 100, "BRL", "BRL", null);
-  expect(noQuote).toEqual({ numerator: 1800n, denominator: 3600n });
+  expect(noQuote).toEqual({ numerator: 1n, denominator: 2n });
   expect(roundHalfUpCents(noQuote)).toBe(1);
 
   const usdToBrl = recordAmountFraction(
@@ -115,11 +152,17 @@ test("calcula frações de centavo com precisão e meio para cima", () => {
   expect(roundHalfUpCents(brlToUsd)).toBe(500);
 
   expect(parseExchangeRate("5,2")).toEqual({
-    numerator: 52n,
-    denominator: 10n,
+    numerator: 26n,
+    denominator: 5n,
   });
   for (const invalid of ["", "0", "0,00", "-1", "abc", "1.123456789"])
     expect(parseExchangeRate(invalid)).toBeNull();
+
+  let total = { numerator: 0n, denominator: 1n };
+  const oneCent = recordAmountFraction(3600, 1, "BRL", "BRL", null);
+  for (let index = 0; index < 10_000; index++)
+    total = addFractions(total, oneCent);
+  expect(roundHalfUpCents(total)).toBe(10_000);
 });
 
 test("interpreta o dia local no fuso e atravessa a mudança de horário", () => {
@@ -181,6 +224,7 @@ test("prévia inclui somente registros encerrados do cliente e inteiros no perí
     startedAt: seconds("2026-06-12T12:00:00Z"),
     endedAt: seconds("2026-06-12T13:00:00Z"),
     description: "Trabalho livre",
+    clientId: client.id,
   });
   await saveRecord(timer, {
     startedAt: seconds("2026-06-12T14:00:00Z"),
@@ -208,14 +252,33 @@ test("prévia inclui somente registros encerrados do cliente e inteiros no perí
   expect(preview.totalCents).toBe(20000);
   expect(preview.includedCount).toBe(2);
   expect(
-    preview.exclusions.map(({ description, reason }) => [
-      description,
-      reason,
-    ]),
+    preview.exclusions.map(({ description, reason }) => [description, reason]),
   ).toEqual([
     ["Trabalho livre", "no-project"],
     ["Atravessa o início", "outside-period"],
   ]);
+  expect(await db.select().from(invoice)).toHaveLength(0);
+});
+
+test("prévia não atribui horas sem Cliente à cobrança de outro Cliente", async () => {
+  const { db, directory, invoices, timer } = await setup();
+  const { client } = await createClientAndProject(directory);
+  await saveRecord(timer, {
+    startedAt: seconds("2026-06-12T12:00:00Z"),
+    endedAt: seconds("2026-06-12T13:00:00Z"),
+    description: "Trabalho sem associação",
+  });
+
+  const preview = await invoices.preview({
+    clientId: client.id,
+    from: "2026-06-01",
+    to: "2026-06-30",
+    currency: "BRL",
+    exchangeRate: "",
+  });
+
+  expect(preview.lines).toEqual([]);
+  expect(preview.exclusions).toEqual([]);
   expect(await db.select().from(invoice)).toHaveLength(0);
 });
 
@@ -239,7 +302,14 @@ test("exclui contagem em andamento e horas já faturadas sem bloquear a prévia"
     description: "Elegível",
     projectId: project.id,
   });
-  await timer.command({ action: "start", version: 0 });
+  const board = createBoardStore(db);
+  const column = await board.saveColumn({ name: "Fazendo" });
+  const task = await board.saveTask({
+    title: "Trabalho em andamento",
+    projectId: project.id,
+    columnId: column.id,
+  });
+  await timer.command({ action: "start", taskId: task.id, version: 0 });
 
   const [created] = await db
     .insert(invoice)
@@ -249,6 +319,18 @@ test("exclui contagem em andamento e horas já faturadas sem bloquear a prévia"
       language: "pt",
       currency: "BRL",
       totalCents: 10000,
+      periodFrom: "2026-07-01",
+      periodTo: "2026-07-31",
+      timezone: "UTC",
+      clientSnapshot: JSON.stringify({
+        name: client.name,
+        legalName: null,
+        taxId: null,
+        address: null,
+      }),
+      companySnapshot: JSON.stringify(null),
+      paymentSnapshot: JSON.stringify({ label: "PIX", instructions: "chave" }),
+      linesSnapshot: JSON.stringify([]),
       issuedAt: seconds("2026-07-11T00:00:00Z"),
     })
     .returning();
@@ -274,12 +356,9 @@ test("exclui contagem em andamento e horas já faturadas sem bloquear a prévia"
     subtotalCents: 10000,
   });
   expect(
-    preview.exclusions.map(({ description, reason }) => [
-      description,
-      reason,
-    ]),
+    preview.exclusions.map(({ description, reason }) => [description, reason]),
   ).toEqual([
-    [null, "in-progress"],
+    ["Trabalho em andamento", "in-progress"],
     ["Faturado", "already-invoiced"],
   ]);
   expect((await timer.getState()).active).not.toBeNull();
@@ -288,6 +367,21 @@ test("exclui contagem em andamento e horas já faturadas sem bloquear a prévia"
     .update(invoice)
     .set({ cancelledAt: seconds("2026-07-12T00:00:00Z") })
     .where(eq(invoice.id, created.id));
+  const [invoicedRecord] = await db
+    .select()
+    .from(timeRecord)
+    .where(eq(timeRecord.description, "Faturado"));
+  const editedCancelledRecord = await timer.saveRecord({
+    id: invoicedRecord.id,
+    version: invoicedRecord.version,
+    startedAt: invoicedRecord.startedAt + 60,
+    endedAt: invoicedRecord.endedAt! + 60,
+    description: "Fatura cancelada",
+    taskId: null,
+    projectId: project.id,
+    clientId: client.id,
+  });
+  expect(editedCancelledRecord.ok).toBe(true);
   const afterCancellation = await invoices.preview({
     clientId: client.id,
     from: "2026-07-01",
@@ -494,4 +588,306 @@ test("valida cliente, datas e período livre", async () => {
   });
   expect(empty.lines).toEqual([]);
   expect(empty.totalCents).toBe(0);
+});
+
+test("emite com snapshots imutáveis e bloqueia a edição das horas", async () => {
+  const { db, directory, invoices, timer } = await setup();
+  await timer.savePreferences({
+    hourlyRateCents: 0,
+    currency: "BRL",
+    timezone: "UTC",
+  });
+  const { client, project } = await createClientAndProject(directory);
+  const settings = createSettingsStore(db);
+  await settings.saveCompany({
+    name: "Caio Serviços",
+    taxId: "123",
+    address: "Rua A",
+    phone: "5555",
+  });
+  const payment = await settings.createPaymentMethod({
+    label: "PIX",
+    instructions: "Chave original",
+  });
+  await saveRecord(timer, {
+    startedAt: seconds("2026-06-10T09:00:00Z"),
+    endedAt: seconds("2026-06-10T10:00:00Z"),
+    description: "Fora do período",
+  });
+  await saveRecord(timer, {
+    startedAt: seconds("2026-07-10T09:00:00Z"),
+    endedAt: seconds("2026-07-10T10:00:00Z"),
+    description: "Período faturado",
+    projectId: project.id,
+  });
+  const [record] = await db
+    .select()
+    .from(timeRecord)
+    .where(eq(timeRecord.description, "Período faturado"));
+  const preview = await invoices.preview({
+    clientId: client.id,
+    from: "2026-07-01",
+    to: "2026-07-31",
+    currency: "BRL",
+    exchangeRate: "",
+    language: "pt",
+  });
+  const issued = await invoices.issue(issueInput(preview, payment.id, 14));
+
+  expect(issued).toMatchObject({
+    number: 14,
+    clientSnapshot: { name: "Estúdio", legalName: null },
+    companySnapshot: { name: "Caio Serviços", taxId: "123" },
+    paymentSnapshot: { label: "PIX", instructions: "Chave original" },
+    totalCents: 10000,
+    lines: [
+      {
+        projectName: "Site",
+        serviceDescription: "Site",
+        hoursSeconds: 3600,
+        subtotalCents: 10000,
+        recordIds: [record.id],
+      },
+    ],
+  });
+  expect(
+    await invoices.preview({
+      clientId: client.id,
+      from: "2026-07-01",
+      to: "2026-07-31",
+      currency: "BRL",
+      exchangeRate: "",
+    }),
+  ).toMatchObject({
+    lines: [],
+    exclusions: [{ recordId: record.id, reason: "already-invoiced" }],
+  });
+  expect(
+    (await timer.getState()).records.find(({ id }) => id === record.id)
+      ?.isInvoiced,
+  ).toBe(true);
+
+  await directory.saveClient({
+    id: client.id,
+    version: client.version,
+    name: "Nome atualizado",
+    legalName: "Razão atualizada",
+    taxId: client.taxId ?? "",
+    address: client.address ?? "",
+  });
+  await directory.saveProject({
+    id: project.id,
+    version: project.version,
+    name: "Projeto atualizado",
+    clientId: client.id,
+    hourlyRate: "100,00",
+    currency: project.currency,
+  });
+  await settings.saveCompany({
+    name: "Empresa atualizada",
+    taxId: "456",
+    address: "Rua B",
+    phone: "6666",
+  });
+  await settings.updatePaymentMethod(payment.id, {
+    label: "Transferência",
+    instructions: "Dados atualizados",
+  });
+  const stored = await invoices.list();
+  expect(stored).toHaveLength(1);
+  expect(stored[0]).toMatchObject({
+    id: issued.id,
+    number: 14,
+    clientSnapshot: { name: "Estúdio" },
+    companySnapshot: { name: "Caio Serviços" },
+    paymentSnapshot: { instructions: "Chave original" },
+    lines: [{ projectName: "Site", serviceDescription: "Site" }],
+  });
+  const edited = await timer.saveRecord({
+    id: record.id,
+    version: record.version,
+    startedAt: record.startedAt + 60,
+    endedAt: record.endedAt! + 60,
+    description: "Alterado",
+    taskId: null,
+    projectId: project.id,
+    clientId: client.id,
+  });
+  expect(edited).toMatchObject({
+    ok: false,
+    message: expect.stringContaining("fatura válida"),
+  });
+});
+
+test("revalida a prévia atomicamente e não reserva número em caso de conflito", async () => {
+  const { db, directory, invoices, timer } = await setup();
+  await timer.savePreferences({
+    hourlyRateCents: 0,
+    currency: "BRL",
+    timezone: "UTC",
+  });
+  const { client, project } = await createClientAndProject(directory);
+  const payment = await createSettingsStore(db).createPaymentMethod({
+    label: "PIX",
+    instructions: "chave",
+  });
+  await saveRecord(timer, {
+    startedAt: seconds("2026-07-10T09:00:00Z"),
+    endedAt: seconds("2026-07-10T10:00:00Z"),
+    projectId: project.id,
+  });
+  const preview = await invoices.preview({
+    clientId: client.id,
+    from: "2026-07-01",
+    to: "2026-07-31",
+    currency: "BRL",
+    exchangeRate: "",
+  });
+  const input = issueInput(preview, payment.id, 50);
+  await saveRecord(timer, {
+    startedAt: seconds("2026-07-11T09:00:00Z"),
+    endedAt: seconds("2026-07-11T10:00:00Z"),
+    projectId: project.id,
+  });
+
+  await expect(invoices.issue(input)).rejects.toThrow(/prévia mudou/i);
+  expect(await db.select().from(invoice)).toHaveLength(0);
+  expect(await db.select().from(invoiceRecord)).toHaveLength(0);
+  expect((await invoices.list()).map(({ number }) => number)).toEqual([]);
+});
+
+test("numeração é por cliente e não reutiliza fatura cancelada", async () => {
+  const { db, directory, invoices, timer } = await setup();
+  await timer.savePreferences({
+    hourlyRateCents: 0,
+    currency: "BRL",
+    timezone: "UTC",
+  });
+  const { client, project } = await createClientAndProject(directory);
+  const payment = await createSettingsStore(db).createPaymentMethod({
+    label: "PIX",
+    instructions: "chave",
+  });
+  await saveRecord(timer, {
+    startedAt: seconds("2026-07-10T09:00:00Z"),
+    endedAt: seconds("2026-07-10T10:00:00Z"),
+    projectId: project.id,
+  });
+  const firstPreview = await invoices.preview({
+    clientId: client.id,
+    from: "2026-07-01",
+    to: "2026-07-31",
+    currency: "BRL",
+    exchangeRate: "",
+  });
+  const first = await invoices.issue(issueInput(firstPreview, payment.id, 27));
+  await db
+    .update(invoice)
+    .set({ cancelledAt: seconds("2026-07-12T00:00:00Z") })
+    .where(eq(invoice.id, first.id));
+
+  const secondPreview = await invoices.preview({
+    clientId: client.id,
+    from: "2026-07-01",
+    to: "2026-07-31",
+    currency: "BRL",
+    exchangeRate: "",
+  });
+  const second = await invoices.issue(issueInput(secondPreview, payment.id, 1));
+  expect([first.number, second.number]).toEqual([27, 28]);
+});
+
+test("emissões concorrentes em conexões distintas não duplicam a cobrança", async () => {
+  const { db, directory, invoices, timer, url } = await setup();
+  const secondDatabase = await openDatabase(url);
+  const secondInvoices = createInvoiceStore(secondDatabase.db);
+  await timer.savePreferences({
+    hourlyRateCents: 0,
+    currency: "BRL",
+    timezone: "UTC",
+  });
+  const { client, project } = await createClientAndProject(directory);
+  const payment = await createSettingsStore(db).createPaymentMethod({
+    label: "PIX",
+    instructions: "chave",
+  });
+  await saveRecord(timer, {
+    startedAt: seconds("2026-07-10T09:00:00Z"),
+    endedAt: seconds("2026-07-10T10:00:00Z"),
+    projectId: project.id,
+  });
+  const preview = await invoices.preview({
+    clientId: client.id,
+    from: "2026-07-01",
+    to: "2026-07-31",
+    currency: "BRL",
+    exchangeRate: "",
+  });
+  const input = issueInput(preview, payment.id, 1);
+  let results: PromiseSettledResult<
+    Awaited<ReturnType<typeof invoices.issue>>
+  >[];
+  try {
+    results = await Promise.allSettled([
+      invoices.issue(input),
+      secondInvoices.issue(input),
+    ]);
+  } finally {
+    secondDatabase.close();
+  }
+
+  expect(
+    results.filter((result) => result.status === "fulfilled"),
+  ).toHaveLength(1);
+  expect((await db.select().from(invoice)).map(({ number }) => number)).toEqual(
+    [1],
+  );
+  expect(await db.select().from(invoiceRecord)).toHaveLength(1);
+});
+
+test("falha ao criar os vínculos reverte a fatura e deixa as horas livres", async () => {
+  const { db, directory, invoices, timer } = await setup();
+  await timer.savePreferences({
+    hourlyRateCents: 0,
+    currency: "BRL",
+    timezone: "UTC",
+  });
+  const { client, project } = await createClientAndProject(directory);
+  const payment = await createSettingsStore(db).createPaymentMethod({
+    label: "PIX",
+    instructions: "chave",
+  });
+  await saveRecord(timer, {
+    startedAt: seconds("2026-07-10T09:00:00Z"),
+    endedAt: seconds("2026-07-10T10:00:00Z"),
+    projectId: project.id,
+  });
+  const preview = await invoices.preview({
+    clientId: client.id,
+    from: "2026-07-01",
+    to: "2026-07-31",
+    currency: "BRL",
+    exchangeRate: "",
+  });
+  await db.run(`CREATE TRIGGER reject_invoice_link BEFORE INSERT ON invoice_record
+    BEGIN SELECT RAISE(ABORT, 'falha no vínculo'); END`);
+
+  await expect(
+    invoices.issue(issueInput(preview, payment.id)),
+  ).rejects.toThrow();
+  expect(await db.select().from(invoice)).toHaveLength(0);
+  expect(await db.select().from(invoiceRecord)).toHaveLength(0);
+  const [record] = await db.select().from(timeRecord);
+  expect(
+    await timer.saveRecord({
+      id: record.id,
+      version: record.version,
+      startedAt: record.startedAt + 60,
+      endedAt: record.endedAt! + 60,
+      description: "Continua livre",
+      taskId: null,
+      projectId: project.id,
+      clientId: client.id,
+    }),
+  ).toMatchObject({ ok: true });
 });

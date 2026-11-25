@@ -7,6 +7,7 @@ import {
 import { useServerFn } from "@tanstack/react-start";
 import { ArchiveDialog, type ArchiveTarget } from "../archive/archive-dialog";
 import { ArchiveFilter } from "../archive/archive-filter";
+import { DeleteTaskDialog } from "./delete-task-dialog";
 import { Button } from "../ui/button";
 import { TimerActionIcon } from "../ui/timer-action-icon";
 import {
@@ -23,7 +24,6 @@ import {
   TaskMoveDialog,
 } from "./board-dialogs";
 
-import { TaskDeletionDialog } from "./task-deletion-dialog";
 import { useTimerControl } from "../../hooks/use-timer-control";
 import { duration } from "../../lib/timer-input";
 
@@ -33,18 +33,19 @@ type Editor =
   | { kind: "task-create"; columnId: number }
   | { kind: "task-details"; task: Task }
   | { kind: "task-edit"; task: Task }
-  | { kind: "task-move"; task: Task }
-  | { kind: "task-delete"; task: Task };
+  | { kind: "task-move"; task: Task };
 
 export function BoardPage() {
   const timer = useTimerControl();
   const { data } = useSuspenseQuery(boardQueryOptions);
   const queryClient = useQueryClient();
   const returnFocus = useRef<HTMLElement | null>(null);
+  const boardHeading = useRef<HTMLHeadingElement | null>(null);
   const [editor, setEditor] = useState<Editor | null>(null);
   const [archiveTarget, setArchiveTarget] = useState<ArchiveTarget | null>(
     null,
   );
+  const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
   const [showArchived, setShowArchived] = useState(false);
   const [notice, setNotice] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -147,7 +148,7 @@ export function BoardPage() {
 
   return (
     <section className="page-content board-page">
-      <h1>Quadro</h1>
+      <h1 ref={boardHeading}>Quadro</h1>
       <p className="settings-success" role="status">
         {notice}
       </p>
@@ -407,7 +408,6 @@ export function BoardPage() {
           onCancel={() => setEditor(null)}
           onEdit={() => setEditor({ kind: "task-edit", task: editor.task })}
           onMove={() => setEditor({ kind: "task-move", task: editor.task })}
-          onDelete={() => setEditor({ kind: "task-delete", task: editor.task })}
           onArchive={() => {
             setArchiveTarget({
               kind: "task",
@@ -416,6 +416,11 @@ export function BoardPage() {
               name: editor.task.title,
               action: editor.task.archiveBatch === null ? "archive" : "restore",
             });
+            setEditor(null);
+          }}
+          onDelete={() => {
+            returnFocus.current = boardHeading.current;
+            setDeleteTarget(editor.task);
             setEditor(null);
           }}
         />
@@ -440,18 +445,18 @@ export function BoardPage() {
           onSaved={() => saved("Tarefa movida.")}
         />
       )}
-      {editor?.kind === "task-delete" && (
-        <TaskDeletionDialog
-          task={editor.task}
-          returnFocus={returnFocus}
-          onClose={() => setEditor(null)}
-        />
-      )}
       {archiveTarget && (
         <ArchiveDialog
           target={archiveTarget}
           returnFocus={returnFocus}
           onClose={() => setArchiveTarget(null)}
+        />
+      )}
+      {deleteTarget && (
+        <DeleteTaskDialog
+          task={deleteTarget}
+          returnFocus={returnFocus}
+          onClose={() => setDeleteTarget(null)}
         />
       )}
     </section>

@@ -161,9 +161,9 @@ test("apaga somente períodos sem fatura válida e mantém intacta a fatura emit
         taskId: null,
         taskTitle: null,
         version: billedRecord.version + 1,
+        isInvoiced: true,
       },
     ]);
-    // Invoice issuance is not available yet, so fixture links stand in for issued invoices.
     expect(await db.select().from(invoice)).toEqual([valid, cancelled]);
     expect(await db.select().from(invoiceRecord)).toEqual([
       { invoiceId: valid.id, recordId: billedRecord.id },

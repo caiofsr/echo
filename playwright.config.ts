@@ -1,10 +1,16 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const browserPort = process.env.ECHO_BROWSER_PORT ?? "4318";
+const controlPort = process.env.ECHO_TEST_CONTROL_PORT ?? "4319";
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
   workers: 1,
-  use: { baseURL: "http://localhost:4318", trace: "retain-on-failure" },
+  use: {
+    baseURL: `http://localhost:${browserPort}`,
+    trace: "retain-on-failure",
+  },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     {
@@ -14,13 +20,13 @@ export default defineConfig({
   ],
   webServer: {
     command: "bun scripts/e2e-server.ts",
-    url: "http://localhost:4318/login",
+    url: `http://localhost:${browserPort}/login`,
     reuseExistingServer: false,
     env: {
       NODE_ENV: "development",
-      PORT: "4318",
-      ECHO_TEST_CONTROL_PORT: "4319",
-      BETTER_AUTH_URL: "http://localhost:4318",
+      PORT: browserPort,
+      ECHO_TEST_CONTROL_PORT: controlPort,
+      BETTER_AUTH_URL: `http://localhost:${browserPort}`,
       BETTER_AUTH_SECRET: "isolated-browser-test-secret-at-least-32-chars",
     },
   },

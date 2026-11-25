@@ -34,12 +34,12 @@ test("confere o destino das horas e exclui uma Tarefa em andamento", async ({
   await task.click();
   await dialog.getByRole("button", { name: "Excluir tarefa" }).click();
   await expect(dialog).toContainText(
-    "Registros vinculados a faturas válidas sempre serão preservados.",
+    "O cronômetro está contando nesta tarefa.",
   );
-  await dialog.getByRole("button", { name: "Apagar horas" }).click();
-  await expect(dialog.getByRole("heading")).toHaveText("Confirmar exclusão");
-  await expect(dialog).toContainText("O cronômetro será parado");
-  await expect(dialog).toContainText("Será apagado");
+  await dialog.getByRole("button", { name: "Apagar as horas" }).click();
+  await dialog.getByRole("button", { name: "Continuar" }).click();
+  await expect(dialog).toContainText("O período atual será encerrado");
+  await expect(dialog).toContainText("será apagado");
   await expect(
     page.locator("[data-task-card]").filter({ hasText: title }),
   ).toBeVisible();
@@ -55,8 +55,8 @@ test("confere o destino das horas e exclui uma Tarefa em andamento", async ({
   ).toBeVisible();
   await otherTab.close();
 
-  await dialog.getByRole("button", { name: "Excluir definitivamente" }).click();
-  await expect(dialog.getByRole("heading")).toHaveText("Os dados mudaram");
+  await dialog.getByRole("button", { name: "Excluir tarefa permanentemente" }).click();
+  await expect(dialog.getByRole("alert")).toContainText("mudaram em outra sessão");
   await dialog.getByRole("button", { name: "Atualizar quadro" }).click();
   await expect(dialog).not.toBeVisible();
   await expect(task).toBeVisible();
@@ -67,9 +67,10 @@ test("confere o destino das horas e exclui uma Tarefa em andamento", async ({
 
   await task.click();
   await dialog.getByRole("button", { name: "Excluir tarefa" }).click();
-  await dialog.getByRole("button", { name: "Preservar horas" }).click();
-  await expect(dialog).toContainText("Será mantido sem tarefa");
-  await dialog.getByRole("button", { name: "Excluir definitivamente" }).click();
+  await dialog.getByRole("button", { name: "Preservar as horas" }).click();
+  await dialog.getByRole("button", { name: "Continuar" }).click();
+  await expect(dialog).toContainText("registros serão preservados sem vínculo");
+  await dialog.getByRole("button", { name: "Excluir tarefa permanentemente" }).click();
   await expect(dialog).not.toBeVisible();
   await expect(task).toHaveCount(0);
   await expect(
